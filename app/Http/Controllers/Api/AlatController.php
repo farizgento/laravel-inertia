@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Alat;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class AlatController extends Controller
 {
@@ -18,11 +17,9 @@ class AlatController extends Controller
             'id' => $alat->id,
             'kode' => sprintf('ALT-%03d', $alat->id),
             'nama' => $alat->nama,
-            'kategori' => $alat->kategori,
             'stok' => $stokTersedia,
             'total_aset' => (int) $alat->total_aset,
             'stok_tersedia' => $stokTersedia,
-            'kondisi' => $alat->kondisi ?? 'baik',
             'deskripsi' => '',
             'lokasi' => $alat->area?->name ?? 'Area tidak diketahui',
             'area_name' => $alat->area?->name ?? 'Area tidak diketahui',
@@ -39,14 +36,14 @@ class AlatController extends Controller
         return DB::table('peminjaman_items as items')
             ->join('peminjamans as pem', 'pem.id', '=', 'items.peminjaman_id')
             ->whereIn('items.alat_id', $alatIds)
-            ->whereIn('pem.status', ['Menunggu Review', 'Diproses', 'Terkirim'])
+            ->whereIn('pem.status', ['Menunggu Review', 'Dipesan', 'Disiapkan', 'Terkirim'])
             ->groupBy('items.alat_id')
             ->select(
                 'items.alat_id',
                 DB::raw(
                     "SUM(CASE
                         WHEN pem.status = 'Menunggu Review' THEN items.qty
-                        WHEN pem.status IN ('Diproses', 'Terkirim') THEN COALESCE(items.approved_qty, 0)
+                        WHEN pem.status IN ('Dipesan', 'Disiapkan', 'Terkirim') THEN COALESCE(items.approved_qty, 0)
                         ELSE 0
                     END) as total"
                 )
@@ -59,7 +56,6 @@ class AlatController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->query('search', ''));
-        $kategori = trim((string) $request->query('kategori', ''));
         $areaId = $request->query('area_id');
         $perPage = (int) $request->query('per_page', 0);
         $shouldPaginate = $request->has('per_page') || $request->has('page');
@@ -68,10 +64,6 @@ class AlatController extends Controller
 
         if ($search !== '') {
             $query->where('nama', 'like', '%' . $search . '%');
-        }
-
-        if ($kategori !== '' && $kategori !== 'Semua Kategori') {
-            $query->where('kategori', $kategori);
         }
 
         if (! empty($areaId)) {
@@ -83,7 +75,7 @@ class AlatController extends Controller
             $alats = $query->orderBy('nama')->paginate($perPage);
             $borrowedMap = $this->borrowedMap($alats->getCollection()->pluck('id')->all());
 
-            $data = $alats->getCollection()->map(function (Alat $alat) {
+            $data = $alats->getCollection()->map(function (Alat $alat) use ($borrowedMap) {
                 $borrowedQty = $borrowedMap[$alat->id] ?? 0;
                 return $this->formatAlat($alat, $borrowedQty);
             })->values();
@@ -102,7 +94,7 @@ class AlatController extends Controller
         $alats = $query->orderBy('nama')->get();
         $borrowedMap = $this->borrowedMap($alats->pluck('id')->all());
 
-        return $alats->map(function (Alat $alat) {
+        return $alats->map(function (Alat $alat) use ($borrowedMap) {
             $borrowedQty = $borrowedMap[$alat->id] ?? 0;
             return $this->formatAlat($alat, $borrowedQty);
         })->values();
@@ -112,10 +104,8 @@ class AlatController extends Controller
     {
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
-            'kategori' => ['required', 'string', 'max:255'],
             'total_aset' => ['required', 'integer', 'min:0'],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
-            'kondisi' => ['required', 'string', Rule::in(['baik', 'rusak', 'tidak aktif'])],
         ]);
 
         $alat = Alat::create($data);
@@ -131,10 +121,8 @@ class AlatController extends Controller
     {
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
-            'kategori' => ['required', 'string', 'max:255'],
             'total_aset' => ['required', 'integer', 'min:0'],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
-            'kondisi' => ['required', 'string', Rule::in(['baik', 'rusak', 'tidak aktif'])],
         ]);
 
         $alat->update($data);

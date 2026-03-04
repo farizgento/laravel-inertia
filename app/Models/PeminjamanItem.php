@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PeminjamanItem extends Model
 {
@@ -29,5 +30,10 @@ class PeminjamanItem extends Model
     public function alat(): BelongsTo
     {
         return $this->belongsTo(Alat::class);
+    }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(PeminjamanItemPhoto::class, 'peminjaman_item_id');
     }
 }

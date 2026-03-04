@@ -15,7 +15,7 @@
                             {{ item?.title || '-' }}
                         </h3>
                         <p class="mt-1 text-sm text-slate-500">
-                            ID #{{ item?.id ?? '-' }} - {{ item?.createdAt || '-' }}
+                            ID #{{ item?.id ?? '-' }} - Dibuat {{ item?.createdAt || '-' }}
                         </p>
                         <p v-if="item?.userName" class="mt-1 text-sm text-slate-500">
                             Peminjam: {{ item.userName }}
@@ -33,7 +33,7 @@
                     </button>
                 </div>
 
-                <div class="mt-5 grid gap-4 md:grid-cols-3">
+                <div class="mt-5 grid gap-4 md:grid-cols-2">
                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                         <p class="text-xs text-slate-400">Status</p>
                         <p class="mt-2 text-sm font-semibold text-slate-800">
@@ -44,6 +44,12 @@
                         <p class="text-xs text-slate-400">Jumlah Item</p>
                         <p class="mt-2 text-sm font-semibold text-slate-800">
                             {{ item?.itemCount ?? 0 }}
+                        </p>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-xs text-slate-400">Tanggal Pinjam</p>
+                        <p class="mt-2 text-sm font-semibold text-slate-800">
+                            {{ item?.borrowDate || '-' }}
                         </p>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
@@ -121,6 +127,7 @@
                                             min="0"
                                             :max="row.requestedQty"
                                             :disabled="row.decision === 'tolak'"
+                                            @input="handleQtyInput(row)"
                                             class="h-9 w-20 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50 disabled:text-slate-400"
                                         />
                                     </td>
@@ -152,6 +159,13 @@
                         class="mt-3 min-h-[110px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         placeholder="Catatan tambahan untuk peminjam..."
                     ></textarea>
+                </div>
+
+                <div
+                    v-if="validationError"
+                    class="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700"
+                >
+                    {{ validationError }}
                 </div>
 
                 <div class="mt-6 flex flex-wrap items-center justify-end gap-3">
@@ -198,6 +212,7 @@ const emit = defineEmits(['close', 'submit']);
 
 const reviewRows = ref([]);
 const reviewNote = ref('');
+const validationError = ref('');
 
 const buildRows = (tools) =>
     (Array.isArray(tools) ? tools : []).map((tool) => {
@@ -232,7 +247,39 @@ const handleDecisionChange = (row) => {
     }
 };
 
+const handleQtyInput = (row) => {
+    const maxQty = Number.isFinite(row.requestedQty) ? row.requestedQty : 0;
+    let nextQty = Number.isFinite(row.approvedQty) ? row.approvedQty : 0;
+    if (nextQty < 0) {
+        nextQty = 0;
+    }
+    if (nextQty > maxQty) {
+        nextQty = maxQty;
+    }
+    row.approvedQty = nextQty;
+    validationError.value = '';
+};
+
+const validateRows = () => {
+    for (const row of reviewRows.value) {
+        const maxQty = Number.isFinite(row.requestedQty) ? row.requestedQty : 0;
+        const qty = Number.isFinite(row.approvedQty) ? row.approvedQty : 0;
+        if (qty > maxQty) {
+            return `Qty disetujui untuk ${row.code} tidak boleh lebih dari ${maxQty}.`;
+        }
+        if (qty < 0) {
+            return `Qty disetujui untuk ${row.code} tidak boleh kurang dari 0.`;
+        }
+    }
+    return '';
+};
+
 const submitReview = () => {
+    const error = validateRows();
+    if (error) {
+        validationError.value = error;
+        return;
+    }
     emit('submit', {
         peminjamanId: props.item?.id ?? null,
         review_note: reviewNote.value,
@@ -250,6 +297,7 @@ watch(
     (next) => {
         reviewRows.value = buildRows(next?.tools);
         reviewNote.value = next?.reviewNote ?? next?.review_note ?? '';
+        validationError.value = '';
     },
     { immediate: true }
 );

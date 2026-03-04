@@ -72,6 +72,9 @@ class ReviewPeminjamanController extends Controller
                 'created_at' => $peminjaman->created_at
                     ? $peminjaman->created_at->format('d M Y H:i')
                     : null,
+                'borrow_date' => $peminjaman->tanggal_pinjam
+                    ? $peminjaman->tanggal_pinjam->format('d M Y')
+                    : null,
                 'return_date' => $peminjaman->tanggal_kembali
                     ? $peminjaman->tanggal_kembali->format('d M Y')
                     : null,
@@ -155,7 +158,7 @@ class ReviewPeminjamanController extends Controller
             $peminjaman->update([
                 'review_note' => $validated['review_note'] ?? null,
                 'reviewed_at' => now(),
-                'status' => $hasApproved ? 'Diproses' : 'Ditolak',
+                'status' => $hasApproved ? 'Dipesan' : 'Ditolak',
             ]);
         });
 

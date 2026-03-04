@@ -9,10 +9,46 @@ window.axios = axios;
 
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
-const storedToken = window.localStorage.getItem('auth_token');
+const getStoredToken = () => {
+    try {
+        return window.localStorage.getItem('auth_token');
+    } catch (err) {
+        return null;
+    }
+};
+
+const storedToken = getStoredToken();
 if (storedToken) {
     window.axios.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
 }
+
+window.axios.interceptors.request.use((config) => {
+    const token = getStoredToken();
+    if (token && !config.headers?.Authorization) {
+        config.headers = config.headers ?? {};
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+window.axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error?.response?.status === 401) {
+            try {
+                window.localStorage.removeItem('auth_token');
+                window.localStorage.removeItem('auth_user');
+            } catch (err) {
+                // Ignore storage failures.
+            }
+            delete window.axios.defaults.headers.common.Authorization;
+            if (window.location?.pathname !== '/login') {
+                window.location.href = '/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
 /**
  * Echo exposes an expressive API for subscribing to channels and listening
  * for events that are broadcast by Laravel. Echo and event broadcasting

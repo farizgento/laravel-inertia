@@ -1,13 +1,11 @@
 <template>
-    <div
-        v-if="alertMessage"
-        class="mb-4 rounded-xl border px-4 py-3 text-sm font-semibold"
-        :class="alertType === 'success'
-            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-            : 'border-rose-200 bg-rose-50 text-rose-700'"
-    >
-        {{ alertMessage }}
-    </div>
+    <ToastNotification
+        :open="!!alertMessage"
+        :type="alertType"
+        :title="alertTitle"
+        :message="alertMessage"
+        @close="closeAlert"
+    />
 
     <div class="mb-6">
         <h1 class="text-2xl font-semibold text-slate-900">Pengelolaan Alat</h1>
@@ -32,7 +30,7 @@
             </button>
         </div>
 
-        <div class="mt-5 grid gap-3 lg:grid-cols-[1fr_auto]">
+        <div class="mt-5 grid gap-3">
             <label class="relative">
                 <span class="sr-only">Cari alat</span>
                 <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400">
@@ -48,46 +46,28 @@
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
             </label>
-            <label class="relative">
-                <span class="sr-only">Kategori</span>
-                <select
-                    v-model="kategoriFilter"
-                    class="h-11 w-full min-w-[190px] appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                >
-                    <option value="Semua Kategori">Semua Kategori</option>
-                    <option v-for="kategori in kategoriOptions" :key="kategori" :value="kategori">
-                        {{ kategori }}
-                    </option>
-                </select>
-                <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="m6 9 6 6 6-6" />
-                    </svg>
-                </span>
-            </label>
         </div>
 
         <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200">
             <div class="overflow-x-auto">
                 <table class="min-w-[860px] w-full text-sm">
                     <thead class="bg-slate-50">
-                        <tr class="text-left text-xs font-semibold text-slate-500">
+                        <tr class="text-left text-base font-semibold text-slate-500">
                             <th class="px-4 py-3">Kode</th>
                             <th class="px-4 py-3">Nama</th>
-                            <th class="px-4 py-3">Kategori</th>
+                            <th class="px-4 py-3">Total</th>
                             <th class="px-4 py-3">Stok</th>
-                            <th class="px-4 py-3">Kondisi</th>
                             <th class="px-4 py-3 text-right">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         <tr v-if="isLoading">
-                            <td colspan="7" class="px-4 py-6 text-center text-sm text-slate-500">
+                            <td colspan="5" class="px-4 py-6 text-center text-sm text-slate-500">
                                 Memuat data...
                             </td>
                         </tr>
                         <tr v-else-if="loadError">
-                            <td colspan="7" class="px-4 py-6 text-center text-sm text-rose-500">
+                            <td colspan="5" class="px-4 py-6 text-center text-sm text-rose-500">
                                 {{ loadError }}
                             </td>
                         </tr>
@@ -95,19 +75,11 @@
                             <td class="px-4 py-4 text-xs font-semibold text-slate-900">
                                 {{ tool.kode }}
                             </td>
-                            <td class="px-4 py-4 font-semibold text-slate-900">
+                            <td class="px-4 py-4 font-semibold text-slate-900 capitalize">
                                 {{ tool.nama }}
                             </td>
-                            <td class="px-4 py-4 text-slate-600">{{ tool.kategori }}</td>
                             <td class="px-4 py-4 text-slate-600">{{ tool.total_aset }}</td>
-                            <td class="px-4 py-4">
-                                <span
-                                    class="rounded-full px-2.5 py-1 text-xs font-semibold"
-                                    :class="badgeClass(tool.kondisi)"
-                                >
-                                    {{ formatKondisi(tool.kondisi) }}
-                                </span>
-                            </td>
+                            <td class="px-4 py-4 text-slate-600">{{ tool.stok_tersedia }}</td>
                             <td class="px-4 py-4 text-right">
                                 <div class="inline-flex items-center gap-2">
                                     <button
@@ -135,12 +107,51 @@
                             </td>
                         </tr>
                         <tr v-if="!isLoading && !loadError && !tools.length">
-                            <td colspan="7" class="px-4 py-6 text-center text-sm text-slate-500">
+                            <td colspan="5" class="px-4 py-6 text-center text-sm text-slate-500">
                                 Tidak ada data alat.
                             </td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <div
+            v-if="pagination.lastPage > 1"
+            class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
+        >
+            <span>
+                Halaman {{ pagination.currentPage }} dari {{ pagination.lastPage }} · Total {{ pagination.total }} alat
+            </span>
+            <div class="flex flex-wrap items-center gap-2">
+                <button
+                    class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:text-slate-300"
+                    type="button"
+                    :disabled="pagination.currentPage === 1"
+                    @click="goToPage(pagination.currentPage - 1)"
+                >
+                    Sebelumnya
+                </button>
+                <button
+                    v-for="page in pageNumbers"
+                    :key="page"
+                    class="h-9 min-w-[36px] rounded-lg border px-3 text-sm font-semibold transition"
+                    :class="page === pagination.currentPage
+                        ? 'border-blue-600 bg-blue-600 text-white'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'"
+                    type="button"
+                    @click="goToPage(page)"
+                >
+                    {{ page }}
+                </button>
+                <button
+                    class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:text-slate-300"
+                    type="button"
+                    :disabled="pagination.currentPage === pagination.lastPage"
+                    @click="goToPage(pagination.currentPage + 1)"
+                >
+                    Selanjutnya
+                </button>
             </div>
         </div>
     </section>
@@ -184,19 +195,11 @@
                         />
                     </label>
                     <label class="space-y-2 text-sm font-medium text-slate-700">
-                        <span>Kategori *</span>
-                        <input
-                            v-model="form.kategori"
-                            type="text"
-                            placeholder="Kategori"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                        />
-                    </label>
-                    <label class="space-y-2 text-sm font-medium text-slate-700">
                         <span>Area *</span>
                         <select
                             v-model="form.area_id"
                             class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            :disabled="isAreaLocked"
                         >
                             <option value="">Pilih area</option>
                             <option v-for="area in areas" :key="area.id" :value="area.id">
@@ -205,24 +208,13 @@
                         </select>
                     </label>
                     <label class="space-y-2 text-sm font-medium text-slate-700">
-                        <span>Stok *</span>
+                        <span>Jumlah Aset *</span>
                         <input
                             v-model.number="form.total_aset"
                             type="number"
                             min="0"
                             class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         />
-                    </label>
-                    <label class="space-y-2 text-sm font-medium text-slate-700">
-                        <span>Kondisi *</span>
-                        <select
-                            v-model="form.kondisi"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                        >
-                            <option value="baik">Baik</option>
-                            <option value="rusak">Rusak</option>
-                            <option value="tidak aktif">Tidak aktif</option>
-                        </select>
                     </label>
                 </div>
 
@@ -255,7 +247,9 @@
 <script setup>
 import axios from 'axios';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
+import ToastNotification from '../../Components/ToastNotification.vue';
 
 defineOptions({
     layout: (h, page) =>
@@ -264,7 +258,7 @@ defineOptions({
             {
                 title: 'Pengelolaan Alat',
                 subtitle: 'Kelola master alat dan proses pengiriman',
-                activeMenu: 'dashboard',
+                activeMenu: 'master-alat',
             },
             () => page
         ),
@@ -279,74 +273,85 @@ const formOpen = ref(false);
 const formError = ref('');
 const alertMessage = ref('');
 const alertType = ref('success');
+const alertTitle = ref('');
 let alertTimeout = null;
 
 const search = ref('');
-const kategoriFilter = ref('Semua Kategori');
-const kategoriCache = ref([]);
+const pagination = reactive({
+    currentPage: 1,
+    lastPage: 1,
+    total: 0,
+    perPage: 10,
+});
 
 const form = reactive({
     id: null,
     nama: '',
-    kategori: '',
     total_aset: 0,
     area_id: '',
-    kondisi: 'baik',
 });
+
+const page = usePage();
+
+const loadCachedUser = () => {
+    if (typeof window === 'undefined') {
+        return null;
+    }
+    try {
+        const cached = window.localStorage.getItem('auth_user');
+        return cached ? JSON.parse(cached) : null;
+    } catch (err) {
+        return null;
+    }
+};
+
+const cachedUser = ref(loadCachedUser());
+const authUser = computed(() => page.props.auth?.user ?? cachedUser.value);
+const userAreaId = computed(() => authUser.value?.area_id ?? authUser.value?.area?.id ?? '');
+const isAreaLocked = computed(() => !!userAreaId.value);
+const normalizeAreaId = (value) => (value === null || value === undefined || value === '' ? '' : Number(value));
 
 const isEdit = computed(() => form.id !== null);
 
-const badgeClass = (kondisi) => {
-    if (kondisi === 'baik') {
-        return 'bg-emerald-50 text-emerald-600';
+const pageNumbers = computed(() => {
+    const total = pagination.lastPage;
+    const current = pagination.currentPage;
+    const delta = 2;
+    const start = Math.max(1, current - delta);
+    const end = Math.min(total, current + delta);
+    const pages = [];
+    for (let i = start; i <= end; i += 1) {
+        pages.push(i);
     }
-    if (kondisi === 'rusak') {
-        return 'bg-rose-50 text-rose-600';
-    }
-    return 'bg-slate-100 text-slate-600';
-};
-
-const formatKondisi = (kondisi) => {
-    if (kondisi === 'baik') {
-        return 'Baik';
-    }
-    if (kondisi === 'rusak') {
-        return 'Rusak';
-    }
-    return 'Tidak aktif';
-};
-
-const kategoriOptions = computed(() => {
-    if (kategoriCache.value.length) {
-        return kategoriCache.value;
-    }
-    const categories = new Set();
-    tools.value.forEach((tool) => {
-        if (tool.kategori) {
-            categories.add(tool.kategori);
-        }
-    });
-    return Array.from(categories);
+    return pages;
 });
 
 const showAlert = (type, message) => {
     alertType.value = type;
+    alertTitle.value = type === 'success' ? 'Berhasil' : 'Gagal';
     alertMessage.value = message;
     if (alertTimeout) {
         clearTimeout(alertTimeout);
     }
     alertTimeout = setTimeout(() => {
         alertMessage.value = '';
+        alertTitle.value = '';
     }, 3000);
+};
+
+const closeAlert = () => {
+    if (alertTimeout) {
+        clearTimeout(alertTimeout);
+    }
+    alertMessage.value = '';
+    alertTitle.value = '';
 };
 
 const resetForm = () => {
     form.id = null;
     form.nama = '';
-    form.kategori = '';
     form.total_aset = 0;
-    form.area_id = '';
-    form.kondisi = 'baik';
+    form.area_id = normalizeAreaId(userAreaId.value);
     formError.value = '';
 };
 
@@ -358,10 +363,8 @@ const openCreate = () => {
 const openEdit = (tool) => {
     form.id = tool.id;
     form.nama = tool.nama ?? '';
-    form.kategori = tool.kategori ?? '';
     form.total_aset = Number(tool.total_aset ?? tool.stok ?? 0);
-    form.area_id = tool.area_id ?? '';
-    form.kondisi = tool.kondisi ?? 'baik';
+    form.area_id = normalizeAreaId(userAreaId.value ?? tool.area_id ?? '');
     formError.value = '';
     formOpen.value = true;
 };
@@ -385,9 +388,6 @@ const buildParams = () => {
     if (keyword) {
         params.search = keyword;
     }
-    if (kategoriFilter.value !== 'Semua Kategori') {
-        params.kategori = kategoriFilter.value;
-    }
     return params;
 };
 
@@ -395,27 +395,34 @@ const loadTools = async () => {
     isLoading.value = true;
     loadError.value = '';
     try {
-        const response = await axios.get('/api/alats', { params: buildParams() });
+        const response = await axios.get('/api/alats', {
+            params: {
+                ...buildParams(),
+                page: pagination.currentPage,
+                per_page: pagination.perPage,
+            },
+        });
         const payload = response.data;
         const data = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
         tools.value = data.map((item) => ({
             id: item.id,
             kode: item.kode ?? '-',
             nama: item.nama ?? '-',
-            kategori: item.kategori ?? '-',
             total_aset: Number(item.total_aset ?? item.stok ?? 0),
-            kondisi: item.kondisi ?? 'baik',
+            stok_tersedia: Number(item.stok_tersedia ?? item.stok ?? 0),
             area_name: item.area_name ?? item.lokasi ?? '-',
             area_id: item.area_id ?? '',
         }));
-        if (!search.value.trim() && kategoriFilter.value === 'Semua Kategori') {
-            const merged = new Set(kategoriCache.value);
-            tools.value.forEach((tool) => {
-                if (tool.kategori) {
-                    merged.add(tool.kategori);
-                }
-            });
-            kategoriCache.value = Array.from(merged);
+        if (Array.isArray(payload)) {
+            pagination.currentPage = 1;
+            pagination.lastPage = 1;
+            pagination.total = tools.value.length;
+        } else {
+            const meta = payload?.meta ?? {};
+            pagination.currentPage = Number(meta.current_page ?? pagination.currentPage) || 1;
+            pagination.lastPage = Number(meta.last_page ?? 1);
+            pagination.perPage = Number(meta.per_page ?? pagination.perPage);
+            pagination.total = Number(meta.total ?? tools.value.length);
         }
     } catch (error) {
         tools.value = [];
@@ -425,9 +432,21 @@ const loadTools = async () => {
     }
 };
 
+const goToPage = (page) => {
+    const next = Math.min(Math.max(1, page), pagination.lastPage || 1);
+    if (next === pagination.currentPage) {
+        return;
+    }
+    pagination.currentPage = next;
+    loadTools();
+};
+
 const submitForm = async () => {
     formError.value = '';
-    if (!form.nama || !form.kategori || !form.area_id || form.total_aset < 0 || !form.kondisi) {
+    if (!form.area_id && userAreaId.value) {
+        form.area_id = normalizeAreaId(userAreaId.value);
+    }
+    if (!form.nama || !form.area_id || form.total_aset < 0) {
         formError.value = 'Lengkapi semua field wajib.';
         return;
     }
@@ -435,10 +454,8 @@ const submitForm = async () => {
     try {
         const payload = {
             nama: form.nama,
-            kategori: form.kategori,
             area_id: form.area_id,
             total_aset: form.total_aset,
-            kondisi: form.kondisi,
         };
         if (isEdit.value) {
             await axios.put(`/api/alats/${form.id}`, payload);
@@ -471,18 +488,30 @@ const removeTool = async (tool) => {
 
 let filterTimeout = null;
 watch(
-    [search, kategoriFilter],
+    search,
     () => {
         if (filterTimeout) {
             clearTimeout(filterTimeout);
         }
         filterTimeout = setTimeout(() => {
+            pagination.currentPage = 1;
             loadTools();
         }, 300);
     },
 );
 
+watch(
+    userAreaId,
+    (next) => {
+        if (next && !form.area_id) {
+            form.area_id = normalizeAreaId(next);
+        }
+    },
+    { immediate: true }
+);
+
 onMounted(() => {
+    cachedUser.value = loadCachedUser();
     loadAreas();
     loadTools();
 });

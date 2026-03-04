@@ -1,13 +1,11 @@
 <template>
-    <div
-        v-if="alertMessage"
-        class="mb-4 rounded-xl border px-4 py-3 text-sm font-semibold"
-        :class="alertType === 'success'
-            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-            : 'border-rose-200 bg-rose-50 text-rose-700'"
-    >
-        {{ alertMessage }}
-    </div>
+    <ToastNotification
+        :open="!!alertMessage"
+        :type="alertType"
+        :title="alertTitle"
+        :message="alertMessage"
+        @close="closeAlert"
+    />
     <div class="mb-6">
         <h1 class="text-2xl font-semibold text-slate-900">Review Peminjaman - {{ areaName }}</h1>
         <p class="mt-1 text-sm text-slate-500">Daftar semua peminjaman yang telah Anda buat</p>
@@ -23,7 +21,7 @@
             <p class="mt-2 text-2xl font-semibold text-blue-600">{{ reviewCount }}</p>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
-            <p class="text-sm text-slate-500">Diproses</p>
+            <p class="text-sm text-slate-500">Disiapkan</p>
             <p class="mt-2 text-2xl font-semibold text-amber-500">{{ processCount }}</p>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
@@ -83,7 +81,8 @@
                 >
                     <option value="Semua">Semua Status</option>
                     <option value="Menunggu Review">Menunggu Review</option>
-                    <option value="Diproses">Diproses</option>
+                    <option value="Dipesan">Dipesan</option>
+                    <option value="Disiapkan">Disiapkan</option>
                     <option value="Terkirim">Terkirim</option>
                     <option value="Ditolak">Ditolak</option>
                 </select>
@@ -101,7 +100,7 @@
                 :key="item.id"
                 class="rounded-xl border border-slate-200 bg-slate-50 p-4 transition hover:bg-white"
             >
-                <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="flex flex-wrap items-start justify-between gap-2">
                     <div>
                         <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
                             <span class="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold text-blue-600">
@@ -114,13 +113,12 @@
                             Peminjam: {{ item.userName }}
                         </p>
                         <p class="mt-1 text-xs text-slate-500">
-                            {{ item.itemCount }} item - Kembali: {{ item.returnDate }}
+                            Tanggal: {{ item.borrowDate}} - {{ item.returnDate }}
                         </p>
                     </div>
-
-                    <div class="flex flex-wrap items-center gap-4">
-                        <div class="hidden items-center gap-2 md:flex">
-                            <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="hidden items-center gap-3 md:flex">
+                            <div class="flex items-center gap-1">
                                 <div
                                     class="flex h-6 w-6 items-center justify-center rounded-full border-2"
                                     :class="stepClass(item.status, 'Menunggu Review')"
@@ -136,14 +134,27 @@
                             <div class="flex items-center gap-2">
                                 <div
                                     class="flex h-6 w-6 items-center justify-center rounded-full border-2"
-                                    :class="stepClass(item.status, 'Diproses')"
+                                    :class="stepClass(item.status, 'Dipesan')"
                                 >
                                     <span
-                                        v-if="item.status === 'Diproses'"
+                                        v-if="item.status === 'Dipesan'"
                                         class="h-2 w-2 rounded-full bg-white"
                                     ></span>
                                 </div>
-                                <span class="text-xs font-semibold text-slate-500">Diproses</span>
+                                <span class="text-xs font-semibold text-slate-500">Dipesan</span>
+                            </div>
+                            <span class="h-px w-8 bg-slate-200"></span>
+                            <div class="flex items-center gap-2">
+                                <div
+                                    class="flex h-6 w-6 items-center justify-center rounded-full border-2"
+                                    :class="stepClass(item.status, 'Disiapkan')"
+                                >
+                                    <span
+                                        v-if="item.status === 'Disiapkan'"
+                                        class="h-2 w-2 rounded-full bg-white"
+                                    ></span>
+                                </div>
+                                <span class="text-xs font-semibold text-slate-500">Disiapkan</span>
                             </div>
                             <span class="h-px w-8 bg-slate-200"></span>
                             <div class="flex items-center gap-2">
@@ -189,7 +200,7 @@
                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
                                 <circle cx="12" cy="12" r="3" />
                             </svg>
-                            Detail
+                            Review
                         </button>
                     </div>
                 </div>
@@ -212,6 +223,7 @@ import { computed, onMounted, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ReviewPeminjamanModal from '../../Components/ReviewPeminjamanModal.vue';
+import ToastNotification from '../../Components/ToastNotification.vue';
 
 defineOptions({
     layout: (h, page) =>
@@ -227,7 +239,7 @@ defineOptions({
 });
 
 const page = usePage();
-const areaName = computed(() => page.props.auth?.user?.area?.name ?? 'Area A');
+const areaName = computed(() => page.props.auth?.user?.area?.name ?? 'Area Tidak Diketahui');
 
 const items = ref([]);
 const isLoading = ref(false);
@@ -235,6 +247,7 @@ const isSubmitting = ref(false);
 const loadError = ref('');
 const alertMessage = ref('');
 const alertType = ref('success');
+const alertTitle = ref('');
 let alertTimeout = null;
 
 const search = ref('');
@@ -256,7 +269,7 @@ const filteredItems = computed(() => {
 
 const totalCount = computed(() => items.value.length);
 const reviewCount = computed(() => items.value.filter((item) => item.status === 'Menunggu Review').length);
-const processCount = computed(() => items.value.filter((item) => item.status === 'Diproses').length);
+const processCount = computed(() => items.value.filter((item) => item.status === 'Disiapkan').length);
 const deliveredCount = computed(() => items.value.filter((item) => item.status === 'Terkirim').length);
 
 const openDetail = (item) => {
@@ -280,6 +293,7 @@ const normalizeHistory = (item) => ({
     userName: item?.user_name ?? '-',
     reviewNote: item?.review_note ?? '',
     createdAt: item?.created_at ?? '-',
+    borrowDate: item?.borrow_date ?? '-',
     returnDate: item?.return_date ?? '-',
     itemCount: Number.isFinite(item?.item_count) ? item.item_count : 0,
     status: item?.status ?? 'Menunggu Review',
@@ -333,13 +347,23 @@ const submitReview = async (payload) => {
 
 const showAlert = (type, message) => {
     alertType.value = type;
+    alertTitle.value = type === 'success' ? 'Berhasil' : 'Gagal';
     alertMessage.value = message;
     if (alertTimeout) {
         clearTimeout(alertTimeout);
     }
     alertTimeout = setTimeout(() => {
         alertMessage.value = '';
+        alertTitle.value = '';
     }, 3000);
+};
+
+const closeAlert = () => {
+    if (alertTimeout) {
+        clearTimeout(alertTimeout);
+    }
+    alertMessage.value = '';
+    alertTitle.value = '';
 };
 
 onMounted(() => {

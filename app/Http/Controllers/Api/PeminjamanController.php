@@ -22,8 +22,16 @@ class PeminjamanController extends Controller
         $search = trim((string) $request->query('search', ''));
         $status = trim((string) $request->query('status', ''));
 
+        $perPage = (int) $request->query('per_page', 8);
+        if ($perPage < 1) {
+            $perPage = 8;
+        }
+        if ($perPage > 100) {
+            $perPage = 100;
+        }
+
         $query = Peminjaman::query()
-            ->with(['items.alat'])
+            ->with(['items.alat', 'items.photos'])
             ->where('user_id', $user->id)
             ->orderByDesc('created_at');
 
@@ -38,9 +46,10 @@ class PeminjamanController extends Controller
             $query->where('status', $status);
         }
 
-        $peminjamans = $query->get();
+        $peminjamans = $query->paginate($perPage);
 
-        return $peminjamans->map(function (Peminjaman $peminjaman) {
+        $peminjamans->setCollection(
+            $peminjamans->getCollection()->map(function (Peminjaman $peminjaman) {
             $tools = $peminjaman->items->map(function (PeminjamanItem $item) {
                 $alat = $item->alat;
                 return [
@@ -50,6 +59,14 @@ class PeminjamanController extends Controller
                     'approved_qty' => (int) ($item->approved_qty ?? 0),
                     'review_status' => $item->review_status ?? 'Menunggu Review',
                     'rejection_reason' => $item->rejection_reason,
+                    'photos' => $item->photos
+                        ? $item->photos->map(fn ($photo) => [
+                            'id' => $photo->id,
+                            'path' => $photo->path,
+                            'url' => url('/storage/' . ltrim($photo->path, '/')),
+                            'original_name' => $photo->original_name,
+                        ])->values()
+                        : [],
                 ];
             })->values();
 
@@ -59,6 +76,9 @@ class PeminjamanController extends Controller
                 'created_at' => $peminjaman->created_at
                     ? $peminjaman->created_at->format('d M Y H:i')
                     : null,
+                'borrow_date' => $peminjaman->tanggal_pinjam
+                    ? $peminjaman->tanggal_pinjam->format('d M Y')
+                    : null,
                 'return_date' => $peminjaman->tanggal_kembali
                     ? $peminjaman->tanggal_kembali->format('d M Y')
                     : null,
@@ -66,13 +86,16 @@ class PeminjamanController extends Controller
                 'status' => $peminjaman->status,
                 'tools' => $tools,
             ];
-        })->values();
+        })->values()
+        );
+
+        return $peminjamans;
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'tanggal_pinjam' => ['required', 'date', 'after_or_equal:today'],
+            'tanggal_pinjam' => ['required', 'date'],
             'tanggal_kembali' => ['required', 'date', 'after_or_equal:tanggal_pinjam'],
             'keperluan' => ['required', 'string', 'max:1000'],
             'catatan' => ['nullable', 'string', 'max:1000'],
@@ -167,14 +190,14 @@ class PeminjamanController extends Controller
         return DB::table('peminjaman_items as items')
             ->join('peminjamans as pem', 'pem.id', '=', 'items.peminjaman_id')
             ->whereIn('items.alat_id', $alatIds)
-            ->whereIn('pem.status', ['Menunggu Review', 'Diproses', 'Terkirim'])
+            ->whereIn('pem.status', ['Menunggu Review', 'Dipesan', 'Disiapkan', 'Terkirim'])
             ->groupBy('items.alat_id')
             ->select(
                 'items.alat_id',
                 DB::raw(
                     "SUM(CASE
                         WHEN pem.status = 'Menunggu Review' THEN items.qty
-                        WHEN pem.status IN ('Diproses', 'Terkirim') THEN COALESCE(items.approved_qty, 0)
+                        WHEN pem.status IN ('Dipesan', 'Disiapkan', 'Terkirim') THEN COALESCE(items.approved_qty, 0)
                         ELSE 0
                     END) as total"
                 )

@@ -14,8 +14,6 @@ return new class extends Migration
         Schema::create('alats', function (Blueprint $table) {
             $table->id();
             $table->string('nama');
-            $table->string('kategori');
-            $table->string('kondisi')->default('baik');
             $table->unsignedInteger('total_aset')->default(0);
             $table->unsignedBigInteger('area_id');
             

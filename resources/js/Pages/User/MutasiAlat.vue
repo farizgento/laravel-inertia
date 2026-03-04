@@ -8,14 +8,57 @@
     />
 
     <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-slate-900">Pengiriman</h1>
-        <p class="mt-1 text-sm text-slate-500">Kelola persiapan dan pengiriman peminjaman alat</p>
+        <h1 class="text-2xl font-semibold text-slate-900">Mutasi alat</h1>
+        <p class="mt-1 text-sm text-slate-500">Daftar pengiriman yang sudah diproses</p>
     </div>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
-        <div>
-            <h2 class="text-lg font-semibold text-slate-900">Pengiriman Peminjaman</h2>
-            <p class="mt-1 text-sm text-slate-500">Kelola persiapan dan pengiriman peminjaman alat</p>
+        <div class="flex flex-wrap items-start gap-3">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500">
+                <svg
+                    class="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M3 7h11v10H3z" />
+                    <path d="M14 10h4l3 3v4h-7z" />
+                    <circle cx="7.5" cy="19" r="1.5" />
+                    <circle cx="17.5" cy="19" r="1.5" />
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-lg font-semibold text-slate-900">Mutasi alat</h2>
+                <p class="mt-1 text-sm text-slate-500">Filter berdasarkan status pengiriman</p>
+            </div>
+        </div>
+
+        <div class="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div class="relative flex-1">
+                <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+                    <svg
+                        class="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.3-4.3" />
+                    </svg>
+                </span>
+                <input
+                    v-model="search"
+                    class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    type="text"
+                    placeholder="Cari keperluan atau ID..."
+                />
+            </div>
         </div>
 
         <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-2">
@@ -31,20 +74,24 @@
                     @click="activeTab = tab.key"
                 >
                     <span class="text-slate-400">
-                        <svg v-if="tab.key === 'menunggu-disiapkan'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="16" rx="2" />
-                            <path d="M7 8h10M7 12h6M7 16h4" />
-                        </svg>
-                        <svg v-else-if="tab.key === 'menunggu-pengiriman'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg v-if="tab.key === 'dikirim'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 7h11v10H3z" />
                             <path d="M14 10h4l3 3v4h-7z" />
                             <circle cx="7.5" cy="19" r="1.5" />
                             <circle cx="17.5" cy="19" r="1.5" />
                         </svg>
+                        <svg v-else-if="tab.key === 'diterima'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 7h11v10H3z" />
+                            <path d="M14 10h4l3 3v4h-7z" />
+                            <circle cx="7.5" cy="19" r="1.5" />
+                            <circle cx="17.5" cy="19" r="1.5" />
+                            <path d="M7 12l2 2 4-4" />
+                        </svg>
                         <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 7h13l3 5v6H3z" />
                             <circle cx="7.5" cy="18" r="1.5" />
                             <circle cx="17.5" cy="18" r="1.5" />
+                            <path d="M9 12h6" />
                         </svg>
                     </span>
                     <span>{{ tab.label }}</span>
@@ -59,10 +106,10 @@
         </div>
 
         <div class="mt-6">
-            <p v-if="isLoading" class="text-sm text-slate-500">Memuat data peminjaman...</p>
+            <p v-if="isLoading" class="text-sm text-slate-500">Memuat Mutasi alat...</p>
             <p v-else-if="loadError" class="text-sm text-rose-500">{{ loadError }}</p>
             <p v-else-if="!filteredItems.length" class="text-sm text-slate-500">
-                Tidak ada peminjaman pada kategori ini.
+                Tidak ada riwayat pada kategori ini.
             </p>
 
             <div v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -114,6 +161,14 @@
                             </svg>
                             <span>{{ item.borrowDate }} - {{ item.returnDate }}</span>
                         </div>
+                        <div v-if="item.pengirimNama" class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 7a4 4 0 1 0-8 0" />
+                                <path d="M12 11v4" />
+                                <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+                            </svg>
+                            <span>Pengirim: {{ item.pengirimNama }}</span>
+                        </div>
                     </div>
 
                     <div class="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-700">
@@ -133,7 +188,7 @@
                             Lihat Detail
                         </button>
                         <button
-                            v-if="item.status === 'Terkirim' && item.suratJalanUrl"
+                            v-if="item.suratJalanUrl"
                             class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
                             type="button"
                             @click="openSuratJalan(item)"
@@ -147,32 +202,6 @@
                             </svg>
                             Surat Jalan
                         </button>
-                        <button
-                            v-if="item.status === 'Disiapkan'"
-                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-700 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
-                            type="button"
-                            @click="openShipping(item)"
-                        >
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M3 7h11v10H3z" />
-                                <path d="M14 10h4l3 3v4h-7z" />
-                                <circle cx="7.5" cy="19" r="1.5" />
-                                <circle cx="17.5" cy="19" r="1.5" />
-                            </svg>
-                            Pengiriman
-                        </button>
-                        <button
-                            v-if="item.status === 'Dipesan'"
-                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
-                            type="button"
-                            @click="openPrepare(item)"
-                        >
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M7 8h10M7 12h6M7 16h4" />
-                                <rect x="3" y="4" width="18" height="16" rx="2" />
-                            </svg>
-                            Siapkan
-                        </button>
                     </div>
                 </article>
             </div>
@@ -183,20 +212,6 @@
         :open="!!detailItem"
         :item="detailItem"
         @close="detailItem = null"
-    />
-    <PreparePengirimanModal
-        :open="!!prepareItem"
-        :item="prepareItem"
-        :is-submitting="isSubmitting"
-        @close="prepareItem = null"
-        @submit="submitPrepare"
-    />
-    <KirimPengirimanModal
-        :open="!!shippingItem"
-        :item="shippingItem"
-        :is-submitting="isShipping"
-        @close="shippingItem = null"
-        @submit="submitShipping"
     />
     <SuratJalanModal
         :open="!!suratJalanItem"
@@ -215,8 +230,6 @@ import { computed, onMounted, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import PeminjamanDetailModal from '../../Components/PeminjamanDetailModal.vue';
-import PreparePengirimanModal from '../../Components/PreparePengirimanModal.vue';
-import KirimPengirimanModal from '../../Components/KirimPengirimanModal.vue';
 import SuratJalanModal from '../../Components/SuratJalanModal.vue';
 import ToastNotification from '../../Components/ToastNotification.vue';
 
@@ -225,9 +238,9 @@ defineOptions({
         h(
             AppLayout,
             {
-                title: 'Pengiriman',
-                subtitle: 'Kelola persiapan dan pengiriman peminjaman alat',
-                activeMenu: 'pengiriman',
+                title: 'Mutasi alat',
+                subtitle: 'Daftar pengiriman yang sudah diproses',
+                activeMenu: 'riwayat-pengiriman',
             },
             () => page
         ),
@@ -238,8 +251,6 @@ const areaName = computed(() => page.props.auth?.user?.area?.name ?? 'Area tidak
 
 const items = ref([]);
 const isLoading = ref(false);
-const isSubmitting = ref(false);
-const isShipping = ref(false);
 const loadError = ref('');
 const alertMessage = ref('');
 const alertType = ref('success');
@@ -247,26 +258,25 @@ const alertTitle = ref('');
 let alertTimeout = null;
 
 const detailItem = ref(null);
-const prepareItem = ref(null);
-const shippingItem = ref(null);
 const suratJalanItem = ref(null);
+const search = ref('');
 
 const tabConfig = [
-    { key: 'menunggu-disiapkan', label: 'Menunggu Disiapkan', status: 'Dipesan' },
-    { key: 'menunggu-pengiriman', label: 'Menunggu Pengiriman', status: 'Disiapkan' },
-    { key: 'dikirim', label: 'Dalam Perjalanan', status: 'Terkirim' },
+    { key: 'dikirim', label: 'Sedang Dikirim', status: 'Terkirim' },
+    { key: 'diterima', label: 'Diterima', status: 'Diterima' },
+    { key: 'dikembalikan', label: 'Dikembalikan', status: 'Dikembalikan' },
 ];
 
 const activeTab = ref(tabConfig[0].key);
 
 const statusLabel = (status) => {
     switch (status) {
-        case 'Dipesan':
-            return 'Menunggu Disiapkan';
-        case 'Disiapkan':
-            return 'Menunggu Pengiriman';
         case 'Terkirim':
-            return 'Dalam Perjalanan';
+            return 'Sudah Dikirim';
+        case 'Diterima':
+            return 'Diterima';
+        case 'Dikembalikan':
+            return 'Dikembalikan';
         default:
             return status ?? '-';
     }
@@ -274,19 +284,19 @@ const statusLabel = (status) => {
 
 const statusBadge = (status) => {
     switch (status) {
-        case 'Dipesan':
-            return 'bg-amber-100 text-amber-600';
-        case 'Disiapkan':
-            return 'bg-blue-100 text-blue-600';
         case 'Terkirim':
+            return 'bg-blue-100 text-blue-600';
+        case 'Diterima':
             return 'bg-emerald-100 text-emerald-600';
+        case 'Dikembalikan':
+            return 'bg-slate-200 text-slate-700';
         default:
             return 'bg-slate-100 text-slate-600';
     }
 };
 
 const statusCountMap = computed(() => {
-    const base = { Dipesan: 0, Disiapkan: 0, Terkirim: 0 };
+    const base = { Terkirim: 0, Diterima: 0, Dikembalikan: 0 };
     items.value.forEach((item) => {
         if (base[item.status] !== undefined) {
             base[item.status] += 1;
@@ -304,12 +314,25 @@ const tabs = computed(() =>
 
 const activeStatus = computed(() => {
     const match = tabConfig.find((tab) => tab.key === activeTab.value);
-    return match?.status ?? 'Dipesan';
+    return match?.status ?? 'Terkirim';
 });
 
-const filteredItems = computed(() =>
-    items.value.filter((item) => item.status === activeStatus.value)
-);
+const filteredItems = computed(() => {
+    const keyword = search.value.trim().toLowerCase();
+    return items.value.filter((item) => {
+        if (item.status !== activeStatus.value) {
+            return false;
+        }
+        if (!keyword) {
+            return true;
+        }
+        return (
+            item.title.toLowerCase().includes(keyword) ||
+            item.createdAt.toLowerCase().includes(keyword) ||
+            String(item.id).includes(keyword)
+        );
+    });
+});
 
 const approvedLabel = (item) => {
     const total = Number.isFinite(item?.itemCount) ? item.itemCount : 0;
@@ -337,32 +360,32 @@ const normalizeHistory = (item) => {
           }))
         : [];
 
-        return {
-            id: item?.id ?? '',
-            title: item?.title ?? '-',
-            userName: item?.user_name ?? '-',
-            createdAt: item?.created_at ?? '-',
-            borrowDate: item?.borrow_date ?? '-',
-            returnDate: item?.return_date ?? '-',
-            itemCount: Number.isFinite(item?.item_count) ? item.item_count : 0,
-            status: item?.status ?? 'Dipesan',
-            pengirimNama: item?.pengirim_nama ?? '',
-            suratJalanUrl: item?.surat_jalan_url ?? '',
-            suratJalanPath: item?.surat_jalan_path ?? '',
-            tools,
-        };
+    return {
+        id: item?.id ?? '',
+        title: item?.title ?? '-',
+        userName: item?.user_name ?? '-',
+        createdAt: item?.created_at ?? '-',
+        borrowDate: item?.borrow_date ?? '-',
+        returnDate: item?.return_date ?? '-',
+        itemCount: Number.isFinite(item?.item_count) ? item.item_count : 0,
+        status: item?.status ?? 'Terkirim',
+        pengirimNama: item?.pengirim_nama ?? '',
+        suratJalanUrl: item?.surat_jalan_url ?? '',
+        suratJalanPath: item?.surat_jalan_path ?? '',
+        tools,
     };
+};
 
 const loadHistory = async () => {
     isLoading.value = true;
     loadError.value = '';
     try {
-        const response = await axios.get('/api/pengiriman');
+        const response = await axios.get('/api/riwayat-pengiriman');
         const data = Array.isArray(response.data) ? response.data : [];
         items.value = data.map((item) => normalizeHistory(item));
     } catch (error) {
         items.value = [];
-        loadError.value = 'Gagal memuat data peminjaman.';
+        loadError.value = 'Gagal memuat Mutasi alat.';
         showAlert('error', loadError.value);
     } finally {
         isLoading.value = false;
@@ -373,68 +396,8 @@ const openDetail = (item) => {
     detailItem.value = item;
 };
 
-const openPrepare = (item) => {
-    prepareItem.value = item;
-};
-
-const openShipping = (item) => {
-    shippingItem.value = item;
-};
-
 const openSuratJalan = (item) => {
     suratJalanItem.value = item;
-};
-
-const submitPrepare = async (payload) => {
-    if (!payload?.peminjamanId) {
-        return;
-    }
-    isSubmitting.value = true;
-    loadError.value = '';
-    try {
-        const formData = new FormData();
-        payload.items.forEach((row, index) => {
-            formData.append(`items[${index}][item_id]`, row.item_id);
-            row.files.forEach((file) => {
-                formData.append(`items[${index}][photos][]`, file);
-            });
-        });
-        await axios.post(`/api/pengiriman/${payload.peminjamanId}/siapkan`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        await loadHistory();
-        prepareItem.value = null;
-        showAlert('success', 'Peminjaman berhasil disiapkan.');
-    } catch (error) {
-        loadError.value = error.response?.data?.message ?? 'Gagal menyiapkan peminjaman.';
-        showAlert('error', loadError.value);
-    } finally {
-        isSubmitting.value = false;
-    }
-};
-
-const submitShipping = async (payload) => {
-    if (!payload?.peminjamanId) {
-        return;
-    }
-    isShipping.value = true;
-    loadError.value = '';
-    try {
-        const formData = new FormData();
-        formData.append('pengirim_nama', payload.pengirimNama ?? '');
-        formData.append('surat_jalan', payload.suratJalan ?? null);
-        await axios.post(`/api/pengiriman/${payload.peminjamanId}/kirim`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        await loadHistory();
-        shippingItem.value = null;
-        showAlert('success', 'Pengiriman berhasil dikirim.');
-    } catch (error) {
-        loadError.value = error.response?.data?.message ?? 'Gagal mengirim peminjaman.';
-        showAlert('error', loadError.value);
-    } finally {
-        isShipping.value = false;
-    }
 };
 
 const showAlert = (type, message) => {

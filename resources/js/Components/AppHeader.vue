@@ -4,7 +4,7 @@
     >
         <div class="flex items-center gap-4">
             <button
-                class="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50"
+                class="flex shadow-sm h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50"
                 type="button"
                 aria-label="Toggle sidebar"
                 aria-controls="app-sidebar"
@@ -12,7 +12,7 @@
                 @click="emit('toggle-sidebar')"
             >
                 <svg
-                    class="h-4 w-4"
+                    class="h-6 w-6"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"

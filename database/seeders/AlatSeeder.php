@@ -14,16 +14,16 @@ class AlatSeeder extends Seeder
     public function run(): void
     {
         $alatTemplates = [
-            ['nama' => 'Ampere Meter', 'total_aset' => 10, 'kategori' => 'listrik', 'kondisi' => 'baik'],
-            ['nama' => 'Test Pen', 'total_aset' => 6, 'kategori' => 'listrik', 'kondisi' => 'baik'],
-            ['nama' => 'Termo Meter', 'total_aset' => 8, 'kategori' => 'listrik', 'kondisi' => 'baik'],
-            ['nama' => 'Ring Pass 50 mm', 'total_aset' => 3, 'kategori' => 'perkakas', 'kondisi' => 'baik'],
-            ['nama' => 'Ring Pass 46 mm', 'total_aset' => 3, 'kategori' => 'perkakas', 'kondisi' => 'baik'],
-            ['nama' => 'Ring Pass 42 mm', 'total_aset' => 3, 'kategori' => 'perkakas', 'kondisi' => 'baik'],
-            ['nama' => 'Ring Pass 41 mm', 'total_aset' => 3, 'kategori' => 'perkakas', 'kondisi' => 'baik'],
-            ['nama' => 'Ring Pass 38 mm', 'total_aset' => 3, 'kategori' => 'perkakas', 'kondisi' => 'baik'],
-            ['nama' => 'Ring Pass 36 mm', 'total_aset' => 3, 'kategori' => 'perkakas', 'kondisi' => 'baik'],
-            ['nama' => 'Ring Pass 34 mm', 'total_aset' => 3, 'kategori' => 'perkakas', 'kondisi' => 'baik'],
+            ['nama' => 'ampere meter', 'total_aset' => 10],
+            ['nama' => 'test pen', 'total_aset' => 6],
+            ['nama' => 'termo meter', 'total_aset' => 8],
+            ['nama' => 'ring pass 50 mm', 'total_aset' => 3],
+            ['nama' => 'ring pass 46 mm', 'total_aset' => 3],
+            ['nama' => 'ring pass 42 mm', 'total_aset' => 3],
+            ['nama' => 'ring pass 41 mm', 'total_aset' => 3],
+            ['nama' => 'ring pass 38 mm', 'total_aset' => 3],
+            ['nama' => 'ring pass 36 mm', 'total_aset' => 3],
+            ['nama' => 'ring pass 34 mm', 'total_aset' => 3],
         ];
 
         $areaId = Area::orderBy('id')->value('id');
@@ -39,9 +39,7 @@ class AlatSeeder extends Seeder
                         'area_id' => $areaId,
                     ],
                     [
-                        'kategori' => $alat['kategori'],
                         'total_aset' => $alat['total_aset'],
-                        'kondisi' => $alat['kondisi'],
                     ]
                 );
             }

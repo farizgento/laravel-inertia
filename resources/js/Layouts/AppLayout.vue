@@ -1,12 +1,13 @@
 <template>
-    <div class="relative min-h-screen overflow-hidden bg-slate-100">
+    <div class="relative h-screen overflow-hidden bg-slate-100">
+        <Head :title="pageTitle" />
         <div
             class="fixed inset-0 z-20 bg-slate-900/40 transition-opacity duration-200 lg:hidden"
             :class="isSidebarOpen ? 'opacity-100' : 'pointer-events-none opacity-0'"
             @click="closeSidebar"
         ></div>
 
-        <div class="relative min-h-screen w-full lg:flex">
+        <div class="relative h-screen w-full lg:flex">
             <div
                 id="app-sidebar"
                 class="fixed inset-y-0 left-0 z-30 w-64 transform transition duration-200 ease-out lg:static lg:z-auto lg:overflow-hidden"
@@ -28,7 +29,7 @@
                 />
             </div>
 
-            <div class="min-w-0 flex-1 flex flex-col">
+            <div class="min-w-0 flex-1 flex flex-col h-screen">
                 <AppHeader
                     :title="title"
                     :subtitle="subtitle"
@@ -39,7 +40,7 @@
                     @toggle-sidebar="toggleSidebar"
                 />
 
-                <main class="flex-1 px-6 py-6 md:px-8 md:py-8">
+                <main class="flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-8">
                     <slot />
                 </main>
             </div>
@@ -48,7 +49,7 @@
 </template>
 
 <script setup>
-import { router, usePage } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
 import { computed, onMounted, ref } from 'vue';
 import AppHeader from '../Components/AppHeader.vue';
@@ -106,6 +107,11 @@ const initials = computed(() => {
         .join('')
         .slice(0, 2)
         .toUpperCase();
+});
+
+const pageTitle = computed(() => {
+    const base = props.title?.trim();
+    return base ? `${base} | ToolArea` : 'ToolArea';
 });
 
 const redirectToLogin = () => {

@@ -40,6 +40,9 @@ Route::get('/riwayat-peminjaman', function () {
     return Inertia::render('User/History');
 })->name('peminjaman.history');
 
+Route::get('/mutasi-alat', function () {
+    return Inertia::render('User/MutasiAlat');
+})->name('mutasi-alat');
 
 Route::get('/review-peminjaman', function () {
     return Inertia::render('Sptool/Index');
@@ -49,9 +52,18 @@ Route::get('/master-alat', function () {
     return Inertia::render('Pictool/Index');
 })->name('master-alat');
 
+Route::get('persiapan-alat', function (){
+    return redirect()->route('pengiriman-alat');
+})->name('persiapan-alat');
+
 Route::get('pengiriman-alat', function (){
     return Inertia::render('Pictool/Pengiriman');
 })->name('pengiriman-alat');
+
+Route::get('/riwayat-pengiriman', function () {
+    return Inertia::render('Pictool/RiwayatPengiriman');
+})->name('riwayat-pengiriman');
+
 
 Route::get('/test-oracle', function () {
     return DB::connection('oracle')->select('select 1 from dual');

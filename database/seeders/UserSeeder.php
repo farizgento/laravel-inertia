@@ -15,22 +15,30 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $area = Area::firstOrCreate(['name' => 'Area 1']);
         $roles = Role::all();
+        $areas = Area::query()->orderBy('name')->get();
 
-        foreach ($roles as $role) {
-            $roleLabel = Str::title(str_replace('_', ' ', $role->key));
-            $email = $role->key . '@example.com';
+        if ($areas->isEmpty()) {
+            $areas = collect([Area::firstOrCreate(['name' => 'Area 1.1'])]);
+        }
 
-            User::firstOrCreate(
-                ['email' => $email],
-                [
-                    'name' => $roleLabel . ' User',
-                    'password' => 'password',
-                    'role_id' => $role->id,
-                    'area_id' => $area->id,
-                ]
-            );
+        foreach ($areas as $area) {
+            $areaSlug = Str::slug($area->name);
+
+            foreach ($roles as $role) {
+                $roleLabel = Str::title(str_replace('_', ' ', $role->key));
+                $email = "{$role->key}.{$areaSlug}@example.com";
+
+                User::firstOrCreate(
+                    ['email' => $email],
+                    [
+                        'name' => "{$roleLabel} {$area->name}",
+                        'password' => 'password',
+                        'role_id' => $role->id,
+                        'area_id' => $area->id,
+                    ]
+                );
+            }
         }
     }
 }
