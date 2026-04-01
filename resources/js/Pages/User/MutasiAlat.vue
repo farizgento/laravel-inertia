@@ -202,6 +202,19 @@
                             </svg>
                             Surat Jalan
                         </button>
+                        <button
+                            v-if="isUserRole && item.status === 'Diterima'"
+                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:border-amber-300"
+                            type="button"
+                            @click="openReturn(item)"
+                        >
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 7H9a4 4 0 0 0-4 4v3" />
+                                <path d="M9 11l-4 4 4 4" />
+                                <path d="M21 17V11a4 4 0 0 0-4-4" />
+                            </svg>
+                            Kembalikan
+                        </button>
                     </div>
                 </article>
             </div>
@@ -220,13 +233,166 @@
         :title="suratJalanItem?.title"
         :pengirim-name="suratJalanItem?.pengirimNama"
         :peminjaman-id="suratJalanItem?.id"
+        :peminjaman-status="suratJalanItem?.status"
         @close="suratJalanItem = null"
+        @accepted="handleSuratJalanAccepted"
     />
+
+    <teleport to="body">
+        <div
+            v-if="returnItem"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+            @click.self="closeReturn"
+        >
+            <div class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white shadow-2xl">
+                <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-6 py-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                            Konfirmasi
+                        </p>
+                        <h3 class="mt-2 text-lg font-semibold text-slate-900">
+                            Kembalikan alat
+                        </h3>
+                    </div>
+                    <button
+                        class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:text-slate-700"
+                        type="button"
+                        @click="closeReturn"
+                    >
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6 6 18" />
+                            <path d="M6 6 18 18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="px-6 py-5 text-sm text-slate-600">
+                    <div class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <div class="mt-0.5 flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 9v4" />
+                                <path d="M12 17h.01" />
+                                <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-slate-900">
+                                Yakin ingin mengembalikan peminjaman ini?
+                            </p>
+                            <p class="mt-1 text-xs text-slate-500">
+                                {{ returnItem?.title || '-' }} (ID: {{ returnItem?.id || '-' }})
+                            </p>
+                        </div>
+                    </div>
+                    <p class="mt-3 text-xs text-slate-500">
+                        Status akan dipindahkan ke <span class="font-semibold">Dikembalikan</span> setelah dikonfirmasi.
+                    </p>
+                    <div class="mt-4">
+                        <button
+                            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-amber-300 hover:text-amber-700"
+                            type="button"
+                            @click="toggleReturnReport"
+                        >
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14" />
+                                <path d="M5 12h14" />
+                            </svg>
+                            {{ showReturnReportForm ? 'Tutup Form Laporan' : '+ Kerusakan/Kehilangan' }}
+                        </button>
+
+                        <div
+                            v-if="showReturnReportForm"
+                            class="mt-4 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                        >
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <label class="space-y-2 text-sm font-medium text-slate-700">
+                                    <span>Kategori *</span>
+                                    <select
+                                        v-model="returnReport.kategori"
+                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                                    >
+                                        <option value="">Pilih kategori</option>
+                                        <option value="kerusakan">Kerusakan</option>
+                                        <option value="kehilangan">Kehilangan</option>
+                                    </select>
+                                </label>
+                                <label class="space-y-2 text-sm font-medium text-slate-700">
+                                    <span>Alat *</span>
+                                    <select
+                                        v-model="returnReport.alat_id"
+                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                                    >
+                                        <option value="">Pilih alat</option>
+                                        <option v-for="tool in returnReportTools" :key="tool.alat_id" :value="tool.alat_id">
+                                            {{ tool.name }} ({{ tool.code }})
+                                        </option>
+                                    </select>
+                                </label>
+                                <label class="space-y-2 text-sm font-medium text-slate-700">
+                                    <span>Jumlah *</span>
+                                    <input
+                                        v-model.number="returnReport.jumlah"
+                                        type="number"
+                                        min="1"
+                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                                    />
+                                </label>
+                                <label class="space-y-2 text-sm font-medium text-slate-700">
+                                    <span>Foto *</span>
+                                    <input
+                                        ref="returnReportFileInput"
+                                        type="file"
+                                        accept="image/*"
+                                        class="block w-full text-sm text-slate-600 file:mr-4 file:rounded-xl file:border-0 file:bg-amber-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-amber-700"
+                                        @change="handleReturnReportFileChange"
+                                    />
+                                </label>
+                            </div>
+                            <label class="block space-y-2 text-sm font-medium text-slate-700">
+                                <span>Deskripsi *</span>
+                                <textarea
+                                    v-model="returnReport.deskripsi"
+                                    rows="3"
+                                    placeholder="Jelaskan kerusakan atau kehilangan yang terjadi..."
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                                />
+                            </label>
+                            <div v-if="returnReportPreviewUrl" class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                                <img :src="returnReportPreviewUrl" alt="Preview laporan alat" class="h-48 w-full object-cover" />
+                            </div>
+                            <p v-if="returnReportError" class="text-sm font-semibold text-rose-500">
+                                {{ returnReportError }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 px-6 py-4">
+                    <button
+                        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300"
+                        type="button"
+                        @click="closeReturn"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        class="rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
+                        type="button"
+                        :disabled="isReturning"
+                        :class="isReturning ? 'cursor-not-allowed opacity-70' : ''"
+                        @click="confirmReturn"
+                    >
+                        {{ isReturning ? 'Memproses...' : 'Ya, kembalikan' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </teleport>
 </template>
 
 <script setup>
 import axios from 'axios';
-import { computed, onMounted, ref } from 'vue';
+import { computed, inject, onMounted, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import PeminjamanDetailModal from '../../Components/PeminjamanDetailModal.vue';
@@ -247,7 +413,33 @@ defineOptions({
 });
 
 const page = usePage();
-const areaName = computed(() => page.props.auth?.user?.area?.name ?? 'Area tidak diketahui');
+const loadCachedUser = () => {
+    if (typeof window === 'undefined') {
+        return null;
+    }
+    try {
+        const cached = window.localStorage.getItem('auth_user');
+        return cached ? JSON.parse(cached) : null;
+    } catch (err) {
+        return null;
+    }
+};
+
+const cachedUser = ref(loadCachedUser());
+const roleKey = computed(() =>
+    (page.props.auth?.user?.role?.key ?? cachedUser.value?.role?.key ?? '').toLowerCase()
+);
+const isMgrTool = computed(() => roleKey.value === 'mgr_tool');
+const isUserRole = computed(() => roleKey.value === 'user');
+const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
+const activeAreaId = inject('activeAreaId', ref(null));
+const setAreaSwitching = inject('setAreaSwitching', null);
+const activeAreaName = inject('activeAreaName', ref('Area tidak diketahui'));
+const areaName = computed(() =>
+    isAreaSwitcherRole.value
+        ? activeAreaName.value
+        : page.props.auth?.user?.area?.name ?? 'Area tidak diketahui'
+);
 
 const items = ref([]);
 const isLoading = ref(false);
@@ -259,7 +451,20 @@ let alertTimeout = null;
 
 const detailItem = ref(null);
 const suratJalanItem = ref(null);
+const returnItem = ref(null);
 const search = ref('');
+const isReturning = ref(false);
+const showReturnReportForm = ref(false);
+const returnReportFileInput = ref(null);
+const returnReportPreviewUrl = ref('');
+const returnReportError = ref('');
+const returnReport = ref({
+    kategori: '',
+    alat_id: '',
+    jumlah: 1,
+    deskripsi: '',
+    foto: null,
+});
 
 const tabConfig = [
     { key: 'dikirim', label: 'Sedang Dikirim', status: 'Terkirim' },
@@ -339,6 +544,10 @@ const approvedLabel = (item) => {
     return `${total} alat disetujui`;
 };
 
+const returnReportTools = computed(() =>
+    Array.isArray(returnItem.value?.tools) ? returnItem.value.tools : []
+);
+
 const normalizeHistory = (item) => {
     const tools = Array.isArray(item?.tools)
         ? item.tools.map((tool) => ({
@@ -380,7 +589,11 @@ const loadHistory = async () => {
     isLoading.value = true;
     loadError.value = '';
     try {
-        const response = await axios.get('/api/riwayat-pengiriman');
+        const params = {};
+        if (isAreaSwitcherRole.value && activeAreaId.value) {
+            params.area_id = activeAreaId.value;
+        }
+        const response = await axios.get('/api/riwayat-pengiriman', { params });
         const data = Array.isArray(response.data) ? response.data : [];
         items.value = data.map((item) => normalizeHistory(item));
     } catch (error) {
@@ -398,6 +611,137 @@ const openDetail = (item) => {
 
 const openSuratJalan = (item) => {
     suratJalanItem.value = item;
+};
+
+const openReturn = (item) => {
+    returnItem.value = item;
+    resetReturnReport();
+};
+
+const closeReturn = () => {
+    returnItem.value = null;
+    resetReturnReport();
+};
+
+const resetReturnReport = () => {
+    showReturnReportForm.value = false;
+    returnReportError.value = '';
+    returnReport.value = {
+        kategori: '',
+        alat_id: '',
+        jumlah: 1,
+        deskripsi: '',
+        foto: null,
+    };
+    if (returnReportFileInput.value) {
+        returnReportFileInput.value.value = '';
+    }
+    if (returnReportPreviewUrl.value) {
+        URL.revokeObjectURL(returnReportPreviewUrl.value);
+        returnReportPreviewUrl.value = '';
+    }
+};
+
+const toggleReturnReport = () => {
+    showReturnReportForm.value = !showReturnReportForm.value;
+    if (!showReturnReportForm.value) {
+        resetReturnReport();
+    }
+};
+
+const handleReturnReportFileChange = (event) => {
+    const file = event.target.files?.[0] ?? null;
+    returnReport.value.foto = file;
+    returnReportError.value = '';
+    if (returnReportPreviewUrl.value) {
+        URL.revokeObjectURL(returnReportPreviewUrl.value);
+        returnReportPreviewUrl.value = '';
+    }
+    if (file) {
+        returnReportPreviewUrl.value = URL.createObjectURL(file);
+    }
+};
+
+const validateReturnReport = () => {
+    if (!showReturnReportForm.value) {
+        return true;
+    }
+
+    if (
+        !returnReport.value.kategori ||
+        !returnReport.value.alat_id ||
+        !returnReport.value.deskripsi.trim() ||
+        !returnReport.value.foto ||
+        Number(returnReport.value.jumlah) < 1
+    ) {
+        returnReportError.value = 'Lengkapi semua field laporan alat.';
+        return false;
+    }
+
+    returnReportError.value = '';
+    return true;
+};
+
+const confirmReturn = async () => {
+    if (!returnItem.value?.id) {
+        returnItem.value = null;
+        return;
+    }
+    if (isReturning.value) {
+        return;
+    }
+    if (!validateReturnReport()) {
+        return;
+    }
+    isReturning.value = true;
+    let shouldClose = false;
+    try {
+        const payload = new FormData();
+
+        if (showReturnReportForm.value) {
+            payload.append('laporan[kategori]', returnReport.value.kategori);
+            payload.append('laporan[alat_id]', String(returnReport.value.alat_id));
+            payload.append('laporan[jumlah]', String(returnReport.value.jumlah));
+            payload.append('laporan[deskripsi]', returnReport.value.deskripsi.trim());
+            payload.append('laporan[foto]', returnReport.value.foto);
+        }
+
+        await axios.post(`/api/pengiriman/${returnItem.value.id}/kembalikan`, payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        await loadHistory();
+        showAlert('success', 'Pengembalian berhasil dikonfirmasi.');
+        shouldClose = true;
+    } catch (error) {
+        const message =
+            error?.response?.data?.message ??
+            'Gagal mengembalikan peminjaman.';
+        if (error?.response?.status === 422) {
+            const errors = error.response?.data?.errors ?? {};
+            returnReportError.value =
+                errors['laporan.kategori']?.[0] ??
+                errors['laporan.alat_id']?.[0] ??
+                errors['laporan.jumlah']?.[0] ??
+                errors['laporan.deskripsi']?.[0] ??
+                errors['laporan.foto']?.[0] ??
+                message;
+        }
+        showAlert('error', message);
+    } finally {
+        isReturning.value = false;
+        if (shouldClose) {
+            returnItem.value = null;
+            resetReturnReport();
+        }
+    }
+};
+
+const handleSuratJalanAccepted = async () => {
+    await loadHistory();
+    suratJalanItem.value = null;
+    showAlert('success', 'Peminjaman berhasil diterima.');
 };
 
 const showAlert = (type, message) => {
@@ -422,6 +766,34 @@ const closeAlert = () => {
 };
 
 onMounted(() => {
-    loadHistory();
+    cachedUser.value = loadCachedUser();
+    if (isAreaSwitcherRole.value) {
+        setAreaSwitching?.(true);
+    }
+    loadHistory().finally(() => {
+        if (isAreaSwitcherRole.value) {
+            setAreaSwitching?.(false);
+        }
+    });
 });
+
+watch(
+    () => activeAreaId.value,
+    async (next, prev) => {
+        if (!isAreaSwitcherRole.value) {
+            return;
+        }
+        const shouldShow = prev !== undefined && prev !== null && next !== prev;
+        if (shouldShow) {
+            setAreaSwitching?.(true);
+        }
+        try {
+            await loadHistory();
+        } finally {
+            if (shouldShow) {
+                setAreaSwitching?.(false);
+            }
+        }
+    }
+);
 </script>

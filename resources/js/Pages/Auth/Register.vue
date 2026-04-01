@@ -263,9 +263,7 @@ const submit = async () => {
         const response = await axios.post('/api/auth/register', form.value);
         const { token, user } = response.data;
 
-        window.localStorage.setItem('auth_token', token);
-        window.localStorage.setItem('auth_user', JSON.stringify(user));
-        axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+        window.setAuthToken(token, user);
 
         router.visit(resolveRoleRoute(user?.role?.key));
     } catch (err) {

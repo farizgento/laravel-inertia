@@ -98,7 +98,7 @@
                                 <path d="M12 22s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11Z" />
                                 <circle cx="12" cy="11" r="2.5" />
                             </svg>
-                            <span>{{ item.areaName }}</span>
+                            <span>{{ areaName }}</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <svg class="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -236,7 +236,7 @@ defineOptions({
 });
 
 const page = usePage();
-const fallbackAreaName = computed(() => page.props.auth?.user?.area?.name ?? 'Area tidak diketahui');
+const areaName = computed(() => page.props.auth?.user?.area?.name ?? 'Area tidak diketahui');
 
 const items = ref([]);
 const isLoading = ref(false);
@@ -343,8 +343,6 @@ const normalizeHistory = (item) => {
             id: item?.id ?? '',
             title: item?.title ?? '-',
             userName: item?.user_name ?? '-',
-            areaName: item?.area_name ?? fallbackAreaName.value,
-            areaId: item?.area_id ?? null,
             createdAt: item?.created_at ?? '-',
             borrowDate: item?.borrow_date ?? '-',
             returnDate: item?.return_date ?? '-',

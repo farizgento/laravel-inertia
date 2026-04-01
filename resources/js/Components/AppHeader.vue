@@ -47,7 +47,21 @@
                     <path d="M12 21s-6-5.33-6-11a6 6 0 1 1 12 0c0 5.67-6 11-6 11z" />
                     <circle cx="12" cy="10" r="2" />
                 </svg>
-                {{ displayArea }}
+                <template v-if="isAreaSwitcher">
+                    <select
+                        class="bg-transparent text-xs font-semibold text-slate-600 outline-none"
+                        :value="activeAreaId ?? ''"
+                        @change="emit('change-area', $event.target.value)"
+                    >
+                        <option value="" disabled>Pilih area</option>
+                        <option v-for="area in areas" :key="area.id" :value="area.id">
+                            {{ area.name }}
+                        </option>
+                    </select>
+                </template>
+                <template v-else>
+                    {{ displayArea }}
+                </template>
             </div>
             <div class="rounded-full border border-slate-200 bg-white px-3 py-2 text-slate-600">
                 Hai, {{ displayName }} ({{ displayRole }})
@@ -57,7 +71,7 @@
 </template>
 
 <script setup>
-const emit = defineEmits(['toggle-sidebar']);
+const emit = defineEmits(['toggle-sidebar', 'change-area']);
 
 defineProps({
     title: {
@@ -81,6 +95,18 @@ defineProps({
         default: 'User',
     },
     sidebarOpen: {
+        type: Boolean,
+        default: false,
+    },
+    areas: {
+        type: Array,
+        default: () => [],
+    },
+    activeAreaId: {
+        type: [String, Number],
+        default: null,
+    },
+    isAreaSwitcher: {
         type: Boolean,
         default: false,
     },

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanItem;
 use App\Models\PeminjamanItemPhoto;
+use App\Models\Role;
 use Illuminate\Http\Request;
 
 class MutasiAlatController extends Controller
@@ -19,14 +20,18 @@ class MutasiAlatController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        $isPicTools = in_array($roleKey, ['pic_tools', 'pic_tool'], true);
-        $isUser = $roleKey === 'user';
+        $isSpTool = $roleKey === Role::KEY_SP_TOOL;
+        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
+        $isUser = $roleKey === Role::KEY_USER;
+        $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
 
-        if (! $isPicTools && ! $isUser) {
+        if (! $isSpTool && ! $isPicTools && ! $isMgrTool && ! $isUser && ! $isAdmin) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
         $search = trim((string) $request->query('search', ''));
+        $areaIdParam = $request->query('area_id');
 
         $query = Peminjaman::query()
             ->with([
@@ -38,18 +43,22 @@ class MutasiAlatController extends Controller
                 'suratJalan',
                 'user',
             ])
-            ->where('area_id', $user->area_id)
             ->whereIn('status', ['Terkirim', 'Diterima', 'Dikembalikan'])
             ->whereHas('items', function ($sub) {
                 $sub->where('approved_qty', '>', 0);
             })
             ->orderByDesc('created_at');
 
-        if ($isPicTools) {
-            if (! $user->area_id) {
+        if ($isAdmin) {
+            if (! empty($areaIdParam)) {
+                $query->where('area_id', $areaIdParam);
+            }
+        } elseif ($isSpTool || $isPicTools || $isMgrTool) {
+            $areaId = $isMgrTool ? ($areaIdParam ?: $user->area_id) : $user->area_id;
+            if (! $areaId) {
                 return response()->json([]);
             }
-            $query->where('area_id', $user->area_id);
+            $query->where('area_id', $areaId);
         } else {
             $query->where('user_id', $user->id);
         }

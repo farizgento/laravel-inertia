@@ -46,22 +46,25 @@
                         <iframe :src="url" class="h-[70vh] w-full" title="Surat Jalan"></iframe>
                     </div>
                     <div v-else class="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-                        Format file tidak didukung untuk preview. Silakan buka di tab baru.
+                        Format file tidak didukung untuk preview.
                     </div>
                 </div>
 
                 <div class="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 px-6 py-4">
-                    <a
-                        v-if="url"
-                        :href="url"
-                        target="_blank"
-                        rel="noopener"
-                        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
-                    >
-                        Buka di Tab Baru
-                    </a>
+                    <p v-if="submitError" class="mr-auto text-xs text-rose-500">
+                        {{ submitError }}
+                    </p>
                     <button
-                        class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                        v-if="canAccept"
+                        class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                        type="button"
+                        :disabled="isSubmitting"
+                        @click="acceptPeminjaman"
+                    >
+                        {{ isSubmitting ? 'Memproses...' : 'Terima' }}
+                    </button>
+                    <button
+                        class="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
                         type="button"
                         @click="emit('close')"
                     >
@@ -74,7 +77,9 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import axios from 'axios';
+import { usePage } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps({
     open: {
@@ -101,9 +106,22 @@ const props = defineProps({
         type: [String, Number],
         default: '',
     },
+    peminjamanStatus: {
+        type: String,
+        default: '',
+    },
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'accepted']);
+const page = usePage();
+
+const isSubmitting = ref(false);
+const submitError = ref('');
+const roleKey = computed(() => String(page.props.auth?.user?.role?.key ?? '').toLowerCase());
+
+const canAccept = computed(
+    () => roleKey.value === 'user' && props.peminjamanStatus === 'Terkirim' && !!props.peminjamanId
+);
 
 const extension = computed(() => {
     const source = props.url || props.path || '';
@@ -118,6 +136,34 @@ const extension = computed(() => {
 const isPdf = computed(() => extension.value === 'pdf');
 const isImage = computed(() =>
     ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension.value)
+);
+
+const acceptPeminjaman = async () => {
+    if (!canAccept.value || isSubmitting.value) {
+        return;
+    }
+    isSubmitting.value = true;
+    submitError.value = '';
+    try {
+        await axios.post(`/api/pengiriman/${props.peminjamanId}/terima`);
+        emit('accepted');
+        emit('close');
+    } catch (error) {
+        submitError.value =
+            error.response?.data?.message ?? 'Gagal menerima peminjaman.';
+    } finally {
+        isSubmitting.value = false;
+    }
+};
+
+watch(
+    () => props.open,
+    (value) => {
+        if (value) {
+            submitError.value = '';
+            isSubmitting.value = false;
+        }
+    }
 );
 
 const titleText = computed(() => {

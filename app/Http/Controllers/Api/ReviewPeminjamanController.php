@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanItem;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -20,11 +21,20 @@ class ReviewPeminjamanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        if ($roleKey !== 'sp_tool') {
+        $isSpTool = $roleKey === Role::KEY_SP_TOOL;
+        $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
+        $isSuperAdmin = $roleKey === Role::KEY_SUPER_ADMIN;
+
+        if (! $isSpTool && ! $isMgrTool && ! $isSuperAdmin) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        if (! $user->area_id) {
+        $areaId = $user->area_id;
+        if (($isMgrTool || $isSuperAdmin) && $request->filled('area_id')) {
+            $areaId = (int) $request->query('area_id');
+        }
+
+        if (! $areaId) {
             return response()->json([]);
         }
 
@@ -33,7 +43,7 @@ class ReviewPeminjamanController extends Controller
 
         $query = Peminjaman::query()
             ->with(['items.alat', 'user'])
-            ->where('area_id', $user->area_id)
+            ->where('area_id', $areaId)
             ->orderByDesc('created_at');
 
         if ($search !== '') {
@@ -85,6 +95,40 @@ class ReviewPeminjamanController extends Controller
         })->values();
     }
 
+    public function pendingCount(Request $request)
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $user->loadMissing('role');
+        $roleKey = strtolower((string) ($user->role?->key ?? ''));
+        $isSpTool = $roleKey === Role::KEY_SP_TOOL;
+        $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
+        $isSuperAdmin = $roleKey === Role::KEY_SUPER_ADMIN;
+
+        if (! $isSpTool && ! $isMgrTool && ! $isSuperAdmin) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $areaId = $user->area_id;
+        if (($isMgrTool || $isSuperAdmin) && $request->filled('area_id')) {
+            $areaId = (int) $request->query('area_id');
+        }
+
+        if (! $areaId) {
+            return response()->json(['count' => 0]);
+        }
+
+        return response()->json([
+            'count' => Peminjaman::query()
+                ->where('area_id', $areaId)
+                ->where('status', 'Menunggu Review')
+                ->count(),
+        ]);
+    }
+
     public function review(Request $request, Peminjaman $peminjaman)
     {
         $user = $request->user();
@@ -94,11 +138,20 @@ class ReviewPeminjamanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        if ($roleKey !== 'sp_tool') {
+        $isSpTool = $roleKey === Role::KEY_SP_TOOL;
+        $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
+        $isSuperAdmin = $roleKey === Role::KEY_SUPER_ADMIN;
+
+        if (! $isSpTool && ! $isMgrTool && ! $isSuperAdmin) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        if (! $user->area_id || $peminjaman->area_id !== $user->area_id) {
+        $areaId = $user->area_id;
+        if (($isMgrTool || $isSuperAdmin) && $request->filled('area_id')) {
+            $areaId = (int) $request->input('area_id');
+        }
+
+        if (! $areaId || $peminjaman->area_id !== $areaId) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 

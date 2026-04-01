@@ -8,6 +8,7 @@ import axios from 'axios';
 window.axios = axios;
 
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+const AUTH_TOKEN_COOKIE = 'auth_token';
 
 const getStoredToken = () => {
     try {
@@ -17,8 +18,42 @@ const getStoredToken = () => {
     }
 };
 
+const setTokenCookie = (token) => {
+    if (!token) {
+        return;
+    }
+
+    document.cookie = `${AUTH_TOKEN_COOKIE}=${encodeURIComponent(token)}; path=/; SameSite=Lax`;
+};
+
+const clearTokenCookie = () => {
+    document.cookie = `${AUTH_TOKEN_COOKIE}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+};
+
+window.setAuthToken = (token, user = null) => {
+    window.localStorage.setItem('auth_token', token);
+    if (user) {
+        window.localStorage.setItem('auth_user', JSON.stringify(user));
+    }
+    setTokenCookie(token);
+    window.axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+};
+
+window.clearAuthToken = () => {
+    try {
+        window.localStorage.removeItem('auth_token');
+        window.localStorage.removeItem('auth_user');
+    } catch (err) {
+        // Ignore storage failures.
+    }
+
+    clearTokenCookie();
+    delete window.axios.defaults.headers.common.Authorization;
+};
+
 const storedToken = getStoredToken();
 if (storedToken) {
+    setTokenCookie(storedToken);
     window.axios.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
 }
 
@@ -35,13 +70,7 @@ window.axios.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error?.response?.status === 401) {
-            try {
-                window.localStorage.removeItem('auth_token');
-                window.localStorage.removeItem('auth_user');
-            } catch (err) {
-                // Ignore storage failures.
-            }
-            delete window.axios.defaults.headers.common.Authorization;
+            window.clearAuthToken();
             if (window.location?.pathname !== '/login') {
                 window.location.href = '/login';
             }

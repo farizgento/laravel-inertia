@@ -14,6 +14,7 @@ class EnsureRole
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
         $user = $request->user();
+        $message = 'Anda tidak memiliki akses.';
 
         if (! $user) {
             return redirect()->route('login');
@@ -22,7 +23,17 @@ class EnsureRole
         $user->loadMissing('role');
 
         if (! $user->role || ! in_array($user->role->key, $roles, true)) {
-            abort(403);
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json(['message' => $message], 403);
+            }
+
+            $previousUrl = url()->previous();
+            $fallbackUrl = route('dashboard');
+            $targetUrl = $previousUrl && $previousUrl !== $request->fullUrl()
+                ? $previousUrl
+                : $fallbackUrl;
+
+            return redirect()->to($targetUrl)->with('error', $message);
         }
 
         return $next($request);

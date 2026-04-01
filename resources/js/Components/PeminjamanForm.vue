@@ -292,7 +292,7 @@
 <script setup>
 import { usePage } from '@inertiajs/vue3';
 import axios from 'axios';
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, inject, onMounted, reactive, ref, watch } from 'vue';
 import CartModal from './CartModal.vue';
 import CheckoutModal from './CheckoutModal.vue';
 import ToastNotification from './ToastNotification.vue';
@@ -339,11 +339,34 @@ const pagination = reactive({
 });
 
 const userId = computed(() => page.props.auth?.user?.id ?? cachedUserId.value);
+const roleKey = computed(() =>
+    (page.props.auth?.user?.role?.key ?? cachedUser.value?.role?.key ?? 'user').toLowerCase(),
+);
+const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
+const activeAreaId = inject('activeAreaId', ref(null));
+const activeAreaName = inject('activeAreaName', ref('Area tidak diketahui'));
+const areaId = computed(
+    () => {
+        if (isAreaSwitcherRole.value) {
+            return activeAreaId.value ?? null;
+        }
+        return page.props.auth?.user?.area?.id ?? cachedUser.value?.area?.id ?? null;
+    },
+);
+const shouldRestrictArea = computed(
+    () => roleKey.value !== 'admin' || isAreaSwitcherRole.value,
+);
 const areaName = computed(
-    () =>
-        page.props.auth?.user?.area?.name ??
-        cachedUser.value?.area?.name ??
-        'Area tidak diketahui',
+    () => {
+        if (isAreaSwitcherRole.value) {
+            return activeAreaName.value;
+        }
+        return (
+            page.props.auth?.user?.area?.name ??
+            cachedUser.value?.area?.name ??
+            'Area tidak diketahui'
+        );
+    },
 );
 const storageKey = computed(() =>
     userId.value ? `${STORAGE_KEY_PREFIX}_${userId.value}` : `${STORAGE_KEY_PREFIX}_guest`,
@@ -447,6 +470,9 @@ const buildFilterParams = () => {
     if (searchText) {
         params.search = searchText;
     }
+    if (shouldRestrictArea.value && areaId.value) {
+        params.area_id = areaId.value;
+    }
     return params;
 };
 
@@ -517,6 +543,17 @@ watch(
             pagination.currentPage = 1;
             loadKatalog(buildFilterParams());
         }, 300);
+    },
+);
+
+watch(
+    () => activeAreaId.value,
+    (next, prev) => {
+        if (!isAreaSwitcherRole.value || next === prev) {
+            return;
+        }
+        pagination.currentPage = 1;
+        loadKatalog(buildFilterParams());
     },
 );
 
@@ -665,7 +702,6 @@ const form = ref({
     tanggal_pinjam: '',
     tanggal_kembali: '',
     keperluan: '',
-    catatan: '',
 });
 
 const openCheckout = () => {
@@ -681,7 +717,6 @@ const resetCheckout = () => {
         tanggal_pinjam: '',
         tanggal_kembali: '',
         keperluan: '',
-        catatan: '',
     };
     cart.value = [];
     Object.keys(cartDrafts).forEach((key) => {
@@ -708,7 +743,7 @@ const submitCheckout = async () => {
             tanggal_pinjam: form.value.tanggal_pinjam,
             tanggal_kembali: form.value.tanggal_kembali,
             keperluan: form.value.keperluan,
-            catatan: form.value.catatan || null,
+            ...(roleKey.value === 'super_admin' && areaId.value ? { area_id: areaId.value } : {}),
             items: cartItems.value.map((item) => ({ id: item.id, qty: item.qty })),
         };
         await axios.post('/api/peminjaman', payload);

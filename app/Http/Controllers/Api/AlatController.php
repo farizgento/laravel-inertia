@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Alat;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -36,14 +37,14 @@ class AlatController extends Controller
         return DB::table('peminjaman_items as items')
             ->join('peminjamans as pem', 'pem.id', '=', 'items.peminjaman_id')
             ->whereIn('items.alat_id', $alatIds)
-            ->whereIn('pem.status', ['Menunggu Review', 'Dipesan', 'Disiapkan', 'Terkirim'])
+            ->whereIn('pem.status', ['Menunggu Review', 'Dipesan', 'Disiapkan', 'Terkirim', 'Diterima'])
             ->groupBy('items.alat_id')
             ->select(
                 'items.alat_id',
                 DB::raw(
                     "SUM(CASE
                         WHEN pem.status = 'Menunggu Review' THEN items.qty
-                        WHEN pem.status IN ('Dipesan', 'Disiapkan', 'Terkirim') THEN COALESCE(items.approved_qty, 0)
+                        WHEN pem.status IN ('Dipesan', 'Disiapkan', 'Terkirim', 'Diterima') THEN COALESCE(items.approved_qty, 0)
                         ELSE 0
                     END) as total"
                 )
@@ -59,6 +60,35 @@ class AlatController extends Controller
         $areaId = $request->query('area_id');
         $perPage = (int) $request->query('per_page', 0);
         $shouldPaginate = $request->has('per_page') || $request->has('page');
+        $perPageNormalized = $shouldPaginate ? ($perPage > 0 ? min($perPage, 100) : 8) : 0;
+
+        $user = $request->user();
+        $roleKey = strtolower((string) ($user?->role?->key ?? ''));
+        $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
+        $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
+
+        if ($user && ! $isAdmin) {
+            if ($isMgrTool) {
+                $areaId = $request->query('area_id') ?: $user->area_id;
+            } else {
+                $areaId = $user->area_id;
+            }
+            if (! $areaId) {
+                if ($shouldPaginate) {
+                    return [
+                        'data' => [],
+                        'meta' => [
+                            'current_page' => 1,
+                            'last_page' => 1,
+                            'per_page' => $perPageNormalized ?: 8,
+                            'total' => 0,
+                        ],
+                    ];
+                }
+
+                return collect();
+            }
+        }
 
         $query = Alat::query()->with('area');
 
@@ -71,8 +101,7 @@ class AlatController extends Controller
         }
 
         if ($shouldPaginate) {
-            $perPage = $perPage > 0 ? min($perPage, 100) : 8;
-            $alats = $query->orderBy('nama')->paginate($perPage);
+            $alats = $query->orderBy('nama')->paginate($perPageNormalized ?: 8);
             $borrowedMap = $this->borrowedMap($alats->getCollection()->pluck('id')->all());
 
             $data = $alats->getCollection()->map(function (Alat $alat) use ($borrowedMap) {

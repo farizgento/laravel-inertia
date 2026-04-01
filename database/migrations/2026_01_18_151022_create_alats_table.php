@@ -16,8 +16,6 @@ return new class extends Migration
             $table->string('nama');
             $table->unsignedInteger('total_aset')->default(0);
             $table->unsignedBigInteger('area_id');
-            
-
             $table->timestamps();
         });
     }

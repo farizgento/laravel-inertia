@@ -8,18 +8,17 @@
     />
 
     <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-slate-900">Pengelolaan Alat</h1>
-        <p class="mt-1 text-sm text-slate-500">Kelola master alat dan proses pengiriman</p>
+        <h1 class="text-2xl font-semibold text-slate-900">Kelola Area</h1>
+        <p class="mt-1 text-sm text-slate-500">Super admin dapat menambah, mengubah, dan menghapus seluruh area.</p>
     </div>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-                <h2 class="text-lg font-semibold text-slate-900">Daftar Alat</h2>
-                <p class="mt-1 text-sm text-slate-500">Kelola inventaris alat di semua area</p>
+                <h2 class="text-lg font-semibold text-slate-900">Daftar Area</h2>
+                <p class="mt-1 text-sm text-slate-500">Slug area dibuat otomatis dari nama area.</p>
             </div>
             <button
-                v-if="canManageTools"
                 class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
                 type="button"
                 @click="openCreate"
@@ -27,13 +26,13 @@
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 5v14M5 12h14" />
                 </svg>
-                Tambah Alat
+                Tambah Area
             </button>
         </div>
 
-        <div class="mt-5 grid gap-3">
-            <label class="relative">
-                <span class="sr-only">Cari alat</span>
+        <div class="mt-5">
+            <label class="relative block max-w-md">
+                <span class="sr-only">Cari area</span>
                 <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="7" />
@@ -43,7 +42,7 @@
                 <input
                     v-model="search"
                     type="text"
-                    placeholder="Cari nama atau kode alat..."
+                    placeholder="Cari nama atau slug area..."
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
             </label>
@@ -51,42 +50,43 @@
 
         <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200">
             <div class="overflow-x-auto">
-                <table class="min-w-[860px] w-full text-sm">
+                <table class="min-w-[760px] w-full text-sm">
                     <thead class="bg-slate-50">
-                        <tr class="text-left text-base font-semibold text-slate-500">
-                            <th class="px-4 py-3">Kode</th>
+                        <tr class="text-left font-semibold text-slate-500">
                             <th class="px-4 py-3">Nama</th>
-                            <th class="px-4 py-3">Total</th>
-                            <th class="px-4 py-3">Stok</th>
-                            <th v-if="canManageTools" class="px-4 py-3 text-right">Aksi</th>
+                            <th class="px-4 py-3">Slug</th>
+                            <th class="px-4 py-3 text-center">Pengguna</th>
+                            <th class="px-4 py-3">Dibuat</th>
+                            <th class="px-4 py-3 text-right">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         <tr v-if="isLoading">
-                            <td :colspan="canManageTools ? 5 : 4" class="px-4 py-6 text-center text-sm text-slate-500">
-                                Memuat data...
+                            <td colspan="5" class="px-4 py-6 text-center text-sm text-slate-500">
+                                Memuat data area...
                             </td>
                         </tr>
                         <tr v-else-if="loadError">
-                            <td :colspan="canManageTools ? 5 : 4" class="px-4 py-6 text-center text-sm text-rose-500">
+                            <td colspan="5" class="px-4 py-6 text-center text-sm text-rose-500">
                                 {{ loadError }}
                             </td>
                         </tr>
-                        <tr v-else v-for="tool in tools" :key="tool.id">
-                            <td class="px-4 py-4 text-xs font-semibold text-slate-900">
-                                {{ tool.kode }}
+                        <tr v-else v-for="area in areas" :key="area.id">
+                            <td class="px-4 py-4">
+                                <div>
+                                    <p class="font-semibold text-slate-900">{{ area.name }}</p>
+                                    <p class="mt-1 text-xs text-slate-500">ID #{{ area.id }}</p>
+                                </div>
                             </td>
-                            <td class="px-4 py-4 font-semibold text-slate-900 capitalize">
-                                {{ tool.nama }}
-                            </td>
-                            <td class="px-4 py-4 text-slate-600">{{ tool.total_aset }}</td>
-                            <td class="px-4 py-4 text-slate-600">{{ tool.stok_tersedia }}</td>
-                            <td v-if="canManageTools" class="px-4 py-4 text-right">
+                            <td class="px-4 py-4 text-slate-600">{{ area.slug }}</td>
+                            <td class="px-4 py-4 text-center font-semibold text-slate-700">{{ area.users_count }}</td>
+                            <td class="px-4 py-4 text-slate-600">{{ area.created_at ?? '-' }}</td>
+                            <td class="px-4 py-4 text-right">
                                 <div class="inline-flex items-center gap-2">
                                     <button
                                         class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-blue-200 hover:text-blue-600"
                                         type="button"
-                                        @click="openEdit(tool)"
+                                        @click="openEdit(area)"
                                     >
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M12 20h9" />
@@ -96,7 +96,7 @@
                                     <button
                                         class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-200 text-rose-500 transition hover:bg-rose-50"
                                         type="button"
-                                        @click="removeTool(tool)"
+                                        @click="removeArea(area)"
                                     >
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <path d="M3 6h18" />
@@ -107,9 +107,9 @@
                                 </div>
                             </td>
                         </tr>
-                        <tr v-if="!isLoading && !loadError && !tools.length">
-                            <td :colspan="canManageTools ? 5 : 4" class="px-4 py-6 text-center text-sm text-slate-500">
-                                Tidak ada data alat.
+                        <tr v-if="!isLoading && !loadError && !areas.length">
+                            <td colspan="5" class="px-4 py-6 text-center text-sm text-slate-500">
+                                Tidak ada data area.
                             </td>
                         </tr>
                     </tbody>
@@ -122,7 +122,7 @@
             class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
         >
             <span>
-                Halaman {{ pagination.currentPage }} dari {{ pagination.lastPage }} · Total {{ pagination.total }} alat
+                Halaman {{ pagination.currentPage }} dari {{ pagination.lastPage }} | Total {{ pagination.total }} area
             </span>
             <div class="flex flex-wrap items-center gap-2">
                 <button
@@ -157,20 +157,20 @@
         </div>
     </section>
 
-    <teleport v-if="canManageTools" to="body">
+    <teleport to="body">
         <div
             v-if="formOpen"
             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
             @click.self="closeForm"
         >
-            <div class="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl">
+            <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <h3 class="text-lg font-semibold text-slate-900">
-                            {{ isEdit ? 'Edit Alat' : 'Tambah Alat' }}
+                            {{ isEdit ? 'Edit Area' : 'Tambah Area' }}
                         </h3>
                         <p class="mt-1 text-sm text-slate-500">
-                            Lengkapi detail alat yang akan disimpan.
+                            {{ isEdit ? 'Perbarui nama area yang dipilih.' : 'Tambahkan area baru ke sistem.' }}
                         </p>
                     </div>
                     <button
@@ -185,42 +185,26 @@
                     </button>
                 </div>
 
-                <div class="mt-5 grid gap-4 md:grid-cols-2">
-                    <label class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
-                        <span>Nama Alat *</span>
+                <div class="mt-5 space-y-4">
+                    <label class="space-y-2 text-sm font-medium text-slate-700">
+                        <span>Nama Area *</span>
                         <input
-                            v-model="form.nama"
+                            v-model="form.name"
                             type="text"
-                            placeholder="Nama alat"
+                            placeholder="Contoh: KS TUBUN"
                             class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         />
+                        <p v-if="errors.name" class="text-xs text-rose-500">{{ errors.name }}</p>
                     </label>
-                    <label class="space-y-2 text-sm font-medium text-slate-700">
-                        <span>Area *</span>
-                        <select
-                            v-model="form.area_id"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            :disabled="isAreaLocked"
-                        >
-                            <option value="">Pilih area</option>
-                            <option v-for="area in areas" :key="area.id" :value="area.id">
-                                {{ area.name }}
-                            </option>
-                        </select>
-                    </label>
-                    <label class="space-y-2 text-sm font-medium text-slate-700">
-                        <span>Jumlah Aset *</span>
-                        <input
-                            v-model.number="form.total_aset"
-                            type="number"
-                            min="0"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                        />
-                    </label>
+
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Slug Otomatis</p>
+                        <p class="mt-1 text-sm font-semibold text-slate-700">{{ previewSlug || 'area' }}</p>
+                    </div>
                 </div>
 
-                <p v-if="formError" class="mt-3 text-sm font-semibold text-rose-500">
-                    {{ formError }}
+                <p v-if="errors.general || formError" class="mt-3 text-sm font-semibold text-rose-500">
+                    {{ errors.general || formError }}
                 </p>
 
                 <div class="mt-6 flex justify-end gap-3">
@@ -247,8 +231,7 @@
 
 <script setup>
 import axios from 'axios';
-import { computed, inject, onMounted, reactive, ref, watch } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ToastNotification from '../../Components/ToastNotification.vue';
 
@@ -257,27 +240,28 @@ defineOptions({
         h(
             AppLayout,
             {
-                title: 'Pengelolaan Alat',
-                subtitle: 'Kelola master alat dan proses pengiriman',
-                activeMenu: 'master-alat',
+                title: 'Kelola Area',
+                subtitle: 'Kelola seluruh area operasional',
+                activeMenu: 'area',
             },
             () => page
         ),
 });
 
-const tools = ref([]);
 const areas = ref([]);
 const isLoading = ref(false);
 const loadError = ref('');
-const isSubmitting = ref(false);
+const search = ref('');
 const formOpen = ref(false);
+const isSubmitting = ref(false);
 const formError = ref('');
+const errors = ref({});
 const alertMessage = ref('');
 const alertType = ref('success');
 const alertTitle = ref('');
 let alertTimeout = null;
+let filterTimeout = null;
 
-const search = ref('');
 const pagination = reactive({
     currentPage: 1,
     lastPage: 1,
@@ -287,38 +271,17 @@ const pagination = reactive({
 
 const form = reactive({
     id: null,
-    nama: '',
-    total_aset: 0,
-    area_id: '',
+    name: '',
 });
 
-const page = usePage();
-
-const loadCachedUser = () => {
-    if (typeof window === 'undefined') {
-        return null;
-    }
-    try {
-        const cached = window.localStorage.getItem('auth_user');
-        return cached ? JSON.parse(cached) : null;
-    } catch (err) {
-        return null;
-    }
-};
-
-const cachedUser = ref(loadCachedUser());
-const authUser = computed(() => page.props.auth?.user ?? cachedUser.value);
-const roleKey = computed(() => (authUser.value?.role?.key ?? '').toLowerCase());
-const isMgrTool = computed(() => roleKey.value === 'mgr_tool');
-const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
-const canManageTools = computed(() => !isMgrTool.value);
-const activeAreaId = inject('activeAreaId', ref(null));
-const setAreaSwitching = inject('setAreaSwitching', null);
-const userAreaId = computed(() => authUser.value?.area_id ?? authUser.value?.area?.id ?? '');
-const isAreaLocked = computed(() => !!userAreaId.value && !isMgrTool.value);
-const normalizeAreaId = (value) => (value === null || value === undefined || value === '' ? '' : Number(value));
-
 const isEdit = computed(() => form.id !== null);
+const previewSlug = computed(() =>
+    String(form.name ?? '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+);
 
 const pageNumbers = computed(() => {
     const total = pagination.lastPage;
@@ -327,19 +290,33 @@ const pageNumbers = computed(() => {
     const start = Math.max(1, current - delta);
     const end = Math.min(total, current + delta);
     const pages = [];
+
     for (let i = start; i <= end; i += 1) {
         pages.push(i);
     }
+
     return pages;
 });
+
+const normalizeErrors = (payload) => {
+    if (!payload) {
+        return {};
+    }
+
+    return Object.fromEntries(
+        Object.entries(payload).map(([key, value]) => [key, Array.isArray(value) ? value[0] : value])
+    );
+};
 
 const showAlert = (type, message) => {
     alertType.value = type;
     alertTitle.value = type === 'success' ? 'Berhasil' : 'Gagal';
     alertMessage.value = message;
+
     if (alertTimeout) {
         clearTimeout(alertTimeout);
     }
+
     alertTimeout = setTimeout(() => {
         alertMessage.value = '';
         alertTitle.value = '';
@@ -350,103 +327,65 @@ const closeAlert = () => {
     if (alertTimeout) {
         clearTimeout(alertTimeout);
     }
+
     alertMessage.value = '';
     alertTitle.value = '';
 };
 
 const resetForm = () => {
     form.id = null;
-    form.nama = '';
-    form.total_aset = 0;
-    form.area_id = normalizeAreaId(
-        isAreaSwitcherRole.value ? activeAreaId.value : userAreaId.value
-    );
+    form.name = '';
     formError.value = '';
+    errors.value = {};
 };
 
 const openCreate = () => {
-    if (!canManageTools.value) {
-        return;
-    }
     resetForm();
     formOpen.value = true;
 };
 
-const openEdit = (tool) => {
-    if (!canManageTools.value) {
-        return;
-    }
-    form.id = tool.id;
-    form.nama = tool.nama ?? '';
-    form.total_aset = Number(tool.total_aset ?? tool.stok ?? 0);
-    form.area_id = normalizeAreaId(
-        isAreaSwitcherRole.value ? tool.area_id ?? activeAreaId.value ?? '' : userAreaId.value ?? tool.area_id ?? ''
-    );
+const openEdit = (area) => {
+    form.id = area.id;
+    form.name = area.name ?? '';
     formError.value = '';
+    errors.value = {};
     formOpen.value = true;
 };
 
 const closeForm = () => {
     formOpen.value = false;
-};
-
-const loadAreas = async () => {
-    try {
-        const response = await axios.get('/api/areas');
-        areas.value = Array.isArray(response.data) ? response.data : [];
-    } catch (error) {
-        areas.value = [];
-    }
+    resetForm();
 };
 
 const buildParams = () => {
-    const params = {};
+    const params = {
+        page: pagination.currentPage,
+        per_page: pagination.perPage,
+    };
+
     const keyword = search.value.trim();
     if (keyword) {
         params.search = keyword;
     }
-    if (isAreaSwitcherRole.value && activeAreaId.value) {
-        params.area_id = activeAreaId.value;
-    }
+
     return params;
 };
 
-const loadTools = async () => {
+const loadAreas = async () => {
     isLoading.value = true;
     loadError.value = '';
+
     try {
-        const response = await axios.get('/api/alats', {
-            params: {
-                ...buildParams(),
-                page: pagination.currentPage,
-                per_page: pagination.perPage,
-            },
-        });
-        const payload = response.data;
-        const data = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
-        tools.value = data.map((item) => ({
-            id: item.id,
-            kode: item.kode ?? '-',
-            nama: item.nama ?? '-',
-            total_aset: Number(item.total_aset ?? item.stok ?? 0),
-            stok_tersedia: Number(item.stok_tersedia ?? item.stok ?? 0),
-            area_name: item.area_name ?? item.lokasi ?? '-',
-            area_id: item.area_id ?? '',
-        }));
-        if (Array.isArray(payload)) {
-            pagination.currentPage = 1;
-            pagination.lastPage = 1;
-            pagination.total = tools.value.length;
-        } else {
-            const meta = payload?.meta ?? {};
-            pagination.currentPage = Number(meta.current_page ?? pagination.currentPage) || 1;
-            pagination.lastPage = Number(meta.last_page ?? 1);
-            pagination.perPage = Number(meta.per_page ?? pagination.perPage);
-            pagination.total = Number(meta.total ?? tools.value.length);
-        }
+        const response = await axios.get('/api/admin/areas', { params: buildParams() });
+        const payload = response.data ?? {};
+        areas.value = Array.isArray(payload.data) ? payload.data : [];
+        pagination.currentPage = Number(payload.meta?.current_page ?? 1) || 1;
+        pagination.lastPage = Number(payload.meta?.last_page ?? 1) || 1;
+        pagination.perPage = Number(payload.meta?.per_page ?? pagination.perPage) || 10;
+        pagination.total = Number(payload.meta?.total ?? areas.value.length) || 0;
     } catch (error) {
-        tools.value = [];
-        loadError.value = 'Gagal memuat data alat.';
+        areas.value = [];
+        loadError.value = error.response?.data?.message ?? 'Gagal memuat data area.';
     } finally {
         isLoading.value = false;
     }
@@ -454,121 +393,79 @@ const loadTools = async () => {
 
 const goToPage = (page) => {
     const next = Math.min(Math.max(1, page), pagination.lastPage || 1);
+
     if (next === pagination.currentPage) {
         return;
     }
+
     pagination.currentPage = next;
-    loadTools();
+    loadAreas();
 };
 
 const submitForm = async () => {
-    if (!canManageTools.value) {
-        return;
-    }
-    formError.value = '';
-    if (!isMgrTool.value && !form.area_id && userAreaId.value) {
-        form.area_id = normalizeAreaId(userAreaId.value);
-    }
-    if (!form.nama || !form.area_id || form.total_aset < 0) {
-        formError.value = 'Lengkapi semua field wajib.';
-        return;
-    }
     isSubmitting.value = true;
+    formError.value = '';
+    errors.value = {};
+
     try {
         const payload = {
-            nama: form.nama,
-            area_id: form.area_id,
-            total_aset: form.total_aset,
+            name: form.name,
         };
+
         if (isEdit.value) {
-            await axios.put(`/api/alats/${form.id}`, payload);
+            await axios.put(`/api/admin/areas/${form.id}`, payload);
         } else {
-            await axios.post('/api/alats', payload);
+            await axios.post('/api/admin/areas', payload);
         }
-        await loadTools();
+
+        await loadAreas();
+        showAlert('success', `Area berhasil ${isEdit.value ? 'diperbarui' : 'ditambahkan'}.`);
         closeForm();
-        showAlert('success', `Alat berhasil ${isEdit.value ? 'diperbarui' : 'ditambahkan'}.`);
     } catch (error) {
-        formError.value = error.response?.data?.message ?? 'Gagal menyimpan data.';
-        showAlert('error', formError.value);
+        if (error.response?.status === 422) {
+            errors.value = normalizeErrors(error.response?.data?.errors);
+            formError.value = error.response?.data?.message ?? 'Validasi gagal.';
+        } else if (error.response?.status === 403) {
+            formError.value = 'Anda tidak memiliki akses untuk mengelola area.';
+        } else {
+            formError.value = error.response?.data?.message ?? 'Gagal menyimpan data area.';
+        }
     } finally {
         isSubmitting.value = false;
     }
 };
 
-const removeTool = async (tool) => {
-    if (!canManageTools.value) {
+const removeArea = async (area) => {
+    if (!confirm(`Hapus area "${area.name}"?`)) {
         return;
     }
-    if (!confirm(`Hapus alat "${tool.nama}"?`)) {
-        return;
-    }
+
     try {
-        await axios.delete(`/api/alats/${tool.id}`);
-        await loadTools();
-        showAlert('success', 'Alat berhasil dihapus.');
+        await axios.delete(`/api/admin/areas/${area.id}`);
+
+        if (areas.value.length === 1 && pagination.currentPage > 1) {
+            pagination.currentPage -= 1;
+        }
+
+        await loadAreas();
+        showAlert('success', 'Area berhasil dihapus.');
     } catch (error) {
-        showAlert('error', error.response?.data?.message ?? 'Gagal menghapus data.');
+        showAlert('error', error.response?.data?.message ?? 'Gagal menghapus area.');
     }
 };
 
-let filterTimeout = null;
-watch(
-    search,
-    () => {
-        if (filterTimeout) {
-            clearTimeout(filterTimeout);
-        }
-        filterTimeout = setTimeout(() => {
-            pagination.currentPage = 1;
-            loadTools();
-        }, 300);
-    },
-);
-
-watch(
-    userAreaId,
-    (next) => {
-        if (!isAreaSwitcherRole.value && next && !form.area_id) {
-            form.area_id = normalizeAreaId(next);
-        }
-    },
-    { immediate: true }
-);
-
-watch(
-    () => activeAreaId.value,
-    async (next, prev) => {
-        if (!isAreaSwitcherRole.value) {
-            return;
-        }
-        const shouldShow = prev !== undefined && prev !== null && next !== prev;
-        if (shouldShow) {
-            setAreaSwitching?.(true);
-        }
-        if (next && !form.area_id) {
-            form.area_id = normalizeAreaId(next);
-        }
-        pagination.currentPage = 1;
-        try {
-            await loadTools();
-        } finally {
-            if (shouldShow) {
-                setAreaSwitching?.(false);
-            }
-        }
+watch(search, () => {
+    if (filterTimeout) {
+        clearTimeout(filterTimeout);
     }
-);
+
+    filterTimeout = setTimeout(() => {
+        pagination.currentPage = 1;
+        loadAreas();
+    }, 300);
+});
 
 onMounted(() => {
-    cachedUser.value = loadCachedUser();
-    if (isAreaSwitcherRole.value) {
-        setAreaSwitching?.(true);
-    }
-    Promise.all([loadAreas(), loadTools()]).finally(() => {
-        if (isAreaSwitcherRole.value) {
-            setAreaSwitching?.(false);
-        }
-    });
+    loadAreas();
 });
 </script>

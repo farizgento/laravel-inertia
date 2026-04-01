@@ -173,9 +173,7 @@ const submit = async () => {
         const { token, user } = response.data;
 
         const authHeader = `Bearer ${token}`;
-        window.localStorage.setItem('auth_token', token);
-        window.localStorage.setItem('auth_user', JSON.stringify(user));
-        axios.defaults.headers.common.Authorization = authHeader;
+        window.setAuthToken(token, user);
 
         router.visit(resolveRoleRoute(user?.role?.key), {
             headers: {

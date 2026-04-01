@@ -69,8 +69,10 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()?->delete();
 
-        return response()->json([
-            'message' => 'Logout berhasil.',
-        ]);
+        return response()
+            ->json([
+                'message' => 'Logout berhasil.',
+            ])
+            ->withCookie(cookie()->forget('auth_token'));
     }
 }

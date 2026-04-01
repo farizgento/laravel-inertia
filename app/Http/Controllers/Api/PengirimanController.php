@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Alat;
+use App\Models\LaporanAlat;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanItem;
 use App\Models\PeminjamanItemPhoto;
+use App\Models\Role;
 use App\Models\SuratJalan;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -28,15 +31,15 @@ class PengirimanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        if (! in_array($roleKey, ['pic_tools', 'pic_tool'], true)) {
+        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
+
+        if (! $isPicTools && ! $isAdmin) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        if (! $user->area_id) {
-            return response()->json([]);
-        }
-
         $search = trim((string) $request->query('search', ''));
+        $areaIdParam = $request->query('area_id');
 
         $query = Peminjaman::query()
             ->with([
@@ -46,14 +49,26 @@ class PengirimanController extends Controller
                 'items.alat',
                 'items.photos',
                 'suratJalan',
+                'area',
                 'user',
             ])
-            ->where('area_id', $user->area_id)
             ->whereIn('status', ['Dipesan', 'Disiapkan', 'Terkirim'])
             ->whereHas('items', function ($sub) {
                 $sub->where('approved_qty', '>', 0);
             })
             ->orderByDesc('created_at');
+
+        if ($isAdmin) {
+            if (! empty($areaIdParam)) {
+                $query->where('area_id', $areaIdParam);
+            }
+        } else {
+            if (! $user->area_id) {
+                return response()->json([]);
+            }
+
+            $query->where('area_id', $user->area_id);
+        }
 
         if ($search !== '') {
             $query->where(function ($sub) use ($search) {
@@ -91,6 +106,8 @@ class PengirimanController extends Controller
                 'id' => $peminjaman->id,
                 'title' => $peminjaman->keperluan,
                 'user_name' => $peminjaman->user?->name ?? '-',
+                'area_name' => $peminjaman->area?->name ?? 'Area tidak diketahui',
+                'area_id' => $peminjaman->area_id,
                 'created_at' => $peminjaman->created_at
                     ? $peminjaman->created_at->format('d M Y H:i')
                     : null,
@@ -121,11 +138,14 @@ class PengirimanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        if (! in_array($roleKey, ['pic_tools', 'pic_tool'], true)) {
+        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
+
+        if (! $isPicTools && ! $isAdmin) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        if (! $user->area_id || $peminjaman->area_id !== $user->area_id) {
+        if ($isPicTools && (! $user->area_id || $peminjaman->area_id !== $user->area_id)) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -217,11 +237,14 @@ class PengirimanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        if (! in_array($roleKey, ['pic_tools', 'pic_tool'], true)) {
+        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
+
+        if (! $isPicTools && ! $isAdmin) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        if (! $user->area_id || $peminjaman->area_id !== $user->area_id) {
+        if ($isPicTools && (! $user->area_id || $peminjaman->area_id !== $user->area_id)) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -272,6 +295,145 @@ class PengirimanController extends Controller
         return response()->json([
             'id' => $peminjaman->id,
             'status' => $peminjaman->status,
+        ]);
+    }
+
+    public function terima(Request $request, Peminjaman $peminjaman)
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $user->loadMissing('role');
+        $roleKey = strtolower((string) ($user->role?->key ?? ''));
+        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isUser = $roleKey === 'user';
+        $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
+
+        if (! $isPicTools && ! $isUser && ! $isAdmin) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ($isPicTools) {
+            if (! $user->area_id || $peminjaman->area_id !== $user->area_id) {
+                return response()->json(['message' => 'Forbidden.'], 403);
+            }
+        } elseif (! $isAdmin && (string) $peminjaman->user_id !== (string) $user->id) {
+            return response()->json(['message' => 'user id tidak sama.'], 403);
+        }
+
+        if ($peminjaman->status !== 'Terkirim') {
+            return response()->json(['message' => 'Peminjaman tidak dalam status Terkirim.'], 422);
+        }
+
+        $peminjaman->update([
+            'status' => 'Diterima',
+        ]);
+
+        return response()->json([
+            'id' => $peminjaman->id,
+            'status' => $peminjaman->status,
+        ]);
+    }
+
+    public function kembalikan(Request $request, Peminjaman $peminjaman)
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $user->loadMissing('role');
+        $roleKey = strtolower((string) ($user->role?->key ?? ''));
+        if ($roleKey !== 'user') {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ((string) $peminjaman->user_id !== (string) $user->id) {
+            return response()->json(['message' => 'user id tidak sama.'], 403);
+        }
+
+        if ($peminjaman->status !== 'Diterima') {
+            return response()->json(['message' => 'Peminjaman tidak dalam status Diterima.'], 422);
+        }
+
+        $validated = $request->validate([
+            'laporan' => ['nullable', 'array'],
+            'laporan.kategori' => ['required_with:laporan', 'in:' . implode(',', [
+                LaporanAlat::CATEGORY_KERUSAKAN,
+                LaporanAlat::CATEGORY_KEHILANGAN,
+            ])],
+            'laporan.alat_id' => ['required_with:laporan', 'integer', 'exists:alats,id'],
+            'laporan.deskripsi' => ['required_with:laporan', 'string', 'max:1000'],
+            'laporan.jumlah' => ['required_with:laporan', 'integer', 'min:1'],
+            'laporan.foto' => ['required_with:laporan', 'image', 'max:5120'],
+        ]);
+
+        DB::transaction(function () use ($peminjaman, $validated, $user) {
+            $peminjaman->update([
+                'status' => 'Dikembalikan',
+            ]);
+
+            if (! empty($validated['laporan'])) {
+                $this->storeReturnReport($peminjaman, $validated['laporan'], $user->id);
+            }
+        });
+
+        return response()->json([
+            'id' => $peminjaman->id,
+            'status' => $peminjaman->status,
+        ]);
+    }
+
+    private function storeReturnReport(Peminjaman $peminjaman, array $payload, int $userId): void
+    {
+        $alatId = (int) ($payload['alat_id'] ?? 0);
+        $jumlah = (int) ($payload['jumlah'] ?? 0);
+
+        $peminjaman->loadMissing('items');
+        $item = $peminjaman->items
+            ->first(fn (PeminjamanItem $row) => (int) $row->alat_id === $alatId && (int) ($row->approved_qty ?? 0) > 0);
+
+        if (! $item) {
+            throw ValidationException::withMessages([
+                'laporan.alat_id' => ['Alat tidak ditemukan dalam peminjaman ini.'],
+            ]);
+        }
+
+        $alat = Alat::query()->find($alatId);
+        if (! $alat) {
+            throw ValidationException::withMessages([
+                'laporan.alat_id' => ['Alat tidak ditemukan.'],
+            ]);
+        }
+
+        if ($jumlah > (int) ($item->approved_qty ?? 0)) {
+            throw ValidationException::withMessages([
+                'laporan.jumlah' => ['Jumlah laporan melebihi jumlah alat yang dipinjam.'],
+            ]);
+        }
+
+        $file = $payload['foto'] ?? null;
+        if (! $file instanceof UploadedFile) {
+            throw ValidationException::withMessages([
+                'laporan.foto' => ['Foto laporan alat tidak valid.'],
+            ]);
+        }
+
+        $stored = $this->storeCompressedPhoto($file, "{$payload['kategori']}/{$alat->id}");
+
+        LaporanAlat::create([
+            'kategori' => $payload['kategori'],
+            'deskripsi' => $payload['deskripsi'],
+            'status' => 'Dilaporkan',
+            'jumlah' => $jumlah,
+            'alat_id' => $alat->id,
+            'user_id' => $userId,
+            'path' => $stored['path'],
+            'original_name' => $file->getClientOriginalName(),
+            'mime' => $stored['mime'],
+            'size' => $stored['size'],
         ]);
     }
 

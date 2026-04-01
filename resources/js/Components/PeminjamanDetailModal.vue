@@ -76,7 +76,7 @@
                             <div>
                                 <p class="font-semibold capitalize text-slate-900">{{ tool.name }}</p>
                                 <p class="mt-1 text-xs text-slate-500">{{ tool.code }}</p>
-                                                               <p v-if="isPicTools" class="mt-2 text-xs text-slate-500">
+                                <p v-if="isPicTools" class="mt-2 text-xs text-slate-500">
                                     Disetujui:
                                     <span class="font-semibold text-emerald-700">
                                         {{ approvedQty(tool) }}
@@ -86,14 +86,14 @@
                                     <span class="text-slate-600">
                                         Diminta: <span class="font-semibold text-slate-900">{{ tool.qty }}</span>
                                     </span>
-                                    <span class="mx-1 text-slate-300">•</span>
+                                    <span class="mx-1 text-slate-300">|</span>
                                     <span class="text-emerald-600">
                                         Disetujui:
                                         <span class="font-semibold text-emerald-700">
                                             {{ approvedQty(tool) }}
                                         </span>
                                     </span>
-                                    <span class="mx-1 text-slate-300">•</span>
+                                    <span class="mx-1 text-slate-300">|</span>
                                     <span class="text-rose-600">
                                         Ditolak:
                                         <span class="font-semibold text-rose-700">
@@ -145,6 +145,62 @@
                         </div>
                     </div>
                 </div>
+
+                <div v-if="itemReports.length" class="mt-6 rounded-xl border border-slate-200 bg-white">
+                    <div class="border-b border-slate-200 px-4 py-3">
+                        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Laporan Kerusakan / Kehilangan</p>
+                    </div>
+                    <div class="space-y-4 px-4 py-4">
+                        <div
+                            v-for="report in itemReports"
+                            :key="`${report.id}-${report.kategori}-${report.alatId}`"
+                            class="rounded-xl border border-slate-100 bg-slate-50 p-4"
+                        >
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span
+                                            class="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase"
+                                            :class="reportCategoryClass(report.kategori)"
+                                        >
+                                            {{ reportCategoryLabel(report.kategori) }}
+                                        </span>
+                                        <span
+                                            class="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold"
+                                            :class="reportStatusClass(report.status)"
+                                        >
+                                            {{ report.status || '-' }}
+                                        </span>
+                                    </div>
+                                    <p class="mt-3 text-sm font-semibold text-slate-900">
+                                        {{ report.alatName || '-' }}
+                                    </p>
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        {{ report.alatCode || '-' }} | {{ report.createdAt || '-' }}
+                                    </p>
+                                </div>
+                                <div class="rounded-lg bg-white px-3 py-2 text-right shadow-sm">
+                                    <p class="text-[11px] uppercase tracking-[0.18em] text-slate-400">Jumlah</p>
+                                    <p class="mt-1 text-sm font-semibold text-slate-800">{{ report.jumlah ?? 0 }}</p>
+                                </div>
+                            </div>
+                            <p class="mt-3 text-sm leading-6 text-slate-600">
+                                {{ report.deskripsi || '-' }}
+                            </p>
+                            <div
+                                v-if="reportPhotoSrc(report)"
+                                class="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white"
+                            >
+                                <img
+                                    :src="reportPhotoSrc(report)"
+                                    :alt="report.originalName || report.alatName || 'Laporan alat'"
+                                    class="h-40 w-full object-cover"
+                                    loading="lazy"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </teleport>
@@ -174,6 +230,9 @@ const isPicTools = computed(() => {
 });
 const pengirimName = computed(
     () => props.item?.pengirimNama ?? props.item?.pengirim_nama ?? ''
+);
+const itemReports = computed(() =>
+    Array.isArray(props.item?.reports) ? props.item.reports : []
 );
 const approvedQty = (tool) =>
     Number.isFinite(tool?.approvedQty) ? tool.approvedQty : 0;
@@ -209,4 +268,52 @@ const photoSrc = (photo) => {
 };
 
 const displayQty = (tool) => (isPicTools.value ? approvedQty(tool) : Number.isFinite(tool?.qty) ? tool.qty : 0);
+
+const reportCategoryLabel = (kategori) => {
+    if ((kategori || '').toLowerCase() === 'kerusakan') {
+        return 'Kerusakan';
+    }
+    if ((kategori || '').toLowerCase() === 'kehilangan') {
+        return 'Kehilangan';
+    }
+    return kategori || '-';
+};
+
+const reportCategoryClass = (kategori) => {
+    if ((kategori || '').toLowerCase() === 'kerusakan') {
+        return 'bg-amber-100 text-amber-700';
+    }
+    if ((kategori || '').toLowerCase() === 'kehilangan') {
+        return 'bg-rose-100 text-rose-700';
+    }
+    return 'bg-slate-100 text-slate-700';
+};
+
+const reportStatusClass = (status) => {
+    switch ((status || '').toLowerCase()) {
+        case 'dilaporkan':
+            return 'bg-blue-100 text-blue-700';
+        case 'disetujui':
+            return 'bg-emerald-100 text-emerald-700';
+        case 'ditolak':
+            return 'bg-rose-100 text-rose-700';
+        case 'selesai':
+            return 'bg-slate-200 text-slate-700';
+        default:
+            return 'bg-slate-100 text-slate-700';
+    }
+};
+
+const reportPhotoSrc = (report) => {
+    if (!report) {
+        return '';
+    }
+    if (report.url) {
+        return report.url;
+    }
+    if (!report.path) {
+        return '';
+    }
+    return report.path.startsWith('/storage/') ? report.path : `/storage/${report.path}`;
+};
 </script>
