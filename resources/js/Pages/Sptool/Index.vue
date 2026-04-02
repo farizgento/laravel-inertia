@@ -209,10 +209,6 @@ const loadCachedUser = () => {
 };
 
 const cachedUser = ref(loadCachedUser());
-const roleKey = computed(() =>
-    (page.props.auth?.user?.role?.key ?? cachedUser.value?.role?.key ?? '').toLowerCase()
-);
-const isMgrTool = computed(() => roleKey.value === 'mgr_tool');
 const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
 const activeAreaId = inject('activeAreaId', ref(null));
 const setAreaSwitching = inject('setAreaSwitching', null);
@@ -256,7 +252,10 @@ const processCount = computed(() => items.value.filter((item) => item.status ===
 const deliveredCount = computed(() => items.value.filter((item) => item.status === 'Terkirim').length);
 
 const openDetail = (item) => {
-    selectedItem.value = item;
+    selectedItem.value = {
+        ...item,
+        areaId: item?.areaId ?? activeAreaId.value ?? null,
+    };
 };
 
 const closeDetail = () => {
@@ -265,6 +264,7 @@ const closeDetail = () => {
 
 const normalizeHistory = (item) => ({
     id: item?.id ?? '',
+    areaId: item?.area_id ?? activeAreaId.value ?? null,
     title: item?.title ?? '-',
     userName: item?.user_name ?? '-',
     reviewNote: item?.review_note ?? '',
@@ -313,9 +313,10 @@ const submitReview = async (payload) => {
     isSubmitting.value = true;
     loadError.value = '';
     try {
+        const reviewAreaId = selectedItem.value?.areaId ?? activeAreaId.value ?? null;
         const body = {
             ...payload,
-            ...(isAreaSwitcherRole.value && activeAreaId.value ? { area_id: activeAreaId.value } : {}),
+            ...(isAreaSwitcherRole.value && reviewAreaId ? { area_id: reviewAreaId } : {}),
         };
         await axios.post(`/api/review-peminjaman/${payload.peminjamanId}`, body);
         await loadHistory();
@@ -323,7 +324,9 @@ const submitReview = async (payload) => {
         selectedItem.value = null;
         showAlert('success', 'Review peminjaman berhasil disimpan.');
     } catch (error) {
-        loadError.value = error.response?.data?.message ?? 'Gagal menyimpan review.';
+        loadError.value = error.response?.status === 403
+            ? 'Review gagal disimpan. Pastikan area aktif sesuai dengan peminjaman yang direview.'
+            : error.response?.data?.message ?? 'Gagal menyimpan review.';
         showAlert('error', loadError.value);
     } finally {
         isSubmitting.value = false;

@@ -42,7 +42,7 @@ class ReviewPeminjamanController extends Controller
         $status = trim((string) $request->query('status', ''));
 
         $query = Peminjaman::query()
-            ->with(['items.alat', 'user'])
+            ->with(['items.alat', 'user', 'area'])
             ->where('area_id', $areaId)
             ->orderByDesc('created_at');
 
@@ -76,6 +76,8 @@ class ReviewPeminjamanController extends Controller
 
             return [
                 'id' => $peminjaman->id,
+                'area_id' => $peminjaman->area_id,
+                'area_name' => $peminjaman->area?->name ?? '-',
                 'title' => $peminjaman->keperluan,
                 'user_name' => $peminjaman->user?->name ?? '-',
                 'review_note' => $peminjaman->review_note,
@@ -151,7 +153,7 @@ class ReviewPeminjamanController extends Controller
             $areaId = (int) $request->input('area_id');
         }
 
-        if (! $areaId || $peminjaman->area_id !== $areaId) {
+        if (! $areaId || (int) $peminjaman->area_id !== (int) $areaId) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 

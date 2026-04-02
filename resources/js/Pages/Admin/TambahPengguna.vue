@@ -16,7 +16,11 @@
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <h2 class="text-lg font-semibold text-slate-900">Daftar Pengguna</h2>
-                <p class="mt-1 text-sm text-slate-500">Role yang dikelola hanya user, SP Tool, dan Pic Tool.</p>
+                <p class="mt-1 text-sm text-slate-500">
+                    {{ isSuperAdmin
+                        ? 'Super Admin dapat mengelola user, SP Tool, Pic Tool, Mgr Tool, dan Admin.'
+                        : 'Role yang dikelola hanya user, SP Tool, dan Pic Tool.' }}
+                </p>
             </div>
             <button
                 class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
@@ -278,6 +282,9 @@
                             </option>
                         </select>
                         <p v-if="errors.area_id" class="text-xs text-rose-500">{{ errors.area_id }}</p>
+                        <p v-else-if="isMgrToolSelected && mgrAreaLabel" class="text-xs text-slate-500">
+                            Role Mgr Tool otomatis menggunakan area {{ mgrAreaLabel }}.
+                        </p>
                     </label>
 
                     <label class="space-y-2 text-sm font-medium text-slate-700">
@@ -348,10 +355,15 @@ defineOptions({
         ),
 });
 
-const roleOptions = [
+const baseRoleOptions = [
     { value: 'user', label: 'User' },
     { value: 'sp_tool', label: 'SP Tool' },
     { value: 'pic_tools', label: 'Pic Tool' },
+];
+
+const superAdminExtraRoleOptions = [
+    { value: 'mgr_tool', label: 'Mgr Tool' },
+    { value: 'admin', label: 'Admin' },
 ];
 
 const page = usePage();
@@ -395,14 +407,31 @@ const isSuperAdmin = computed(() => authUser.value?.role?.key === 'super_admin')
 const adminAreaId = computed(() => authUser.value?.area?.id ? String(authUser.value.area.id) : '');
 const isAdminRole = computed(() => authUser.value?.role?.key === 'admin');
 const activeAreaId = inject('activeAreaId', ref(null));
+const roleOptions = computed(() =>
+    isSuperAdmin.value
+        ? [...baseRoleOptions, ...superAdminExtraRoleOptions]
+        : baseRoleOptions
+);
+const mgrArea = computed(
+    () => areas.value.find((area) => String(area.name ?? '').trim().toUpperCase() === 'KS TUBUN') ?? null
+);
+const mgrAreaId = computed(() => (mgrArea.value?.id ? String(mgrArea.value.id) : ''));
+const mgrAreaLabel = computed(() => mgrArea.value?.name ?? '');
+const isMgrToolSelected = computed(() => form.role_key === 'mgr_tool');
 const availableAreas = computed(() => {
+    if (isMgrToolSelected.value && mgrAreaId.value) {
+        return areas.value.filter((area) => String(area.id) === mgrAreaId.value);
+    }
+
     if (!isAdminRole.value || !adminAreaId.value) {
         return areas.value;
     }
 
     return areas.value.filter((area) => String(area.id) === adminAreaId.value);
 });
-const isAreaLocked = computed(() => isAdminRole.value && !!availableAreas.value.length);
+const isAreaLocked = computed(
+    () => (isAdminRole.value && !!availableAreas.value.length) || (isMgrToolSelected.value && !!mgrAreaId.value)
+);
 
 const pageNumbers = computed(() => {
     const total = pagination.lastPage;
@@ -429,10 +458,21 @@ const normalizeErrors = (payload) => {
     );
 };
 
-const resolveRoleLabel = (roleKey) =>
-    roleOptions.find((role) => role.value === roleKey)?.label ?? roleKey ?? '-';
+const resolveRoleLabel = (roleKey) => {
+    const matchedRole = roleOptions.value.find((role) => role.value === roleKey)
+        ?? superAdminExtraRoleOptions.find((role) => role.value === roleKey)
+        ?? baseRoleOptions.find((role) => role.value === roleKey);
+
+    return matchedRole?.label ?? roleKey ?? '-';
+};
 
 const roleBadgeClass = (roleKey) => {
+    if (roleKey === 'admin') {
+        return 'bg-rose-100 text-rose-700';
+    }
+    if (roleKey === 'mgr_tool') {
+        return 'bg-violet-100 text-violet-700';
+    }
     if (roleKey === 'pic_tools') {
         return 'bg-amber-100 text-amber-700';
     }
@@ -467,6 +507,11 @@ const closeAlert = () => {
 };
 
 const syncAreaSelection = () => {
+    if (isMgrToolSelected.value && mgrAreaId.value) {
+        form.area_id = mgrAreaId.value;
+        return;
+    }
+
     if (isAreaLocked.value) {
         form.area_id = adminAreaId.value;
         return;
@@ -485,7 +530,7 @@ const resetForm = () => {
     form.area_id = '';
     form.password = '';
     form.password_confirmation = '';
-    form.area_id = adminAreaId.value;
+    form.area_id = isMgrToolSelected.value && mgrAreaId.value ? mgrAreaId.value : adminAreaId.value;
     errors.value = {};
     formError.value = '';
 };
@@ -500,7 +545,9 @@ const openEdit = (user) => {
     form.name = user.name ?? '';
     form.email = user.email ?? '';
     form.role_key = user.role_key ?? '';
-    form.area_id = isAreaLocked.value ? adminAreaId.value : user.area_id ? String(user.area_id) : '';
+    form.area_id = isAreaLocked.value
+        ? (user.role_key === 'mgr_tool' && mgrAreaId.value ? mgrAreaId.value : adminAreaId.value)
+        : user.area_id ? String(user.area_id) : '';
     form.password = '';
     form.password_confirmation = '';
     errors.value = {};
@@ -644,6 +691,7 @@ const removeUser = async (user) => {
 watch(
     () => form.role_key,
     () => {
+        syncAreaSelection();
         errors.value = {
             ...errors.value,
             role_key: '',

@@ -18,8 +18,8 @@
                     </svg>
                 </div>
                 <div>
-                    <h1 class="text-sm font-semibold text-slate-900">ToolArea</h1>
-                    <p class="text-xs text-slate-500">Lending System</p>
+                    <h1 class="text-sm font-semibold text-slate-900">IPTools Lite</h1>
+                    <p class="text-xs text-slate-500">BETA</p>
                 </div>
             </div>
         </div>

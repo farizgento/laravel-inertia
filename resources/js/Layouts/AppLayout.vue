@@ -84,7 +84,7 @@
 <script setup>
 import { Head, router, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
-import { computed, onMounted, provide, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
 import AppHeader from '../Components/AppHeader.vue';
 import AppSidebar from '../Components/AppSidebar.vue';
 import ToastNotification from '../Components/ToastNotification.vue';
@@ -105,6 +105,7 @@ const props = defineProps({
 });
 
 const page = usePage();
+const SIDEBAR_BADGE_POLL_INTERVAL_MS = 10000;
 const isSidebarOpen = ref(
     typeof window !== 'undefined' &&
         window.matchMedia('(min-width: 1024px)').matches
@@ -121,6 +122,8 @@ const reviewPendingCount = ref(0);
 const kerusakanPendingCount = ref(0);
 const kehilanganPendingCount = ref(0);
 const isApiReady = ref(false);
+const sidebarBadgePollingId = ref(null);
+const isRefreshingSidebarCounts = ref(false);
 
 const loadCachedUser = () => {
     if (typeof window === 'undefined') {
@@ -236,21 +239,30 @@ const attachLoadingInterceptors = () => {
     }
     requestInterceptorId.value = axios.interceptors.request.use(
         (config) => {
+            if (config?.__skipGlobalLoading) {
+                return config;
+            }
             startGlobalLoading();
             return config;
         },
         (error) => {
-            stopGlobalLoading();
+            if (!error?.config?.__skipGlobalLoading) {
+                stopGlobalLoading();
+            }
             return Promise.reject(error);
         }
     );
     responseInterceptorId.value = axios.interceptors.response.use(
         (response) => {
-            stopGlobalLoading();
+            if (!response?.config?.__skipGlobalLoading) {
+                stopGlobalLoading();
+            }
             return response;
         },
         (error) => {
-            stopGlobalLoading();
+            if (!error?.config?.__skipGlobalLoading) {
+                stopGlobalLoading();
+            }
             return Promise.reject(error);
         }
     );
@@ -312,7 +324,7 @@ const loadAreas = async () => {
     }
 };
 
-const refreshReviewPendingCount = async () => {
+const refreshReviewPendingCount = async ({ silent = false } = {}) => {
     if (!isApiReady.value) {
         return;
     }
@@ -328,14 +340,17 @@ const refreshReviewPendingCount = async () => {
     }
 
     try {
-        const response = await axios.get('/api/review-peminjaman/pending-count', { params });
+        const response = await axios.get('/api/review-peminjaman/pending-count', {
+            params,
+            __skipGlobalLoading: silent,
+        });
         reviewPendingCount.value = Number(response.data?.count ?? 0);
     } catch (err) {
         reviewPendingCount.value = 0;
     }
 };
 
-const refreshLaporanPendingCounts = async () => {
+const refreshLaporanPendingCounts = async ({ silent = false } = {}) => {
     if (!isApiReady.value) {
         return;
     }
@@ -352,7 +367,10 @@ const refreshLaporanPendingCounts = async () => {
     }
 
     try {
-        const response = await axios.get('/api/laporan-pending-counts', { params });
+        const response = await axios.get('/api/laporan-pending-counts', {
+            params,
+            __skipGlobalLoading: silent,
+        });
         kerusakanPendingCount.value = Number(response.data?.kerusakan ?? 0);
         kehilanganPendingCount.value = Number(response.data?.kehilangan ?? 0);
     } catch (err) {
@@ -361,11 +379,54 @@ const refreshLaporanPendingCounts = async () => {
     }
 };
 
-const refreshSidebarNotificationCounts = async () => {
-    await Promise.all([
-        refreshReviewPendingCount(),
-        refreshLaporanPendingCounts(),
-    ]);
+const refreshSidebarNotificationCounts = async ({ silent = false } = {}) => {
+    if (isRefreshingSidebarCounts.value) {
+        return;
+    }
+
+    isRefreshingSidebarCounts.value = true;
+
+    try {
+        await Promise.all([
+            refreshReviewPendingCount({ silent }),
+            refreshLaporanPendingCounts({ silent }),
+        ]);
+    } finally {
+        isRefreshingSidebarCounts.value = false;
+    }
+};
+
+const pollSidebarNotificationCounts = async () => {
+    if (typeof document !== 'undefined' && document.hidden) {
+        return;
+    }
+
+    await refreshSidebarNotificationCounts({ silent: true });
+};
+
+const startSidebarBadgePolling = () => {
+    if (typeof window === 'undefined' || sidebarBadgePollingId.value !== null) {
+        return;
+    }
+
+    sidebarBadgePollingId.value = window.setInterval(() => {
+        pollSidebarNotificationCounts();
+    }, SIDEBAR_BADGE_POLL_INTERVAL_MS);
+};
+
+const stopSidebarBadgePolling = () => {
+    if (typeof window === 'undefined' || sidebarBadgePollingId.value === null) {
+        return;
+    }
+
+    window.clearInterval(sidebarBadgePollingId.value);
+    sidebarBadgePollingId.value = null;
+};
+
+const handleVisibilityChange = () => {
+    if (typeof document !== 'undefined' && !document.hidden) {
+        pollSidebarNotificationCounts();
+    }
 };
 
 const redirectToLogin = () => {
@@ -520,6 +581,18 @@ onMounted(() => {
         loadUser();
     } else {
         refreshSidebarNotificationCounts();
+    }
+
+    startSidebarBadgePolling();
+    if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+});
+
+onBeforeUnmount(() => {
+    stopSidebarBadgePolling();
+    if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
     }
 });
 </script>

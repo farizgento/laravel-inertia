@@ -14,10 +14,15 @@ use Illuminate\Validation\Rules\Password;
 
 class UserManagementController extends Controller
 {
-    private const ALLOWED_ROLE_KEYS = [
+    private const DEFAULT_ALLOWED_ROLE_KEYS = [
         Role::KEY_USER,
         Role::KEY_SP_TOOL,
         Role::KEY_PIC_TOOLS,
+    ];
+
+    private const SUPER_ADMIN_EXTRA_ROLE_KEYS = [
+        Role::KEY_MGR_TOOL,
+        Role::KEY_ADMIN,
     ];
 
     private function authorizeActor(Request $request): User
@@ -38,12 +43,26 @@ class UserManagementController extends Controller
         return $actor->role?->key === Role::KEY_ADMIN;
     }
 
+    private function allowedRoleKeysForActor(User $actor): array
+    {
+        if ($actor->role?->key === Role::KEY_SUPER_ADMIN) {
+            return [
+                ...self::DEFAULT_ALLOWED_ROLE_KEYS,
+                ...self::SUPER_ADMIN_EXTRA_ROLE_KEYS,
+            ];
+        }
+
+        return self::DEFAULT_ALLOWED_ROLE_KEYS;
+    }
+
     private function manageableUsersQuery(User $actor)
     {
+        $allowedRoleKeys = $this->allowedRoleKeysForActor($actor);
+
         $query = User::query()
             ->with(['area', 'role'])
-            ->whereHas('role', function ($query) {
-                $query->whereIn('key', self::ALLOWED_ROLE_KEYS);
+            ->whereHas('role', function ($query) use ($allowedRoleKeys) {
+                $query->whereIn('key', $allowedRoleKeys);
             });
 
         if ($this->isAreaScopedAdmin($actor)) {
@@ -121,6 +140,7 @@ class UserManagementController extends Controller
     public function index(Request $request): array
     {
         $actor = $this->authorizeActor($request);
+        $allowedRoleKeys = $this->allowedRoleKeysForActor($actor);
 
         $search = trim((string) $request->query('search', ''));
         $roleKey = trim((string) $request->query('role', ''));
@@ -146,7 +166,7 @@ class UserManagementController extends Controller
             });
         }
 
-        if (in_array($roleKey, self::ALLOWED_ROLE_KEYS, true)) {
+        if (in_array($roleKey, $allowedRoleKeys, true)) {
             $query->whereHas('role', function ($roleQuery) use ($roleKey) {
                 $roleQuery->where('key', $roleKey);
             });
@@ -175,12 +195,13 @@ class UserManagementController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $this->authorizeActor($request);
+        $actor = $this->authorizeActor($request);
+        $allowedRoleKeys = $this->allowedRoleKeysForActor($actor);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'role_key' => ['required', 'string', Rule::in(self::ALLOWED_ROLE_KEYS)],
+            'role_key' => ['required', 'string', Rule::in($allowedRoleKeys)],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
@@ -205,6 +226,7 @@ class UserManagementController extends Controller
     public function update(Request $request, User $user): JsonResponse
     {
         $actor = $this->authorizeActor($request);
+        $allowedRoleKeys = $this->allowedRoleKeysForActor($actor);
 
         $manageableUser = $this->manageableUsersQuery($actor)->find($user->id);
         abort_unless($manageableUser, 404);
@@ -212,7 +234,7 @@ class UserManagementController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'role_key' => ['required', 'string', Rule::in(self::ALLOWED_ROLE_KEYS)],
+            'role_key' => ['required', 'string', Rule::in($allowedRoleKeys)],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
             'password' => ['nullable', 'confirmed', Password::min(8)],
         ]);
