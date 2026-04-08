@@ -20,6 +20,9 @@
                         <p v-if="item?.userName" class="mt-1 text-sm text-slate-500">
                             Peminjam: {{ item.userName }}
                         </p>
+                        <p v-if="item?.reviewerName && item.reviewerName !== '-'" class="mt-1 text-sm text-slate-500">
+                            Direview oleh: {{ item.reviewerName }}
+                        </p>
                     </div>
                     <button
                         class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:text-slate-700"
@@ -97,6 +100,7 @@
                                             <select
                                                 v-model="row.decision"
                                                 @change="handleDecisionChange(row)"
+                                                :disabled="readOnly"
                                                 class="h-9 w-28 appearance-none rounded-lg border border-slate-200 bg-white px-3 pr-8 text-xs font-semibold transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                                                 :class="
                                                     row.decision === 'setujui'
@@ -126,7 +130,7 @@
                                             type="number"
                                             min="0"
                                             :max="row.requestedQty"
-                                            :disabled="row.decision === 'tolak'"
+                                            :disabled="readOnly || row.decision === 'tolak'"
                                             @input="handleQtyInput(row)"
                                             class="h-9 w-20 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50 disabled:text-slate-400"
                                         />
@@ -136,7 +140,7 @@
                                             v-model="row.rejectionReason"
                                             type="text"
                                             placeholder="Opsional"
-                                            :disabled="row.decision !== 'tolak'"
+                                            :disabled="readOnly || row.decision !== 'tolak'"
                                             class="h-9 w-44 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-50 disabled:text-slate-400"
                                         />
                                     </td>
@@ -156,6 +160,7 @@
                     <p class="text-sm font-semibold text-slate-900">Catatan Review (Opsional)</p>
                     <textarea
                         v-model="reviewNote"
+                        :disabled="readOnly"
                         class="mt-3 min-h-[110px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         placeholder="Catatan tambahan untuk peminjam..."
                     ></textarea>
@@ -174,9 +179,10 @@
                         type="button"
                         @click="emit('close')"
                     >
-                        Batal
+                        {{ readOnly ? 'Tutup' : 'Batal' }}
                     </button>
                     <button
+                        v-if="!readOnly"
                         class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                         type="button"
                         :disabled="!reviewRows.length || isSubmitting"
@@ -203,6 +209,10 @@ const props = defineProps({
         default: null,
     },
     isSubmitting: {
+        type: Boolean,
+        default: false,
+    },
+    readOnly: {
         type: Boolean,
         default: false,
     },
@@ -275,6 +285,10 @@ const validateRows = () => {
 };
 
 const submitReview = () => {
+    if (props.readOnly) {
+        return;
+    }
+
     const error = validateRows();
     if (error) {
         validationError.value = error;

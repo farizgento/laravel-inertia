@@ -54,6 +54,9 @@
                         <p class="mt-1 text-xs text-slate-500">
                             Setiap alat wajib memiliki minimal 1 foto. Foto akan dikompres otomatis.
                         </p>
+                        <p class="mt-1 text-xs text-slate-500">
+                            Di perangkat mobile, pilih file dapat langsung membuka kamera belakang.
+                        </p>
                     </div>
 
                     <div class="mt-4 space-y-4">
@@ -76,6 +79,7 @@
                                 <input
                                     type="file"
                                     accept="image/*"
+                                    capture="environment"
                                     multiple
                                     class="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 shadow-sm file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-700"
                                     @change="(event) => handleFileChange(row, event)"

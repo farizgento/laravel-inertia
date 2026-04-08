@@ -24,6 +24,7 @@ class Peminjaman extends Model
         'tanggal_kembali',
         'review_note',
         'reviewed_at',
+        'reviewed_by',
     ];
 
     protected $casts = [
@@ -40,6 +41,11 @@ class Peminjaman extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 
     public function suratJalan(): HasOne

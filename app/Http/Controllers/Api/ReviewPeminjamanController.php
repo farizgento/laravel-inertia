@@ -42,7 +42,7 @@ class ReviewPeminjamanController extends Controller
         $status = trim((string) $request->query('status', ''));
 
         $query = Peminjaman::query()
-            ->with(['items.alat', 'user', 'area'])
+            ->with(['items.alat', 'user', 'area', 'reviewer'])
             ->where('area_id', $areaId)
             ->orderByDesc('created_at');
 
@@ -81,6 +81,7 @@ class ReviewPeminjamanController extends Controller
                 'title' => $peminjaman->keperluan,
                 'user_name' => $peminjaman->user?->name ?? '-',
                 'review_note' => $peminjaman->review_note,
+                'reviewed_by_name' => $peminjaman->reviewer?->name,
                 'created_at' => $peminjaman->created_at
                     ? $peminjaman->created_at->format('d M Y H:i')
                     : null,
@@ -157,6 +158,12 @@ class ReviewPeminjamanController extends Controller
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
+        if ($peminjaman->status !== 'Menunggu Review') {
+            return response()->json([
+                'message' => 'Peminjaman ini sudah direview dan hanya dapat dilihat detailnya.',
+            ], 422);
+        }
+
         $validated = $request->validate([
             'review_note' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
@@ -187,7 +194,7 @@ class ReviewPeminjamanController extends Controller
 
         $hasApproved = false;
 
-        DB::transaction(function () use ($items, $itemModels, $peminjaman, &$hasApproved, $validated) {
+        DB::transaction(function () use ($items, $itemModels, $peminjaman, &$hasApproved, $validated, $user) {
             foreach ($items as $itemId => $payload) {
                 $item = $itemModels[$itemId];
                 $decision = $payload['decision'];
@@ -213,6 +220,7 @@ class ReviewPeminjamanController extends Controller
             $peminjaman->update([
                 'review_note' => $validated['review_note'] ?? null,
                 'reviewed_at' => now(),
+                'reviewed_by' => $user->id,
                 'status' => $hasApproved ? 'Dipesan' : 'Ditolak',
             ]);
         });

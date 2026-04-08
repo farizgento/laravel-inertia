@@ -47,7 +47,7 @@
             </div>
             <div>
                 <h2 class="text-lg font-semibold text-slate-900">Daftar Peminjaman</h2>
-                <p class="mt-1 text-sm text-slate-500">Klik tombol review pada baris yang ingin diproses</p>
+                <p class="mt-1 text-sm text-slate-500">Klik tombol review atau detail pada baris yang ingin dibuka</p>
             </div>
         </div>
 
@@ -101,9 +101,10 @@
                         <thead class="bg-slate-50">
                             <tr class="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                                 <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3">Dibuat</th>
-                                <th class="px-4 py-3">Keperluan</th>
                                 <th class="px-4 py-3">Peminjam</th>
+                                <th class="px-4 py-3">Dibuat</th>
+                                <th class="px-4 py-3">Direview</th>
+                                <th class="px-4 py-3">Keperluan</th>
                                 <th class="px-4 py-3">Periode</th>
                                 <th class="px-4 py-3 text-center">Item</th>
                                 <th class="px-4 py-3 text-right">Aksi</th>
@@ -120,15 +121,18 @@
                                         {{ item.status }}
                                     </span>
                                 </td>
+                                <td class="px-4 py-4 align-top text-slate-700">
+                                    {{ item.userName }}
+                                </td>
                                 <td class="px-4 py-4 align-top text-slate-600">
                                     {{ item.createdAt }}
+                                </td>
+                                <td class="px-4 py-4 align-top text-slate-700">
+                                    {{ item.reviewerName }}
                                 </td>
                                 <td class="px-4 py-4 align-top">
                                     <p class="font-semibold text-slate-900">{{ item.title }}</p>
                                     <p class="mt-1 text-xs text-slate-500">ID #{{ item.id }}</p>
-                                </td>
-                                <td class="px-4 py-4 align-top text-slate-700">
-                                    {{ item.userName }}
                                 </td>
                                 <td class="px-4 py-4 align-top text-slate-600">
                                     {{ item.borrowDate }} - {{ item.returnDate }}
@@ -154,7 +158,7 @@
                                             <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
                                             <circle cx="12" cy="12" r="3" />
                                         </svg>
-                                        Review
+                                        {{ item.status === 'Menunggu Review' ? 'Review' : 'Detail' }}
                                     </button>
                                 </td>
                             </tr>
@@ -169,6 +173,7 @@
         :open="!!selectedItem"
         :item="selectedItem"
         :is-submitting="isSubmitting"
+        :read-only="selectedItem?.status !== 'Menunggu Review'"
         @close="closeDetail"
         @submit="submitReview"
     />
@@ -267,6 +272,7 @@ const normalizeHistory = (item) => ({
     areaId: item?.area_id ?? activeAreaId.value ?? null,
     title: item?.title ?? '-',
     userName: item?.user_name ?? '-',
+    reviewerName: item?.reviewed_by_name ?? '-',
     reviewNote: item?.review_note ?? '',
     createdAt: item?.created_at ?? '-',
     borrowDate: item?.borrow_date ?? '-',
