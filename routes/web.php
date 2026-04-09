@@ -135,6 +135,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Role::KEY_SUPER_ADMIN,
     ]))->name('tambah-pengguna');
 
+    Route::get('/log-activity', function () {
+        return Inertia::render('Admin/ActivityLog');
+    })->middleware('role:' . implode(',', [
+        Role::KEY_SP_TOOL,
+        Role::KEY_MGR_TOOL,
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+    ]))->name('activity-log');
+
     Route::get('/area', function () {
         return Inertia::render('Admin/Area');
     })->middleware('role:' . Role::KEY_SUPER_ADMIN)->name('area.index');

@@ -57,6 +57,9 @@
                         <p class="mt-1 text-xs text-slate-500">
                             Di perangkat mobile, pilih file dapat langsung membuka kamera belakang.
                         </p>
+                        <p class="mt-1 text-xs text-slate-500">
+                            Gunakan tombol Buka Kamera untuk mengambil foto langsung dari webcam laptop atau kamera browser.
+                        </p>
                     </div>
 
                     <div class="mt-4 space-y-4">
@@ -76,12 +79,61 @@
                             </div>
 
                             <div class="mt-3">
+                                <div class="flex flex-wrap gap-2">
+                                    <button
+                                        class="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100"
+                                        type="button"
+                                        @click="openCamera(row)"
+                                    >
+                                        {{ activeCameraRowId === row.itemId ? 'Muat Ulang Kamera' : 'Buka Kamera' }}
+                                    </button>
+                                    <button
+                                        v-if="activeCameraRowId === row.itemId"
+                                        class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                                        type="button"
+                                        @click="closeCamera"
+                                    >
+                                        Tutup Kamera
+                                    </button>
+                                </div>
+
+                                <div
+                                    v-if="activeCameraRowId === row.itemId"
+                                    class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3"
+                                >
+                                    <div class="overflow-hidden rounded-lg bg-slate-900">
+                                        <video
+                                            :ref="(el) => setVideoRef(row.itemId, el)"
+                                            autoplay
+                                            muted
+                                            playsinline
+                                            class="aspect-video w-full bg-slate-900 object-cover"
+                                        />
+                                    </div>
+                                    <div class="mt-3 flex flex-wrap gap-2">
+                                        <button
+                                            class="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+                                            type="button"
+                                            :disabled="isCapturing"
+                                            @click="capturePhoto(row)"
+                                        >
+                                            {{ isCapturing ? 'Mengambil...' : 'Ambil Foto' }}
+                                        </button>
+                                    </div>
+                                    <p
+                                        v-if="cameraError"
+                                        class="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700"
+                                    >
+                                        {{ cameraError }}
+                                    </p>
+                                </div>
+
                                 <input
+                                    class="mt-3 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 shadow-sm file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-700"
                                     type="file"
                                     accept="image/*"
                                     capture="environment"
                                     multiple
-                                    class="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 shadow-sm file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-blue-700"
                                     @change="(event) => handleFileChange(row, event)"
                                 />
                             </div>
@@ -142,7 +194,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, ref, watch } from 'vue';
 
 const props = defineProps({
     open: {
@@ -164,6 +216,35 @@ const emit = defineEmits(['close', 'submit']);
 const rows = ref([]);
 const validationError = ref('');
 const approvedItemTotal = ref(0);
+const activeCameraRowId = ref(null);
+const cameraError = ref('');
+const isCapturing = ref(false);
+const videoElements = new Map();
+let cameraStream = null;
+
+const stopCameraStream = () => {
+    if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+        cameraStream = null;
+    }
+};
+
+const closeCamera = () => {
+    stopCameraStream();
+    activeCameraRowId.value = null;
+    cameraError.value = '';
+};
+
+const setVideoRef = (rowId, element) => {
+    if (element) {
+        videoElements.set(rowId, element);
+        if (activeCameraRowId.value === rowId && cameraStream) {
+            element.srcObject = cameraStream;
+        }
+        return;
+    }
+    videoElements.delete(rowId);
+};
 
 const approvedQty = (tool) => {
     if (Number.isFinite(tool?.approvedQty)) {
@@ -232,6 +313,45 @@ const compressImage = (file) =>
         img.src = url;
     });
 
+const openCamera = async (row) => {
+    cameraError.value = '';
+    stopCameraStream();
+    activeCameraRowId.value = row.itemId;
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+        cameraError.value = 'Browser ini tidak mendukung akses kamera. Gunakan upload file biasa.';
+        return;
+    }
+
+    try {
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: 'environment',
+                },
+                audio: false,
+            });
+        } catch (primaryError) {
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: false,
+            });
+        }
+        await nextTick();
+        const videoElement = videoElements.get(row.itemId);
+        if (!videoElement) {
+            cameraError.value = 'Preview kamera tidak tersedia.';
+            stopCameraStream();
+            return;
+        }
+        videoElement.srcObject = cameraStream;
+        await videoElement.play();
+    } catch (error) {
+        cameraError.value = 'Kamera tidak bisa dibuka. Pastikan izin kamera diberikan di browser.';
+        stopCameraStream();
+    }
+};
+
 const handleFileChange = async (row, event) => {
     const files = Array.from(event.target?.files ?? []);
     if (!files.length) {
@@ -244,6 +364,56 @@ const handleFileChange = async (row, event) => {
     row.files.push(...compressed);
     event.target.value = '';
     validationError.value = '';
+};
+
+const capturePhoto = async (row) => {
+    const videoElement = videoElements.get(row.itemId);
+    if (!videoElement || !cameraStream) {
+        cameraError.value = 'Kamera belum siap digunakan.';
+        return;
+    }
+
+    isCapturing.value = true;
+    cameraError.value = '';
+
+    try {
+        const width = videoElement.videoWidth;
+        const height = videoElement.videoHeight;
+        if (!width || !height) {
+            cameraError.value = 'Gambar kamera belum tersedia.';
+            return;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            cameraError.value = 'Gagal memproses gambar kamera.';
+            return;
+        }
+
+        ctx.drawImage(videoElement, 0, 0, width, height);
+
+        const photoBlob = await new Promise((resolve) => {
+            canvas.toBlob(resolve, 'image/jpeg', 0.9);
+        });
+
+        if (!photoBlob) {
+            cameraError.value = 'Foto dari kamera gagal dibuat.';
+            return;
+        }
+
+        const timestamp = Date.now();
+        const baseName = row.code && row.code !== '-' ? row.code : `alat-${row.itemId ?? 'photo'}`;
+        const cameraFile = new File([photoBlob], `${baseName}-${timestamp}.jpg`, {
+            type: 'image/jpeg',
+        });
+        row.files.push(await compressImage(cameraFile));
+        validationError.value = '';
+    } finally {
+        isCapturing.value = false;
+    }
 };
 
 const removeFile = (row, index) => {
@@ -290,10 +460,24 @@ const submitPrepare = () => {
 watch(
     () => props.item,
     (next) => {
+        closeCamera();
         rows.value = buildRows(next?.tools);
         approvedItemTotal.value = computeApprovedTotal(next?.tools);
         validationError.value = '';
     },
     { immediate: true }
 );
+
+watch(
+    () => props.open,
+    (isOpen) => {
+        if (!isOpen) {
+            closeCamera();
+        }
+    }
+);
+
+onBeforeUnmount(() => {
+    stopCameraStream();
+});
 </script>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AlatController;
+use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AreaController;
 use App\Http\Controllers\Api\DashboardController;
@@ -47,6 +48,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/users', [UserManagementController::class, 'store']);
         Route::put('/users/{user}', [UserManagementController::class, 'update']);
         Route::delete('/users/{user}', [UserManagementController::class, 'destroy']);
+    });
+
+    Route::middleware('role:' . implode(',', [
+        Role::KEY_SP_TOOL,
+        Role::KEY_MGR_TOOL,
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+    ]))->group(function () {
+        Route::get('/activity-logs', [ActivityLogController::class, 'index']);
+        Route::get('/activity-logs/export', [ActivityLogController::class, 'export']);
     });
 
     Route::middleware('role:' . Role::KEY_SUPER_ADMIN)->group(function () {
