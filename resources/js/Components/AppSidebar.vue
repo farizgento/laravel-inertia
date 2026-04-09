@@ -161,6 +161,18 @@
                                     <circle cx="17.5" cy="19" r="1.5" />
                                 </svg>
                                 <svg
+                                    v-else-if="item.icon === 'activity-log'"
+                                    class="h-4 w-4"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path d="M3 12h4l2-5 4 10 2-5h6" />
+                                </svg>
+                                <svg
                                     v-else-if="item.icon === 'mutasi-alat'"
                                     class="h-4 w-4"
                                     viewBox="0 0 24 24"
@@ -401,6 +413,12 @@ const menuItems = computed(() => {
                       icon: 'area',
                   },
                   {
+                      key: 'activity-log',
+                      label: 'Log Activity',
+                      href: '/log-activity',
+                      icon: 'activity-log',
+                  },
+                  {
                       key: 'peminjaman',
                       label: 'Peminjaman',
                       href: '/peminjaman',
@@ -456,6 +474,12 @@ const menuItems = computed(() => {
                       label: 'Tambah Pengguna',
                       href: '/tambah-pengguna',
                       icon: 'users',
+                  },
+                  {
+                      key: 'activity-log',
+                      label: 'Log Activity',
+                      href: '/log-activity',
+                      icon: 'activity-log',
                   },
                   {
                       key: 'pengiriman',
@@ -566,6 +590,12 @@ const menuItems = computed(() => {
                         icon: 'riwayat',
                     },
                     {
+                        key: 'activity-log',
+                        label: 'Log Activity',
+                        href: '/log-activity',
+                        icon: 'activity-log',
+                    },
+                    {
                         key: 'laporan-kerusakan',
                         label: 'Daftar Kerusakan',
                         href: '/laporan-kerusakan',
@@ -610,6 +640,12 @@ const menuItems = computed(() => {
                                   label: 'Riwayat Peminjaman',
                                   href: '/riwayat-peminjaman',
                                   icon: 'riwayat',
+                              },
+                              {
+                                  key: 'activity-log',
+                                  label: 'Log Activity',
+                                  href: '/log-activity',
+                                  icon: 'activity-log',
                               },
                               {
                                   key: 'laporan-kerusakan',

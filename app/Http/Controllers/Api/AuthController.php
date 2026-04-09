@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -34,6 +35,11 @@ class AuthController extends Controller
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        ActivityLogger::log('register', $user, [
+            'actor' => $user,
+            'description' => "{$user->name} mendaftarkan akun baru.",
+        ]);
 
         return response()->json([
             'token' => $token,
@@ -67,7 +73,9 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()?->delete();
+        $user = $request->user();
+
+        $user?->currentAccessToken()?->delete();
 
         return response()
             ->json([
