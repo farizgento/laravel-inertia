@@ -35,21 +35,6 @@
                 </select>
             </div>
 
-            <div v-if="isSuperAdmin" class="w-full lg:w-56">
-                <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    Area
-                </label>
-                <select
-                    v-model="draftAreaId"
-                    class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                >
-                    <option value="">Semua Area</option>
-                    <option v-for="area in areas" :key="area.id" :value="String(area.id)">
-                        {{ area.name }}
-                    </option>
-                </select>
-            </div>
-
             <div class="flex gap-2">
                 <button
                     class="h-11 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
@@ -172,8 +157,7 @@
 
 <script setup>
 import axios from 'axios';
-import { computed, onMounted, reactive, ref } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { inject, onMounted, reactive, ref, watch } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 
 defineOptions({
@@ -189,12 +173,10 @@ defineOptions({
         ),
 });
 
-const page = usePage();
-const roleKey = computed(() => String(page.props.auth?.user?.role?.key ?? '').toLowerCase());
-const isSuperAdmin = computed(() => roleKey.value === 'super_admin');
-
+const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
+const activeAreaId = inject('activeAreaId', ref(null));
+const setAreaSwitching = inject('setAreaSwitching', null);
 const logs = ref([]);
-const areas = ref([]);
 const isLoading = ref(false);
 const isExporting = ref(false);
 const loadError = ref('');
@@ -202,12 +184,10 @@ const loadError = ref('');
 const filters = reactive({
     search: '',
     action: 'Semua',
-    areaId: '',
 });
 
 const draftSearch = ref('');
 const draftAction = ref('Semua');
-const draftAreaId = ref('');
 
 const pagination = reactive({
     currentPage: 1,
@@ -215,19 +195,6 @@ const pagination = reactive({
     perPage: 10,
     total: 0,
 });
-
-const loadAreas = async () => {
-    if (!isSuperAdmin.value) {
-        return;
-    }
-
-    try {
-        const response = await axios.get('/api/areas');
-        areas.value = Array.isArray(response.data) ? response.data : [];
-    } catch {
-        areas.value = [];
-    }
-};
 
 const loadLogs = async (pageNumber = 1) => {
     isLoading.value = true;
@@ -260,17 +227,14 @@ const loadLogs = async (pageNumber = 1) => {
 const applyFilters = () => {
     filters.search = draftSearch.value;
     filters.action = draftAction.value;
-    filters.areaId = draftAreaId.value;
     loadLogs(1);
 };
 
 const resetFilters = () => {
     draftSearch.value = '';
     draftAction.value = 'Semua';
-    draftAreaId.value = '';
     filters.search = '';
     filters.action = 'Semua';
-    filters.areaId = '';
     loadLogs(1);
 };
 
@@ -291,8 +255,8 @@ const buildParams = () => {
     if (filters.action !== 'Semua') {
         params.action = filters.action;
     }
-    if (isSuperAdmin.value && filters.areaId) {
-        params.area_id = filters.areaId;
+    if (isAreaSwitcherRole.value && activeAreaId.value) {
+        params.area_id = activeAreaId.value;
     }
 
     return params;
@@ -349,7 +313,28 @@ const formatValue = (value) => {
 };
 
 onMounted(async () => {
-    await loadAreas();
+    if (isAreaSwitcherRole.value) {
+        setAreaSwitching?.(true);
+    }
     await loadLogs();
+    if (isAreaSwitcherRole.value) {
+        setAreaSwitching?.(false);
+    }
 });
+
+watch(
+    () => activeAreaId.value,
+    async (next, prev) => {
+        if (!isAreaSwitcherRole.value || !next || next === prev) {
+            return;
+        }
+
+        setAreaSwitching?.(true);
+        try {
+            await loadLogs(1);
+        } finally {
+            setAreaSwitching?.(false);
+        }
+    }
+);
 </script>
