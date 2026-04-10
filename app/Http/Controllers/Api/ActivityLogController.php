@@ -142,18 +142,20 @@ class ActivityLogController extends Controller
         $search = trim((string) $request->query('search', ''));
         $action = trim((string) $request->query('action', ''));
         $areaId = (int) $request->query('area_id', 0);
+        $roleKey = $actor->role?->key;
 
         $query = ActivityLog::query()
             ->with('area')
             ->whereNotIn('action', ['login', 'logout'])
             ->orderByDesc('created_at');
 
-        if (in_array($actor->role?->key, [
+        if (in_array($roleKey, [
             Role::KEY_SP_TOOL,
-            Role::KEY_MGR_TOOL,
             Role::KEY_ADMIN,
         ], true)) {
             $query->where('area_id', $actor->area_id);
+        } elseif ($roleKey === Role::KEY_MGR_TOOL) {
+            $query->where('area_id', $areaId > 0 ? $areaId : $actor->area_id);
         } elseif ($areaId > 0) {
             $query->where('area_id', $areaId);
         }

@@ -35,16 +35,30 @@
                     <p class="mt-1 text-sm text-slate-500">Area aktif: {{ areaName }}</p>
                 </div>
             </div>
-            <button
-                class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
-                type="button"
-                @click="openCreate"
-            >
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 5v14M5 12h14" />
-                </svg>
-                Tambah Laporan
-            </button>
+            <div class="flex flex-wrap items-center gap-2">
+                <button
+                    class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300"
+                    type="button"
+                    @click="exportCsv"
+                >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 3v12" />
+                        <path d="m7 10 5 5 5-5" />
+                        <path d="M5 21h14" />
+                    </svg>
+                    Export CSV
+                </button>
+                <button
+                    class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
+                    type="button"
+                    @click="openCreate"
+                >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Tambah Laporan
+                </button>
+            </div>
         </div>
 
         <div class="mt-5 grid gap-3 lg:grid-cols-[1.2fr,0.8fr,0.6fr]">
@@ -541,6 +555,48 @@ const buildParams = () => {
         params.area_id = activeAreaId.value;
     }
     return params;
+};
+
+const buildExportParams = () => {
+    const params = {};
+    const keyword = search.value.trim();
+    if (keyword) {
+        params.search = keyword;
+    }
+    if (selectedTool.value) {
+        params.alat_id = selectedTool.value;
+    }
+    if (statusFilter.value && statusFilter.value !== 'Semua') {
+        params.status = statusFilter.value;
+    }
+    if (isAreaSwitcherRole.value && activeAreaId.value) {
+        params.area_id = activeAreaId.value;
+    }
+    return params;
+};
+
+const exportCsv = () => {
+    axios.get('/api/laporan-kerusakan/export', {
+        params: buildExportParams(),
+        responseType: 'blob',
+    })
+        .then((response) => {
+            const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const disposition = response.headers['content-disposition'] ?? '';
+            const match = disposition.match(/filename=\"?([^\";]+)\"?/i);
+
+            link.href = url;
+            link.download = match?.[1] ?? 'laporan-kerusakan.csv';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(() => {
+            showAlert('error', 'Gagal mengunduh file CSV.');
+        });
 };
 
 const loadReports = async () => {

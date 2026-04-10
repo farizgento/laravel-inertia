@@ -146,6 +146,14 @@ Route::middleware('auth:sanctum')->group(function () {
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
         ]));
+    Route::get('/laporan-kerusakan/export', [LaporanAlatController::class, 'exportKerusakan'])
+        ->middleware('role:' . implode(',', [
+            Role::KEY_SP_TOOL,
+            Role::KEY_PIC_TOOLS,
+            Role::KEY_MGR_TOOL,
+            Role::KEY_ADMIN,
+            Role::KEY_SUPER_ADMIN,
+        ]));
     Route::get('/laporan-pending-counts', [LaporanAlatController::class, 'pendingCounts'])
         ->middleware('role:' . implode(',', [
             Role::KEY_SP_TOOL,
@@ -172,6 +180,14 @@ Route::middleware('auth:sanctum')->group(function () {
         ]));
 
     Route::get('/laporan-kehilangan', [LaporanAlatController::class, 'indexKehilangan'])
+        ->middleware('role:' . implode(',', [
+            Role::KEY_SP_TOOL,
+            Role::KEY_PIC_TOOLS,
+            Role::KEY_MGR_TOOL,
+            Role::KEY_ADMIN,
+            Role::KEY_SUPER_ADMIN,
+        ]));
+    Route::get('/laporan-kehilangan/export', [LaporanAlatController::class, 'exportKehilangan'])
         ->middleware('role:' . implode(',', [
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOLS,

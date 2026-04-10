@@ -12,6 +12,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LaporanAlatController extends Controller
 {
@@ -80,6 +81,11 @@ class LaporanAlatController extends Controller
         return $this->indexByKategori($request, LaporanAlat::CATEGORY_KEHILANGAN);
     }
 
+    public function exportKehilangan(Request $request): StreamedResponse
+    {
+        return $this->exportByKategori($request, LaporanAlat::CATEGORY_KEHILANGAN);
+    }
+
     public function storeKehilangan(Request $request)
     {
         return $this->storeByKategori($request, LaporanAlat::CATEGORY_KEHILANGAN);
@@ -88,6 +94,11 @@ class LaporanAlatController extends Controller
     public function indexKerusakan(Request $request)
     {
         return $this->indexByKategori($request, LaporanAlat::CATEGORY_KERUSAKAN);
+    }
+
+    public function exportKerusakan(Request $request): StreamedResponse
+    {
+        return $this->exportByKategori($request, LaporanAlat::CATEGORY_KERUSAKAN);
     }
 
     public function storeKerusakan(Request $request)
@@ -107,84 +118,28 @@ class LaporanAlatController extends Controller
 
     private function indexByKategori(Request $request, string $kategori)
     {
-        $user = $request->user();
-        if (! $user) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
-        }
-
-        $user->loadMissing('role');
-        $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        $isSpTool = $roleKey === Role::KEY_SP_TOOL;
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
-        $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
-        $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
-
-        if (! ($isSpTool || $isPicTools || $isMgrTool || $isAdmin)) {
-            return response()->json(['message' => 'Forbidden.'], 403);
-        }
-
-        $search = trim((string) $request->query('search', ''));
-        $alatId = $request->query('alat_id');
-        $status = trim((string) $request->query('status', ''));
-        $areaId = $this->resolveActiveAreaId($request, $roleKey, $user->area_id);
+        $context = $this->resolveKategoriContext($request);
         $perPage = (int) $request->query('per_page', 0);
         $shouldPaginate = $request->has('per_page') || $request->has('page');
         $perPageNormalized = $shouldPaginate ? ($perPage > 0 ? min($perPage, 100) : 10) : 0;
 
-        $query = LaporanAlat::query()
-            ->where('kategori', $kategori)
-            ->with(['alat.area', 'user'])
-            ->orderByDesc('created_at');
-
-        if ($isSpTool || $isPicTools || $isMgrTool) {
-            if (! $areaId) {
-                if ($shouldPaginate) {
-                    return [
-                        'data' => [],
-                        'meta' => [
-                            'current_page' => 1,
-                            'last_page' => 1,
-                            'per_page' => $perPageNormalized ?: 10,
-                            'total' => 0,
-                        ],
-                    ];
-                }
-
-                return collect();
+        if ($this->shouldReturnEmptyResult($context)) {
+            if ($shouldPaginate) {
+                return [
+                    'data' => [],
+                    'meta' => [
+                        'current_page' => 1,
+                        'last_page' => 1,
+                        'per_page' => $perPageNormalized ?: 10,
+                        'total' => 0,
+                    ],
+                ];
             }
 
-            $query->whereHas('alat', function (Builder $sub) use ($areaId) {
-                $sub->where('area_id', $areaId);
-            });
-        } elseif (! empty($areaId)) {
-            $query->whereHas('alat', function (Builder $sub) use ($areaId) {
-                $sub->where('area_id', $areaId);
-            });
+            return collect();
         }
 
-        if (! empty($alatId)) {
-            $query->where('alat_id', $alatId);
-        }
-
-        if ($status !== '' && strtolower($status) !== 'semua') {
-            $query->where('status', $status);
-        }
-
-        if ($search !== '') {
-            $query->where(function (Builder $sub) use ($search) {
-                $sub->where('deskripsi', 'like', '%' . $search . '%')
-                    ->orWhere('id', $search)
-                    ->orWhereHas('alat', function (Builder $alatQuery) use ($search) {
-                        $alatQuery->where('nama', 'like', '%' . $search . '%');
-                    })
-                    ->orWhereHas('alat.area', function (Builder $areaQuery) use ($search) {
-                        $areaQuery->where('name', 'like', '%' . $search . '%');
-                    })
-                    ->orWhereHas('user', function (Builder $userQuery) use ($search) {
-                        $userQuery->where('name', 'like', '%' . $search . '%');
-                    });
-            });
-        }
+        $query = $this->buildKategoriQuery($request, $kategori, $context);
 
         if ($shouldPaginate) {
             $laporans = $query->paginate($perPageNormalized ?: 10);
@@ -206,6 +161,65 @@ class LaporanAlatController extends Controller
         return $query->get()
             ->map(fn (LaporanAlat $laporan) => $this->mapLaporan($laporan))
             ->values();
+    }
+
+    private function exportByKategori(Request $request, string $kategori): StreamedResponse
+    {
+        $context = $this->resolveKategoriContext($request);
+        $filename = 'laporan-' . $kategori . '-' . now()->format('Ymd-His') . '.csv';
+
+        return response()->streamDownload(function () use ($request, $kategori, $context) {
+            $handle = fopen('php://output', 'w');
+            if ($handle === false) {
+                return;
+            }
+
+            fwrite($handle, "\xEF\xBB\xBF");
+            fwrite($handle, "sep=;\n");
+
+            fputcsv($handle, [
+                'Tanggal',
+                'ID',
+                'Kategori',
+                'Alat',
+                'Kode Alat',
+                'Area',
+                'Pelapor',
+                'Jumlah',
+                'Status',
+                'Deskripsi',
+                'File Foto',
+                'URL Foto',
+            ], ';');
+
+            if (! $this->shouldReturnEmptyResult($context)) {
+                $this->buildKategoriQuery($request, $kategori, $context)
+                    ->chunk(500, function ($laporans) use ($handle) {
+                        foreach ($laporans as $laporan) {
+                            $row = $this->mapLaporan($laporan);
+
+                            fputcsv($handle, [
+                                $row['created_at'] ?? '-',
+                                $row['id'] ?? '',
+                                Str::headline((string) ($row['kategori'] ?? '')),
+                                $row['alat_nama'] ?? '-',
+                                $row['alat_kode'] ?? '-',
+                                $row['area_name'] ?? '-',
+                                $row['user_name'] ?? '-',
+                                $row['jumlah'] ?? 0,
+                                $row['status'] ?? '-',
+                                $row['deskripsi'] ?? '-',
+                                $row['original_name'] ?? '-',
+                                $row['url'] ?? '',
+                            ], ';');
+                        }
+                    });
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     private function storeByKategori(Request $request, string $kategori)
@@ -362,6 +376,87 @@ class LaporanAlatController extends Controller
                 $laporan->fresh(['alat.area', 'user'])
             )
         );
+    }
+
+    private function resolveKategoriContext(Request $request): array
+    {
+        $user = $request->user();
+        if (! $user) {
+            abort(401, 'Unauthenticated.');
+        }
+
+        $user->loadMissing('role');
+        $roleKey = strtolower((string) ($user->role?->key ?? ''));
+        $isSpTool = $roleKey === Role::KEY_SP_TOOL;
+        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
+        $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
+
+        abort_unless($isSpTool || $isPicTools || $isMgrTool || $isAdmin, 403, 'Forbidden.');
+
+        return [
+            'role_key' => $roleKey,
+            'is_sp_tool' => $isSpTool,
+            'is_pic_tools' => $isPicTools,
+            'is_mgr_tool' => $isMgrTool,
+            'is_admin' => $isAdmin,
+            'area_id' => $this->resolveActiveAreaId($request, $roleKey, $user->area_id),
+        ];
+    }
+
+    private function shouldReturnEmptyResult(array $context): bool
+    {
+        return ($context['is_sp_tool'] || $context['is_pic_tools'] || $context['is_mgr_tool'])
+            && empty($context['area_id']);
+    }
+
+    private function buildKategoriQuery(Request $request, string $kategori, array $context): Builder
+    {
+        $search = trim((string) $request->query('search', ''));
+        $alatId = $request->query('alat_id');
+        $status = trim((string) $request->query('status', ''));
+        $areaId = $context['area_id'];
+
+        $query = LaporanAlat::query()
+            ->where('kategori', $kategori)
+            ->with(['alat.area', 'user'])
+            ->orderByDesc('created_at');
+
+        if ($context['is_sp_tool'] || $context['is_pic_tools'] || $context['is_mgr_tool']) {
+            $query->whereHas('alat', function (Builder $sub) use ($areaId) {
+                $sub->where('area_id', $areaId);
+            });
+        } elseif (! empty($areaId)) {
+            $query->whereHas('alat', function (Builder $sub) use ($areaId) {
+                $sub->where('area_id', $areaId);
+            });
+        }
+
+        if (! empty($alatId)) {
+            $query->where('alat_id', $alatId);
+        }
+
+        if ($status !== '' && strtolower($status) !== 'semua') {
+            $query->where('status', $status);
+        }
+
+        if ($search !== '') {
+            $query->where(function (Builder $sub) use ($search) {
+                $sub->where('deskripsi', 'like', '%' . $search . '%')
+                    ->orWhere('id', $search)
+                    ->orWhereHas('alat', function (Builder $alatQuery) use ($search) {
+                        $alatQuery->where('nama', 'like', '%' . $search . '%');
+                    })
+                    ->orWhereHas('alat.area', function (Builder $areaQuery) use ($search) {
+                        $areaQuery->where('name', 'like', '%' . $search . '%');
+                    })
+                    ->orWhereHas('user', function (Builder $userQuery) use ($search) {
+                        $userQuery->where('name', 'like', '%' . $search . '%');
+                    });
+            });
+        }
+
+        return $query;
     }
 
     private function mapLaporan(LaporanAlat $laporan): array
