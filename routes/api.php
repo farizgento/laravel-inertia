@@ -106,14 +106,23 @@ Route::middleware('auth:sanctum')->group(function () {
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
         ]));
+    Route::get('/alats/export', [AlatController::class, 'export'])
+        ->middleware('role:' . implode(',', [
+            Role::KEY_USER,
+            Role::KEY_SP_TOOL,
+            Role::KEY_PIC_TOOLS,
+            Role::KEY_MGR_TOOL,
+            Role::KEY_ADMIN,
+            Role::KEY_SUPER_ADMIN,
+        ]));
 
     Route::middleware('role:' . implode(',', [
-        Role::KEY_SP_TOOL,
         Role::KEY_PIC_TOOLS,
-        Role::KEY_MGR_TOOL,
+        Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
     ]))->group(function () {
         Route::post('/alats', [AlatController::class, 'store']);
+        Route::post('/alats/import', [AlatController::class, 'import']);
         Route::put('/alats/{alat}', [AlatController::class, 'update']);
         Route::delete('/alats/{alat}', [AlatController::class, 'destroy']);
     });

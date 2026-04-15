@@ -18,17 +18,49 @@
                 <h2 class="text-lg font-semibold text-slate-900">Daftar Alat</h2>
                 <p class="mt-1 text-sm text-slate-500">Kelola inventaris alat di semua area</p>
             </div>
-            <button
-                v-if="canManageTools"
-                class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
-                type="button"
-                @click="openCreate"
-            >
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 5v14M5 12h14" />
-                </svg>
-                Tambah Alat
-            </button>
+            <div class="flex flex-wrap items-center gap-3">
+                <button
+                    class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    type="button"
+                    :disabled="isExporting"
+                    @click="exportTools"
+                >
+                    <svg v-if="isExporting" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
+                    </svg>
+                    <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 3v12" />
+                        <path d="m7 10 5 5 5-5" />
+                        <path d="M5 21h14" />
+                    </svg>
+                    {{ isExporting ? 'Mengekspor...' : 'Export CSV' }}
+                </button>
+                <template v-if="canManageTools">
+                    <button
+                        class="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                        type="button"
+                        @click="openImport"
+                    >
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 3v12" />
+                            <path d="m7 10 5 5 5-5" />
+                            <path d="M5 21h14" />
+                        </svg>
+                        Import CSV/XLSX
+                    </button>
+                    <button
+                        class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
+                        type="button"
+                        @click="openCreate"
+                    >
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
+                        Tambah Alat
+                    </button>
+                </template>
+            </div>
         </div>
 
         <div class="mt-5 grid gap-3">
@@ -43,7 +75,7 @@
                 <input
                     v-model="search"
                     type="text"
-                    placeholder="Cari nama atau kode alat..."
+                    placeholder="Cari nama atau jenis alat..."
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
             </label>
@@ -51,11 +83,14 @@
 
         <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200">
             <div class="overflow-x-auto">
-                <table class="min-w-[860px] w-full text-sm">
+                <table class="min-w-[1200px] w-full text-sm">
                     <thead class="bg-slate-50">
                         <tr class="text-left text-base font-semibold text-slate-500">
                             <th class="px-4 py-3">Kode</th>
                             <th class="px-4 py-3">Nama</th>
+                            <th class="px-4 py-3">Jenis</th>
+                            <th class="px-4 py-3">Klasifikasi</th>
+                            <th class="px-4 py-3">Area</th>
                             <th class="px-4 py-3">Total</th>
                             <th class="px-4 py-3">Stok</th>
                             <th v-if="canManageTools" class="px-4 py-3 text-right">Aksi</th>
@@ -63,12 +98,12 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         <tr v-if="isLoading">
-                            <td :colspan="canManageTools ? 5 : 4" class="px-4 py-6 text-center text-sm text-slate-500">
+                            <td :colspan="canManageTools ? 8 : 7" class="px-4 py-6 text-center text-sm text-slate-500">
                                 Memuat data...
                             </td>
                         </tr>
                         <tr v-else-if="loadError">
-                            <td :colspan="canManageTools ? 5 : 4" class="px-4 py-6 text-center text-sm text-rose-500">
+                            <td :colspan="canManageTools ? 8 : 7" class="px-4 py-6 text-center text-sm text-rose-500">
                                 {{ loadError }}
                             </td>
                         </tr>
@@ -79,6 +114,9 @@
                             <td class="px-4 py-4 font-semibold text-slate-900 capitalize">
                                 {{ tool.nama }}
                             </td>
+                            <td class="px-4 py-4 text-slate-600">{{ tool.jenis_alat }}</td>
+                            <td class="px-4 py-4 text-slate-600">{{ tool.klasifikasi_alat }}</td>
+                            <td class="px-4 py-4 text-slate-600">{{ tool.area_name }}</td>
                             <td class="px-4 py-4 text-slate-600">{{ tool.total_aset }}</td>
                             <td class="px-4 py-4 text-slate-600">{{ tool.stok_tersedia }}</td>
                             <td v-if="canManageTools" class="px-4 py-4 text-right">
@@ -108,7 +146,7 @@
                             </td>
                         </tr>
                         <tr v-if="!isLoading && !loadError && !tools.length">
-                            <td :colspan="canManageTools ? 5 : 4" class="px-4 py-6 text-center text-sm text-slate-500">
+                            <td :colspan="canManageTools ? 8 : 7" class="px-4 py-6 text-center text-sm text-slate-500">
                                 Tidak ada data alat.
                             </td>
                         </tr>
@@ -160,23 +198,243 @@
     <teleport v-if="canManageTools" to="body">
         <div
             v-if="formOpen"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+            class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 p-4"
             @click.self="closeForm"
         >
-            <div class="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl">
+            <div class="flex min-h-full items-center justify-center">
+                <div class="max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900">
+                                {{ isEdit ? 'Edit Alat' : 'Tambah Alat' }}
+                            </h3>
+                            <p class="mt-1 text-sm text-slate-500">
+                                Lengkapi detail alat yang akan disimpan.
+                            </p>
+                        </div>
+                        <button
+                            class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:text-slate-700"
+                            type="button"
+                            @click="closeForm"
+                        >
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6 6 18" />
+                                <path d="M6 6 18 18" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="mt-5 grid gap-4 md:grid-cols-2">
+                        <label class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+                            <span>Nama Alat *</span>
+                            <input
+                                v-model="form.nama"
+                                type="text"
+                                placeholder="Nama alat"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            />
+                        </label>
+                        <label class="space-y-2 text-sm font-medium text-slate-700">
+                            <span>Jenis Alat *</span>
+                            <input
+                                v-model="form.jenis_alat"
+                                type="text"
+                                placeholder="Jenis alat"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            />
+                        </label>
+                        <label class="space-y-2 text-sm font-medium text-slate-700">
+                            <span>Klasifikasi Alat *</span>
+                            <select
+                                v-model="form.klasifikasi_alat"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            >
+                                <option value="">Pilih klasifikasi alat</option>
+                                <option
+                                    v-for="classification in classificationOptions"
+                                    :key="classification"
+                                    :value="classification"
+                                >
+                                    {{ classification }}
+                                </option>
+                            </select>
+                        </label>
+                        <label class="space-y-2 text-sm font-medium text-slate-700">
+                            <span>Area *</span>
+                            <select
+                                v-model="form.area_id"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                :disabled="isAreaLocked"
+                            >
+                                <option value="">Pilih area</option>
+                                <option v-for="area in areas" :key="area.id" :value="area.id">
+                                    {{ area.name }}
+                                </option>
+                            </select>
+                        </label>
+                        <label class="space-y-2 text-sm font-medium text-slate-700">
+                            <span>Jumlah Aset *</span>
+                            <input
+                                v-model.number="form.total_aset"
+                                type="number"
+                                min="0"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            />
+                        </label>
+                    </div>
+
+                    <p v-if="formError" class="mt-3 text-sm font-semibold text-rose-500">
+                        {{ formError }}
+                    </p>
+
+                    <div class="mt-6 flex justify-end gap-3">
+                        <button
+                            class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300"
+                            type="button"
+                            @click="closeForm"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            class="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                            type="button"
+                            :disabled="isSubmitting"
+                            @click="submitForm"
+                        >
+                            {{ isSubmitting ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Simpan' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </teleport>
+
+    <teleport v-if="canManageTools" to="body">
+        <div
+            v-if="importOpen"
+            class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 p-4"
+            @click.self="!isImporting && closeImport()"
+        >
+            <div class="flex min-h-full items-center justify-center">
+                <div class="relative max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+                    <div
+                        v-if="isImporting"
+                        class="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl bg-white/85 backdrop-blur-[1px]"
+                    >
+                        <svg class="h-8 w-8 animate-spin text-emerald-600" viewBox="0 0 24 24" fill="none">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
+                        </svg>
+                        <p class="mt-3 text-sm font-semibold text-slate-700">Mengimpor data alat...</p>
+                        <p class="mt-1 text-xs text-slate-500">Mohon tunggu, file sedang diproses.</p>
+                    </div>
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-900">Import Data Alat</h3>
+                            <p class="mt-1 text-sm text-slate-500">
+                                Upload file CSV atau XLSX dengan urutan kolom: nama alat, jenis alat, klasifikasi alat, total aset, area.
+                            </p>
+                        </div>
+                        <button
+                            class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:text-slate-700"
+                            type="button"
+                            :disabled="isImporting"
+                            @click="closeImport"
+                        >
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6 6 18" />
+                                <path d="M6 6 18 18" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                        <p class="font-semibold text-slate-800">Format file</p>
+                        <p class="mt-2">Kolom 1: nama alat</p>
+                        <p>Kolom 2: jenis alat</p>
+                        <p>Kolom 3: klasifikasi alat</p>
+                        <p>Kolom 4: total aset</p>
+                        <p>Kolom 5: area</p>
+                        <p class="mt-3 text-xs text-slate-500">
+                            Nilai klasifikasi alat harus salah satu dari `General Tools`, `Lifting Tools`, atau `Measurement Tools`.
+                        </p>
+                        <p class="mt-2 text-xs text-slate-500">
+                            Nilai pada kolom area harus sama dengan `slug` area, misalnya `uphk`, `I.1`, atau `kstubun`.
+                        </p>
+                    </div>
+
+                    <div class="mt-5 space-y-3">
+                        <input
+                            ref="importInput"
+                            type="file"
+                            accept=".csv,.xlsx"
+                            class="hidden"
+                            @change="handleImportFileChange"
+                        />
+                        <button
+                            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-600"
+                            type="button"
+                            :disabled="isImporting"
+                            @click="chooseImportFile"
+                        >
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <path d="M7 10 12 5l5 5" />
+                                <path d="M12 5v12" />
+                            </svg>
+                            Pilih File
+                        </button>
+                        <p class="text-sm text-slate-600">
+                            {{ importFileName || 'Belum ada file dipilih.' }}
+                        </p>
+                    </div>
+
+                    <p v-if="importError" class="mt-4 whitespace-pre-line text-sm font-semibold text-rose-500">
+                        {{ importError }}
+                    </p>
+
+                    <div class="mt-6 flex justify-end gap-3">
+                        <button
+                            class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300"
+                            type="button"
+                            :disabled="isImporting"
+                            @click="closeImport"
+                        >
+                            Batal
+                        </button>
+                        <button
+                            class="rounded-xl bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+                            type="button"
+                            :disabled="isImporting"
+                            @click="submitImport"
+                        >
+                            {{ isImporting ? 'Mengimpor...' : 'Import' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </teleport>
+
+    <teleport v-if="canManageTools" to="body">
+        <div
+            v-if="deleteOpen"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+            @click.self="!isDeleting && closeDeleteModal()"
+        >
+            <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <h3 class="text-lg font-semibold text-slate-900">
-                            {{ isEdit ? 'Edit Alat' : 'Tambah Alat' }}
-                        </h3>
+                        <h3 class="text-lg font-semibold text-slate-900">Hapus Alat</h3>
                         <p class="mt-1 text-sm text-slate-500">
-                            Lengkapi detail alat yang akan disimpan.
+                            Data alat yang dihapus tidak dapat dikembalikan.
                         </p>
                     </div>
                     <button
-                        class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:text-slate-700"
+                        class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
                         type="button"
-                        @click="closeForm"
+                        :disabled="isDeleting"
+                        @click="closeDeleteModal"
                     >
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 6 6 18" />
@@ -185,59 +443,32 @@
                     </button>
                 </div>
 
-                <div class="mt-5 grid gap-4 md:grid-cols-2">
-                    <label class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
-                        <span>Nama Alat *</span>
-                        <input
-                            v-model="form.nama"
-                            type="text"
-                            placeholder="Nama alat"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                        />
-                    </label>
-                    <label class="space-y-2 text-sm font-medium text-slate-700">
-                        <span>Area *</span>
-                        <select
-                            v-model="form.area_id"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            :disabled="isAreaLocked"
-                        >
-                            <option value="">Pilih area</option>
-                            <option v-for="area in areas" :key="area.id" :value="area.id">
-                                {{ area.name }}
-                            </option>
-                        </select>
-                    </label>
-                    <label class="space-y-2 text-sm font-medium text-slate-700">
-                        <span>Jumlah Aset *</span>
-                        <input
-                            v-model.number="form.total_aset"
-                            type="number"
-                            min="0"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                        />
-                    </label>
+                <div class="mt-5 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3">
+                    <p class="text-sm text-slate-700">
+                        Yakin ingin menghapus alat <span class="font-semibold text-slate-900">{{ deleteTarget?.nama }}</span>?
+                    </p>
                 </div>
-
-                <p v-if="formError" class="mt-3 text-sm font-semibold text-rose-500">
-                    {{ formError }}
-                </p>
 
                 <div class="mt-6 flex justify-end gap-3">
                     <button
-                        class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300"
+                        class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
                         type="button"
-                        @click="closeForm"
+                        :disabled="isDeleting"
+                        @click="closeDeleteModal"
                     >
                         Batal
                     </button>
                     <button
-                        class="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                        class="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-200 transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-300"
                         type="button"
-                        :disabled="isSubmitting"
-                        @click="submitForm"
+                        :disabled="isDeleting"
+                        @click="confirmDelete"
                     >
-                        {{ isSubmitting ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Simpan' }}
+                        <svg v-if="isDeleting" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
+                        </svg>
+                        {{ isDeleting ? 'Menghapus...' : 'Hapus' }}
                     </button>
                 </div>
             </div>
@@ -270,11 +501,20 @@ const areas = ref([]);
 const isLoading = ref(false);
 const loadError = ref('');
 const isSubmitting = ref(false);
+const isImporting = ref(false);
+const isDeleting = ref(false);
+const isExporting = ref(false);
 const formOpen = ref(false);
+const importOpen = ref(false);
+const deleteOpen = ref(false);
 const formError = ref('');
+const importError = ref('');
 const alertMessage = ref('');
 const alertType = ref('success');
 const alertTitle = ref('');
+const importInput = ref(null);
+const importFile = ref(null);
+const deleteTarget = ref(null);
 let alertTimeout = null;
 
 const search = ref('');
@@ -288,11 +528,14 @@ const pagination = reactive({
 const form = reactive({
     id: null,
     nama: '',
+    jenis_alat: '',
+    klasifikasi_alat: '',
     total_aset: 0,
     area_id: '',
 });
 
 const page = usePage();
+const classificationOptions = ['General Tools', 'Lifting Tools', 'Measurement Tools'];
 
 const loadCachedUser = () => {
     if (typeof window === 'undefined') {
@@ -309,16 +552,17 @@ const loadCachedUser = () => {
 const cachedUser = ref(loadCachedUser());
 const authUser = computed(() => page.props.auth?.user ?? cachedUser.value);
 const roleKey = computed(() => (authUser.value?.role?.key ?? '').toLowerCase());
-const isMgrTool = computed(() => roleKey.value === 'mgr_tool');
+const isSuperAdmin = computed(() => roleKey.value === 'super_admin');
 const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
-const canManageTools = computed(() => !isMgrTool.value);
+const canManageTools = computed(() => ['pic_tools', 'admin', 'super_admin'].includes(roleKey.value));
 const activeAreaId = inject('activeAreaId', ref(null));
 const setAreaSwitching = inject('setAreaSwitching', null);
 const userAreaId = computed(() => authUser.value?.area_id ?? authUser.value?.area?.id ?? '');
-const isAreaLocked = computed(() => !!userAreaId.value && !isMgrTool.value);
+const isAreaLocked = computed(() => !isSuperAdmin.value);
 const normalizeAreaId = (value) => (value === null || value === undefined || value === '' ? '' : Number(value));
 
 const isEdit = computed(() => form.id !== null);
+const importFileName = computed(() => importFile.value?.name ?? '');
 
 const pageNumbers = computed(() => {
     const total = pagination.lastPage;
@@ -357,9 +601,11 @@ const closeAlert = () => {
 const resetForm = () => {
     form.id = null;
     form.nama = '';
+    form.jenis_alat = '';
+    form.klasifikasi_alat = '';
     form.total_aset = 0;
     form.area_id = normalizeAreaId(
-        isAreaSwitcherRole.value ? activeAreaId.value : userAreaId.value
+        isSuperAdmin.value && isAreaSwitcherRole.value ? activeAreaId.value : userAreaId.value
     );
     formError.value = '';
 };
@@ -378,9 +624,13 @@ const openEdit = (tool) => {
     }
     form.id = tool.id;
     form.nama = tool.nama ?? '';
+    form.jenis_alat = tool.jenis_alat ?? '';
+    form.klasifikasi_alat = tool.klasifikasi_alat ?? '';
     form.total_aset = Number(tool.total_aset ?? tool.stok ?? 0);
     form.area_id = normalizeAreaId(
-        isAreaSwitcherRole.value ? tool.area_id ?? activeAreaId.value ?? '' : userAreaId.value ?? tool.area_id ?? ''
+        isSuperAdmin.value
+            ? tool.area_id ?? activeAreaId.value ?? ''
+            : userAreaId.value ?? tool.area_id ?? ''
     );
     formError.value = '';
     formOpen.value = true;
@@ -388,6 +638,46 @@ const openEdit = (tool) => {
 
 const closeForm = () => {
     formOpen.value = false;
+};
+
+const resetImport = () => {
+    importFile.value = null;
+    importError.value = '';
+    if (importInput.value) {
+        importInput.value.value = '';
+    }
+};
+
+const openImport = () => {
+    if (!canManageTools.value) {
+        return;
+    }
+    resetImport();
+    importOpen.value = true;
+};
+
+const closeImport = () => {
+    if (isImporting.value) {
+        return;
+    }
+    importOpen.value = false;
+    importError.value = '';
+};
+
+const chooseImportFile = () => {
+    if (isImporting.value) {
+        return;
+    }
+    importInput.value?.click();
+};
+
+const handleImportFileChange = (event) => {
+    if (isImporting.value) {
+        return;
+    }
+    const [file] = event.target.files ?? [];
+    importFile.value = file ?? null;
+    importError.value = '';
 };
 
 const loadAreas = async () => {
@@ -405,7 +695,7 @@ const buildParams = () => {
     if (keyword) {
         params.search = keyword;
     }
-    if (isAreaSwitcherRole.value && activeAreaId.value) {
+    if (isSuperAdmin.value && isAreaSwitcherRole.value && activeAreaId.value) {
         params.area_id = activeAreaId.value;
     }
     return params;
@@ -428,6 +718,8 @@ const loadTools = async () => {
             id: item.id,
             kode: item.kode ?? '-',
             nama: item.nama ?? '-',
+            jenis_alat: item.jenis_alat ?? '-',
+            klasifikasi_alat: item.klasifikasi_alat ?? '-',
             total_aset: Number(item.total_aset ?? item.stok ?? 0),
             stok_tersedia: Number(item.stok_tersedia ?? item.stok ?? 0),
             area_name: item.area_name ?? item.lokasi ?? '-',
@@ -466,10 +758,10 @@ const submitForm = async () => {
         return;
     }
     formError.value = '';
-    if (!isMgrTool.value && !form.area_id && userAreaId.value) {
+    if (!isSuperAdmin.value && !form.area_id && userAreaId.value) {
         form.area_id = normalizeAreaId(userAreaId.value);
     }
-    if (!form.nama || !form.area_id || form.total_aset < 0) {
+    if (!form.nama || !form.jenis_alat || !form.klasifikasi_alat || !form.area_id || form.total_aset < 0) {
         formError.value = 'Lengkapi semua field wajib.';
         return;
     }
@@ -477,6 +769,8 @@ const submitForm = async () => {
     try {
         const payload = {
             nama: form.nama,
+            jenis_alat: form.jenis_alat,
+            klasifikasi_alat: form.klasifikasi_alat,
             area_id: form.area_id,
             total_aset: form.total_aset,
         };
@@ -496,19 +790,111 @@ const submitForm = async () => {
     }
 };
 
-const removeTool = async (tool) => {
+const submitImport = async () => {
     if (!canManageTools.value) {
         return;
     }
-    if (!confirm(`Hapus alat "${tool.nama}"?`)) {
+    if (!importFile.value) {
+        importError.value = 'Pilih file CSV atau XLSX terlebih dahulu.';
         return;
     }
+
+    importError.value = '';
+    isImporting.value = true;
+
     try {
-        await axios.delete(`/api/alats/${tool.id}`);
+        const payload = new FormData();
+        payload.append('file', importFile.value);
+
+        const response = await axios.post('/api/alats/import', payload, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+
+        pagination.currentPage = 1;
         await loadTools();
+        closeImport();
+        resetImport();
+        showAlert('success', response.data?.message ?? 'Import alat berhasil.');
+    } catch (error) {
+        const validationErrors = error.response?.data?.errors?.file;
+        importError.value = Array.isArray(validationErrors)
+            ? validationErrors.join('\n')
+            : error.response?.data?.message ?? 'Gagal mengimpor data.';
+        showAlert('error', 'Import alat gagal.');
+    } finally {
+        isImporting.value = false;
+    }
+};
+
+const exportTools = async () => {
+    if (isExporting.value) {
+        return;
+    }
+
+    isExporting.value = true;
+
+    try {
+        const response = await axios.get('/api/alats/export', {
+            params: buildParams(),
+            responseType: 'blob',
+        });
+
+        const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+
+        link.href = url;
+        link.setAttribute('download', `data-alat-${timestamp}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+
+        showAlert('success', 'Export data alat berhasil.');
+    } catch (error) {
+        showAlert('error', 'Gagal mengekspor data alat.');
+    } finally {
+        isExporting.value = false;
+    }
+};
+
+const removeTool = (tool) => {
+    if (!canManageTools.value) {
+        return;
+    }
+    deleteTarget.value = tool;
+    deleteOpen.value = true;
+};
+
+const closeDeleteModal = () => {
+    if (isDeleting.value) {
+        return;
+    }
+    deleteOpen.value = false;
+    deleteTarget.value = null;
+};
+
+const confirmDelete = async () => {
+    if (!canManageTools.value || !deleteTarget.value) {
+        return;
+    }
+    isDeleting.value = true;
+    let shouldCloseModal = false;
+    try {
+        await axios.delete(`/api/alats/${deleteTarget.value.id}`);
+        await loadTools();
+        shouldCloseModal = true;
         showAlert('success', 'Alat berhasil dihapus.');
     } catch (error) {
         showAlert('error', error.response?.data?.message ?? 'Gagal menghapus data.');
+    } finally {
+        isDeleting.value = false;
+        if (shouldCloseModal) {
+            closeDeleteModal();
+        }
     }
 };
 
@@ -529,7 +915,7 @@ watch(
 watch(
     userAreaId,
     (next) => {
-        if (!isAreaSwitcherRole.value && next && !form.area_id) {
+        if (!isSuperAdmin.value && next) {
             form.area_id = normalizeAreaId(next);
         }
     },
@@ -539,7 +925,7 @@ watch(
 watch(
     () => activeAreaId.value,
     async (next, prev) => {
-        if (!isAreaSwitcherRole.value) {
+        if (!isSuperAdmin.value || !isAreaSwitcherRole.value) {
             return;
         }
         const shouldShow = prev !== undefined && prev !== null && next !== prev;
