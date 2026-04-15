@@ -326,7 +326,9 @@
                             <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
                         </svg>
                         <p class="mt-3 text-sm font-semibold text-slate-700">Mengimpor data alat...</p>
-                        <p class="mt-1 text-xs text-slate-500">Mohon tunggu, file sedang diproses.</p>
+                        <p class="mt-1 text-xs text-slate-500">
+                            {{ importSummary || 'Mohon tunggu, file sedang diproses.' }}
+                        </p>
                     </div>
                     <div class="flex items-start justify-between gap-3">
                         <div>
@@ -392,6 +394,12 @@
                     <p v-if="importError" class="mt-4 whitespace-pre-line text-sm font-semibold text-rose-500">
                         {{ importError }}
                     </p>
+                    <div
+                        v-if="currentImport && !isImporting && currentImport.status === 'completed'"
+                        class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+                    >
+                        Import selesai. {{ currentImport.created_count ?? 0 }} data ditambahkan, {{ currentImport.updated_count ?? 0 }} data diperbarui.
+                    </div>
 
                     <div class="mt-6 flex justify-end gap-3">
                         <button
@@ -515,6 +523,8 @@ const alertTitle = ref('');
 const importInput = ref(null);
 const importFile = ref(null);
 const deleteTarget = ref(null);
+const currentImport = ref(null);
+let importStatusInterval = null;
 let alertTimeout = null;
 
 const search = ref('');
@@ -563,6 +573,9 @@ const normalizeAreaId = (value) => (value === null || value === undefined || val
 
 const isEdit = computed(() => form.id !== null);
 const importFileName = computed(() => importFile.value?.name ?? '');
+const importSummary = computed(() => currentImport.value
+    ? `Diproses ${currentImport.value.processed_rows ?? 0} dari ${currentImport.value.total_rows ?? 0} baris`
+    : '');
 
 const pageNumbers = computed(() => {
     const total = pagination.lastPage;
@@ -643,6 +656,11 @@ const closeForm = () => {
 const resetImport = () => {
     importFile.value = null;
     importError.value = '';
+    currentImport.value = null;
+    if (importStatusInterval) {
+        clearInterval(importStatusInterval);
+        importStatusInterval = null;
+    }
     if (importInput.value) {
         importInput.value.value = '';
     }
@@ -678,6 +696,37 @@ const handleImportFileChange = (event) => {
     const [file] = event.target.files ?? [];
     importFile.value = file ?? null;
     importError.value = '';
+};
+
+const stopImportPolling = () => {
+    if (importStatusInterval) {
+        clearInterval(importStatusInterval);
+        importStatusInterval = null;
+    }
+};
+
+const pollImportStatus = async (importId) => {
+    const response = await axios.get(`/api/alats/imports/${importId}`);
+    currentImport.value = response.data?.import ?? null;
+
+    const status = currentImport.value?.status;
+    if (status === 'completed') {
+        stopImportPolling();
+        isImporting.value = false;
+        pagination.currentPage = 1;
+        await loadTools();
+        showAlert(
+            'success',
+            `Import alat selesai. ${currentImport.value?.created_count ?? 0} data ditambahkan, ${currentImport.value?.updated_count ?? 0} data diperbarui.`
+        );
+    }
+
+    if (status === 'failed') {
+        stopImportPolling();
+        isImporting.value = false;
+        importError.value = currentImport.value?.error_message ?? 'Import alat gagal.';
+        showAlert('error', 'Import alat gagal.');
+    }
 };
 
 const loadAreas = async () => {
@@ -811,13 +860,24 @@ const submitImport = async () => {
                 'Content-Type': 'multipart/form-data',
             },
         });
+        currentImport.value = response.data?.import ?? null;
 
-        pagination.currentPage = 1;
-        await loadTools();
-        closeImport();
-        resetImport();
-        showAlert('success', response.data?.message ?? 'Import alat berhasil.');
+        if (!currentImport.value?.id) {
+            throw new Error('Import id tidak ditemukan.');
+        }
+
+        stopImportPolling();
+        importStatusInterval = setInterval(() => {
+            pollImportStatus(currentImport.value.id).catch(() => {
+                stopImportPolling();
+                isImporting.value = false;
+                importError.value = 'Gagal memantau status import.';
+            });
+        }, 2000);
+
+        await pollImportStatus(currentImport.value.id);
     } catch (error) {
+        stopImportPolling();
         const validationErrors = error.response?.data?.errors?.file;
         importError.value = Array.isArray(validationErrors)
             ? validationErrors.join('\n')

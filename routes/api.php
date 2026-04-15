@@ -1,16 +1,16 @@
 <?php
 
-use App\Http\Controllers\Api\AlatController;
 use App\Http\Controllers\Api\ActivityLogController;
-use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AlatController;
 use App\Http\Controllers\Api\AreaController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\LaporanAlatController;
-use App\Http\Controllers\Api\UserManagementController;
 use App\Http\Controllers\api\MutasiAlatController;
 use App\Http\Controllers\Api\PeminjamanController;
 use App\Http\Controllers\Api\PengirimanController;
 use App\Http\Controllers\Api\ReviewPeminjamanController;
+use App\Http\Controllers\Api\UserManagementController;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -40,7 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
-    Route::middleware('role:' . implode(',', [
+    Route::middleware('role:'.implode(',', [
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
     ]))->group(function () {
@@ -50,7 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/users/{user}', [UserManagementController::class, 'destroy']);
     });
 
-    Route::middleware('role:' . implode(',', [
+    Route::middleware('role:'.implode(',', [
         Role::KEY_SP_TOOL,
         Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
@@ -60,14 +60,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/activity-logs/export', [ActivityLogController::class, 'export']);
     });
 
-    Route::middleware('role:' . Role::KEY_SUPER_ADMIN)->group(function () {
+    Route::middleware('role:'.Role::KEY_SUPER_ADMIN)->group(function () {
         Route::get('/admin/areas', [AreaController::class, 'managementIndex']);
         Route::post('/admin/areas', [AreaController::class, 'store']);
         Route::put('/admin/areas/{area}', [AreaController::class, 'update']);
         Route::delete('/admin/areas/{area}', [AreaController::class, 'destroy']);
     });
 
-    Route::middleware('role:' . implode(',', [
+    Route::middleware('role:'.implode(',', [
         Role::KEY_USER,
         Role::KEY_SP_TOOL,
         Role::KEY_PIC_TOOLS,
@@ -78,7 +78,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/peminjaman', [PeminjamanController::class, 'index']);
     });
 
-    Route::middleware('role:' . implode(',', [
+    Route::middleware('role:'.implode(',', [
         Role::KEY_USER,
         Role::KEY_SUPER_ADMIN,
     ]))->group(function () {
@@ -87,7 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/pengiriman/{peminjaman}/kembalikan', [PengirimanController::class, 'kembalikan']);
     });
 
-    Route::middleware('role:' . implode(',', [
+    Route::middleware('role:'.implode(',', [
         Role::KEY_SP_TOOL,
         Role::KEY_MGR_TOOL,
         Role::KEY_SUPER_ADMIN,
@@ -98,7 +98,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('/alats', [AlatController::class, 'index'])
-        ->middleware('role:' . implode(',', [
+        ->middleware('role:'.implode(',', [
             Role::KEY_USER,
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOLS,
@@ -107,7 +107,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Role::KEY_SUPER_ADMIN,
         ]));
     Route::get('/alats/export', [AlatController::class, 'export'])
-        ->middleware('role:' . implode(',', [
+        ->middleware('role:'.implode(',', [
             Role::KEY_USER,
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOLS,
@@ -116,18 +116,19 @@ Route::middleware('auth:sanctum')->group(function () {
             Role::KEY_SUPER_ADMIN,
         ]));
 
-    Route::middleware('role:' . implode(',', [
+    Route::middleware('role:'.implode(',', [
         Role::KEY_PIC_TOOLS,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
     ]))->group(function () {
         Route::post('/alats', [AlatController::class, 'store']);
         Route::post('/alats/import', [AlatController::class, 'import']);
+        Route::get('/alats/imports/{import}', [AlatController::class, 'importStatus']);
         Route::put('/alats/{alat}', [AlatController::class, 'update']);
         Route::delete('/alats/{alat}', [AlatController::class, 'destroy']);
     });
 
-    Route::middleware('role:' . implode(',', [
+    Route::middleware('role:'.implode(',', [
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
         Role::KEY_PIC_TOOLS,
@@ -138,7 +139,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('/riwayat-pengiriman', [MutasiAlatController::class, 'index'])
-        ->middleware('role:' . implode(',', [
+        ->middleware('role:'.implode(',', [
             Role::KEY_USER,
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOLS,
@@ -148,7 +149,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ]));
 
     Route::get('/laporan-kerusakan', [LaporanAlatController::class, 'indexKerusakan'])
-        ->middleware('role:' . implode(',', [
+        ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOLS,
             Role::KEY_MGR_TOOL,
@@ -156,7 +157,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Role::KEY_SUPER_ADMIN,
         ]));
     Route::get('/laporan-kerusakan/export', [LaporanAlatController::class, 'exportKerusakan'])
-        ->middleware('role:' . implode(',', [
+        ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOLS,
             Role::KEY_MGR_TOOL,
@@ -164,7 +165,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Role::KEY_SUPER_ADMIN,
         ]));
     Route::get('/laporan-pending-counts', [LaporanAlatController::class, 'pendingCounts'])
-        ->middleware('role:' . implode(',', [
+        ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOLS,
             Role::KEY_MGR_TOOL,
@@ -172,7 +173,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Role::KEY_SUPER_ADMIN,
         ]));
     Route::post('/laporan-kerusakan', [LaporanAlatController::class, 'storeKerusakan'])
-        ->middleware('role:' . implode(',', [
+        ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOLS,
             Role::KEY_MGR_TOOL,
@@ -180,7 +181,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Role::KEY_SUPER_ADMIN,
         ]));
     Route::put('/laporan-kerusakan/{laporan}', [LaporanAlatController::class, 'updateKerusakanStatus'])
-        ->middleware('role:' . implode(',', [
+        ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOLS,
             Role::KEY_MGR_TOOL,
@@ -189,7 +190,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ]));
 
     Route::get('/laporan-kehilangan', [LaporanAlatController::class, 'indexKehilangan'])
-        ->middleware('role:' . implode(',', [
+        ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOLS,
             Role::KEY_MGR_TOOL,
@@ -197,7 +198,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Role::KEY_SUPER_ADMIN,
         ]));
     Route::get('/laporan-kehilangan/export', [LaporanAlatController::class, 'exportKehilangan'])
-        ->middleware('role:' . implode(',', [
+        ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOLS,
             Role::KEY_MGR_TOOL,
@@ -205,7 +206,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Role::KEY_SUPER_ADMIN,
         ]));
     Route::post('/laporan-kehilangan', [LaporanAlatController::class, 'storeKehilangan'])
-        ->middleware('role:' . implode(',', [
+        ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOLS,
             Role::KEY_MGR_TOOL,
@@ -213,7 +214,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Role::KEY_SUPER_ADMIN,
         ]));
     Route::put('/laporan-kehilangan/{laporan}', [LaporanAlatController::class, 'updateKehilanganStatus'])
-        ->middleware('role:' . implode(',', [
+        ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOLS,
             Role::KEY_MGR_TOOL,
