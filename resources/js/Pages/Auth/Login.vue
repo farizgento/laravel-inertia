@@ -25,7 +25,7 @@
                             <path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" />
                         </svg>
                     </div>
-                    <h1 class="mt-4 text-2xl font-semibold text-slate-900">ToolArea Lending</h1>
+                    <h1 class="mt-4 text-2xl font-semibold text-slate-900">IP TOOLS Lite <i>BETA</i></h1>
                     <p class="mt-1 text-sm text-slate-500">Sistem Peminjaman Alat PT. PLN Indonesia Power</p>
                 </div>
 
@@ -112,13 +112,6 @@
                             {{ processing ? 'Memproses...' : 'Masuk' }}
                         </button>
                     </form>
-
-                    <p class="mt-5 text-center text-sm text-slate-500">
-                        Belum punya akun?
-                        <Link class="font-semibold text-blue-600 hover:text-blue-700" href="/register">
-                            Daftar sekarang
-                        </Link>
-                    </p>
                 </div>
 
                 <p class="mt-6 text-center text-xs text-slate-400">
