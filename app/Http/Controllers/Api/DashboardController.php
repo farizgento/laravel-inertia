@@ -27,7 +27,7 @@ class DashboardController extends Controller
 
         $user->loadMissing(['role', 'area']);
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        $isAreaSwitcherRole = in_array($roleKey, [Role::KEY_MGR_TOOL, Role::KEY_SUPER_ADMIN], true);
+        $isAreaSwitcherRole = $roleKey === Role::KEY_SUPER_ADMIN;
         $showOperationalInsights = in_array($roleKey, [
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOLS,
@@ -66,11 +66,14 @@ class DashboardController extends Controller
             'total_jenis_alat_area' => (clone $alatQuery)->count(),
             'menunggu_review' => (int) ($statusCounts['Menunggu Review'] ?? 0),
             'sedang_berjalan' =>
-                (int) ($statusCounts['Dipesan'] ?? 0) +
-                (int) ($statusCounts['Disiapkan'] ?? 0) +
-                (int) ($statusCounts['Terkirim'] ?? 0) +
-                (int) ($statusCounts['Diterima'] ?? 0),
-            'selesai' => (int) ($statusCounts['Dikembalikan'] ?? 0),
+                (int) ($statusCounts[Peminjaman::STATUS_DIPESAN] ?? 0) +
+                (int) ($statusCounts[Peminjaman::STATUS_DISIAPKAN] ?? 0) +
+                (int) ($statusCounts[Peminjaman::STATUS_TERKIRIM] ?? 0) +
+                (int) ($statusCounts[Peminjaman::STATUS_DITERIMA] ?? 0) +
+                (int) ($statusCounts[Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS] ?? 0),
+            'selesai' =>
+                (int) ($statusCounts[Peminjaman::STATUS_DIKEMBALIKAN_SEMUANYA] ?? 0) +
+                (int) ($statusCounts[Peminjaman::STATUS_SELESAI] ?? 0),
             'laporan_aktif' => $effectiveAreaId
                 ? $this->laporanAreaQuery($effectiveAreaId)
                     ->whereIn('status', ['Dilaporkan', 'Disetujui'])

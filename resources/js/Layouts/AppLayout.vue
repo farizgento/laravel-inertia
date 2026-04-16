@@ -144,9 +144,8 @@ const dismissedFlash = ref('');
 const displayName = computed(() => authUser.value?.name ?? 'Memuat...');
 const displayRole = computed(() => authUser.value?.role?.name ?? 'Memuat...');
 const roleKey = computed(() => authUser.value?.role?.key ?? '');
-const isMgrTool = computed(() => (roleKey.value ?? '').toLowerCase() === 'mgr_tool');
 const isSuperAdmin = computed(() => (roleKey.value ?? '').toLowerCase() === 'super_admin');
-const isAreaSwitcherRole = computed(() => isMgrTool.value || isSuperAdmin.value);
+const isAreaSwitcherRole = computed(() => isSuperAdmin.value);
 const canSeeReviewBadge = computed(() =>
     ['sp_tool', 'mgr_tool', 'super_admin'].includes((roleKey.value ?? '').toLowerCase())
 );
@@ -454,9 +453,6 @@ const loadUser = async () => {
         const response = await axios.get('/api/user');
         fetchedUser.value = response.data;
         cacheUser(response.data);
-        if (isMgrTool.value) {
-            await loadAreas();
-        }
     } catch (err) {
         if (err?.response?.status === 401) {
             redirectToLogin();
@@ -494,7 +490,6 @@ const closeSidebarOnMobile = () => {
 
 provide('activeAreaId', activeAreaId);
 provide('activeAreaName', activeAreaName);
-provide('isMgrTool', isMgrTool);
 provide('isAreaSwitcherRole', isAreaSwitcherRole);
 provide('setAreaSwitching', setAreaSwitching);
 provide('refreshReviewPendingCount', refreshReviewPendingCount);

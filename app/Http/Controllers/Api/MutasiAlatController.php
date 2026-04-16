@@ -43,7 +43,7 @@ class MutasiAlatController extends Controller
                 'suratJalan',
                 'user',
             ])
-            ->whereIn('status', ['Terkirim', 'Diterima', 'Dikembalikan'])
+            ->whereIn('status', Peminjaman::shippingHistoryStatuses())
             ->whereHas('items', function ($sub) {
                 $sub->where('approved_qty', '>', 0);
             })
@@ -54,7 +54,7 @@ class MutasiAlatController extends Controller
                 $query->where('area_id', $areaIdParam);
             }
         } elseif ($isSpTool || $isPicTools || $isMgrTool) {
-            $areaId = $isMgrTool ? ($areaIdParam ?: $user->area_id) : $user->area_id;
+            $areaId = $user->area_id;
             if (! $areaId) {
                 return response()->json([]);
             }
@@ -82,6 +82,8 @@ class MutasiAlatController extends Controller
                     'code' => $alat ? sprintf('ALT-%03d', $alat->id) : '-',
                     'qty' => (int) $item->qty,
                     'approved_qty' => (int) ($item->approved_qty ?? 0),
+                    'returned_qty' => (int) ($item->returned_qty ?? 0),
+                    'remaining_qty' => max((int) ($item->approved_qty ?? 0) - (int) ($item->returned_qty ?? 0), 0),
                     'review_status' => $item->review_status ?? 'Menunggu Review',
                     'rejection_reason' => $item->rejection_reason,
                     'photos' => $item->photos

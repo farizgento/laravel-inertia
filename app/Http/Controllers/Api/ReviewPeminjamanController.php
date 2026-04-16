@@ -29,10 +29,9 @@ class ReviewPeminjamanController extends Controller
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        $areaId = $user->area_id;
-        if (($isMgrTool || $isSuperAdmin) && $request->filled('area_id')) {
-            $areaId = (int) $request->query('area_id');
-        }
+        $areaId = $isSuperAdmin && $request->filled('area_id')
+            ? (int) $request->query('area_id')
+            : $user->area_id;
 
         if (! $areaId) {
             return response()->json([]);
@@ -115,10 +114,9 @@ class ReviewPeminjamanController extends Controller
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        $areaId = $user->area_id;
-        if (($isMgrTool || $isSuperAdmin) && $request->filled('area_id')) {
-            $areaId = (int) $request->query('area_id');
-        }
+        $areaId = $isSuperAdmin && $request->filled('area_id')
+            ? (int) $request->query('area_id')
+            : $user->area_id;
 
         if (! $areaId) {
             return response()->json(['count' => 0]);
@@ -149,10 +147,9 @@ class ReviewPeminjamanController extends Controller
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        $areaId = $user->area_id;
-        if (($isMgrTool || $isSuperAdmin) && $request->filled('area_id')) {
-            $areaId = (int) $request->input('area_id');
-        }
+        $areaId = $isSuperAdmin && $request->filled('area_id')
+            ? (int) $request->input('area_id')
+            : $user->area_id;
 
         if (! $areaId || (int) $peminjaman->area_id !== (int) $areaId) {
             return response()->json(['message' => 'Forbidden.'], 403);

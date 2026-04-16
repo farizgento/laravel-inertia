@@ -7,6 +7,7 @@ use App\Models\AlatImport;
 use App\Models\Area;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ActivityLogger;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -27,6 +28,11 @@ class AlatImportService
         'Measurement Tools',
     ];
 
+    public function downloadUrl(AlatImport $import): string
+    {
+        return url('/api/alats/imports/'.$import->id.'/download');
+    }
+
     public function parseImportFile(UploadedFile|string $file): array
     {
         $extension = strtolower($file instanceof UploadedFile
@@ -44,6 +50,8 @@ class AlatImportService
 
     public function processImport(AlatImport $import): void
     {
+        $import->loadMissing('user.role', 'user.area');
+
         $import->update([
             'status' => AlatImport::STATUS_PROCESSING,
             'error_message' => null,
@@ -172,6 +180,8 @@ class AlatImportService
             'updated_count' => $updated,
             'finished_at' => now(),
         ]);
+
+        $this->logImportActivity($import->fresh(['user.role', 'user.area']));
     }
 
     public function markAsFailed(AlatImport $import, string $message): void
@@ -181,6 +191,8 @@ class AlatImportService
             'error_message' => $message,
             'finished_at' => now(),
         ]);
+
+        $this->logImportActivity($import->fresh(['user.role', 'user.area']));
     }
 
     public function formatImport(AlatImport $import): array
@@ -196,6 +208,7 @@ class AlatImportService
             'error_message' => $import->error_message,
             'finished_at' => $import->finished_at?->toISOString(),
             'created_at' => $import->created_at?->toISOString(),
+            'download_url' => $this->downloadUrl($import),
         ];
     }
 
@@ -219,6 +232,55 @@ class AlatImportService
         $areaId = $user?->area_id;
 
         return $areaId ? (int) $areaId : null;
+    }
+
+    private function logImportActivity(AlatImport $import): void
+    {
+        $actor = $import->user;
+        $downloadUrl = $this->downloadUrl($import);
+        $baseValues = [
+            'file_name' => $import->file_name,
+            'file_download_url' => $downloadUrl,
+        ];
+
+        ActivityLogger::log('import', $import, [
+            'actor' => $actor,
+            'area_id' => $actor?->area_id,
+            'subject_type' => 'Import Alat',
+            'subject_label' => $import->file_name,
+            'description' => $this->buildImportDescription($import, $actor),
+            'method' => 'QUEUE',
+            'route' => 'api/alats/import',
+            'url' => $downloadUrl,
+            'old_values' => [
+                ...$baseValues,
+                'status' => AlatImport::STATUS_PENDING,
+            ],
+            'new_values' => [
+                ...$baseValues,
+                'status' => $import->status,
+                'total_rows' => (int) $import->total_rows,
+                'processed_rows' => (int) $import->processed_rows,
+                'created_count' => (int) $import->created_count,
+                'updated_count' => (int) $import->updated_count,
+                'error_message' => $import->error_message,
+            ],
+            'properties' => [
+                'import_id' => $import->id,
+                'finished_at' => $import->finished_at?->format('Y-m-d H:i:s'),
+            ],
+        ]);
+    }
+
+    private function buildImportDescription(AlatImport $import, ?User $actor): string
+    {
+        $actorName = $actor?->name ?? 'System';
+
+        return match ($import->status) {
+            AlatImport::STATUS_COMPLETED => "{$actorName} menyelesaikan import alat {$import->file_name}.",
+            AlatImport::STATUS_FAILED => "{$actorName} gagal import alat {$import->file_name}.",
+            default => "{$actorName} memproses import alat {$import->file_name}.",
+        };
     }
 
     private function parseCsvFile(UploadedFile|string $file): array

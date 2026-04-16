@@ -76,6 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Role::KEY_SUPER_ADMIN,
     ]))->group(function () {
         Route::get('/peminjaman', [PeminjamanController::class, 'index']);
+        Route::get('/peminjaman/export', [PeminjamanController::class, 'export']);
     });
 
     Route::middleware('role:'.implode(',', [
@@ -124,6 +125,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/alats', [AlatController::class, 'store']);
         Route::post('/alats/import', [AlatController::class, 'import']);
         Route::get('/alats/imports/{import}', [AlatController::class, 'importStatus']);
+        Route::get('/alats/imports/{import}/download', [AlatController::class, 'downloadImport']);
         Route::put('/alats/{alat}', [AlatController::class, 'update']);
         Route::delete('/alats/{alat}', [AlatController::class, 'destroy']);
     });
@@ -134,8 +136,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Role::KEY_PIC_TOOLS,
     ]))->group(function () {
         Route::get('/pengiriman', [PengirimanController::class, 'index']);
+        Route::get('/pengembalian', [PengirimanController::class, 'pengembalianIndex']);
         Route::post('/pengiriman/{peminjaman}/siapkan', [PengirimanController::class, 'siapkan']);
         Route::post('/pengiriman/{peminjaman}/kirim', [PengirimanController::class, 'kirim']);
+        Route::post('/pengembalian/{peminjaman}/selesai', [PengirimanController::class, 'selesai']);
     });
 
     Route::get('/riwayat-pengiriman', [MutasiAlatController::class, 'index'])

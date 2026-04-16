@@ -19,7 +19,7 @@
                 <p class="mt-1 text-sm text-slate-500">
                     {{ isSuperAdmin
                         ? 'Super Admin dapat mengelola user, SP Tool, Pic Tool, Mgr Tool, dan Admin.'
-                        : 'Role yang dikelola hanya user, SP Tool, dan Pic Tool.' }}
+                        : 'Admin dapat mengelola user, SP Tool, Pic Tool, dan Mgr Tool pada area sendiri.' }}
                 </p>
             </div>
             <button
@@ -282,9 +282,6 @@
                             </option>
                         </select>
                         <p v-if="errors.area_id" class="text-xs text-rose-500">{{ errors.area_id }}</p>
-                        <p v-else-if="isMgrToolSelected && mgrAreaLabel" class="text-xs text-slate-500">
-                            Role Mgr Tool otomatis menggunakan area {{ mgrAreaLabel }}.
-                        </p>
                     </label>
 
                     <label class="space-y-2 text-sm font-medium text-slate-700">
@@ -359,10 +356,10 @@ const baseRoleOptions = [
     { value: 'user', label: 'User' },
     { value: 'sp_tool', label: 'SP Tool' },
     { value: 'pic_tools', label: 'Pic Tool' },
+    { value: 'mgr_tool', label: 'Mgr Tool' },
 ];
 
 const superAdminExtraRoleOptions = [
-    { value: 'mgr_tool', label: 'Mgr Tool' },
     { value: 'admin', label: 'Admin' },
 ];
 
@@ -412,26 +409,14 @@ const roleOptions = computed(() =>
         ? [...baseRoleOptions, ...superAdminExtraRoleOptions]
         : baseRoleOptions
 );
-const mgrArea = computed(
-    () => areas.value.find((area) => String(area.name ?? '').trim().toUpperCase() === 'KS TUBUN') ?? null
-);
-const mgrAreaId = computed(() => (mgrArea.value?.id ? String(mgrArea.value.id) : ''));
-const mgrAreaLabel = computed(() => mgrArea.value?.name ?? '');
-const isMgrToolSelected = computed(() => form.role_key === 'mgr_tool');
 const availableAreas = computed(() => {
-    if (isMgrToolSelected.value && mgrAreaId.value) {
-        return areas.value.filter((area) => String(area.id) === mgrAreaId.value);
-    }
-
     if (!isAdminRole.value || !adminAreaId.value) {
         return areas.value;
     }
 
     return areas.value.filter((area) => String(area.id) === adminAreaId.value);
 });
-const isAreaLocked = computed(
-    () => (isAdminRole.value && !!availableAreas.value.length) || (isMgrToolSelected.value && !!mgrAreaId.value)
-);
+const isAreaLocked = computed(() => isAdminRole.value && !!availableAreas.value.length);
 
 const pageNumbers = computed(() => {
     const total = pagination.lastPage;
@@ -507,11 +492,6 @@ const closeAlert = () => {
 };
 
 const syncAreaSelection = () => {
-    if (isMgrToolSelected.value && mgrAreaId.value) {
-        form.area_id = mgrAreaId.value;
-        return;
-    }
-
     if (isAreaLocked.value) {
         form.area_id = adminAreaId.value;
         return;
@@ -530,7 +510,7 @@ const resetForm = () => {
     form.area_id = '';
     form.password = '';
     form.password_confirmation = '';
-    form.area_id = isMgrToolSelected.value && mgrAreaId.value ? mgrAreaId.value : adminAreaId.value;
+    form.area_id = adminAreaId.value;
     errors.value = {};
     formError.value = '';
 };
@@ -545,9 +525,7 @@ const openEdit = (user) => {
     form.name = user.name ?? '';
     form.email = user.email ?? '';
     form.role_key = user.role_key ?? '';
-    form.area_id = isAreaLocked.value
-        ? (user.role_key === 'mgr_tool' && mgrAreaId.value ? mgrAreaId.value : adminAreaId.value)
-        : user.area_id ? String(user.area_id) : '';
+    form.area_id = isAreaLocked.value ? adminAreaId.value : user.area_id ? String(user.area_id) : '';
     form.password = '';
     form.password_confirmation = '';
     errors.value = {};

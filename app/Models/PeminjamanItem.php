@@ -18,6 +18,7 @@ class PeminjamanItem extends Model
         'alat_id',
         'qty',
         'approved_qty',
+        'returned_qty',
         'review_status',
         'rejection_reason',
     ];

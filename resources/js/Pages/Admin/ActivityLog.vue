@@ -105,7 +105,16 @@
                                     <div v-if="log.before_changes?.length" class="space-y-2">
                                         <p v-for="change in log.before_changes" :key="`${log.id}-before-${change.field}`">
                                             <span class="font-semibold text-slate-700">{{ change.label }}:</span>
-                                            {{ formatValue(change.value) }}
+                                            <a
+                                                v-if="isUrl(formatValue(change.value))"
+                                                :href="formatValue(change.value)"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="text-blue-600 underline underline-offset-2 hover:text-blue-700"
+                                            >
+                                                Download File
+                                            </a>
+                                            <template v-else>{{ formatValue(change.value) }}</template>
                                         </p>
                                     </div>
                                     <p v-else>Tidak ada data.</p>
@@ -114,7 +123,16 @@
                                     <div v-if="log.after_changes?.length" class="space-y-2">
                                         <p v-for="change in log.after_changes" :key="`${log.id}-after-${change.field}`">
                                             <span class="font-semibold text-slate-700">{{ change.label }}:</span>
-                                            {{ formatValue(change.value) }}
+                                            <a
+                                                v-if="isUrl(formatValue(change.value))"
+                                                :href="formatValue(change.value)"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="text-blue-600 underline underline-offset-2 hover:text-blue-700"
+                                            >
+                                                Download File
+                                            </a>
+                                            <template v-else>{{ formatValue(change.value) }}</template>
                                         </p>
                                     </div>
                                     <p v-else>Tidak ada data.</p>
@@ -311,6 +329,8 @@ const formatValue = (value) => {
 
     return typeof value === 'object' ? JSON.stringify(value) : String(value);
 };
+
+const isUrl = (value) => /^https?:\/\//i.test(String(value ?? '').trim());
 
 onMounted(async () => {
     if (isAreaSwitcherRole.value) {

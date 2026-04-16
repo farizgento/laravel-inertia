@@ -100,14 +100,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Role::KEY_PIC_TOOLS,
     ]))->name('pengiriman-alat');
 
-    Route::get('/riwayat-pengiriman', function () {
-        return Inertia::render('Pictool/RiwayatPengiriman');
+    Route::get('pengembalian-alat', function () {
+        return Inertia::render('Pictool/Pengembalian');
     })->middleware('role:' . implode(',', [
-        Role::KEY_SP_TOOL,
-        Role::KEY_PIC_TOOLS,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
-    ]))->name('riwayat-pengiriman');
+        Role::KEY_PIC_TOOLS,
+    ]))->name('pengembalian-alat');
 
     Route::get('/laporan-kerusakan', function () {
         return Inertia::render('Pictool/Kerusakan');

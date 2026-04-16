@@ -66,7 +66,7 @@
                 <button
                     v-for="tab in tabs"
                     :key="tab.key"
-                    class="flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition"
+                    class="flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition border-1"
                     :class="activeTab === tab.key
                         ? 'bg-white text-blue-700 shadow-sm'
                         : 'text-slate-600 hover:bg-white/70'"
@@ -203,7 +203,7 @@
                             Surat Jalan
                         </button>
                         <button
-                            v-if="isUserRole && item.status === 'Diterima'"
+                            v-if="isUserRole && ['Diterima', 'Dikembalikan Partials'].includes(item.status)"
                             class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:border-amber-300"
                             type="button"
                             @click="openReturn(item)"
@@ -244,7 +244,7 @@
             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
             @click.self="closeReturn"
         >
-            <div class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white shadow-2xl">
+            <div class="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
                 <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-6 py-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
@@ -285,80 +285,158 @@
                         </div>
                     </div>
                     <p class="mt-3 text-xs text-slate-500">
-                        Status akan dipindahkan ke <span class="font-semibold">Dikembalikan</span> setelah dikonfirmasi.
+                        Anda bisa mengembalikan sebagian alat dulu. Status akan berubah otomatis ke parsial atau selesai sesuai jumlah yang dikembalikan.
                     </p>
-                    <div class="mt-4">
-                        <button
-                            class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-amber-300 hover:text-amber-700"
-                            type="button"
-                            @click="toggleReturnReport"
-                        >
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 5v14" />
-                                <path d="M5 12h14" />
-                            </svg>
-                            {{ showReturnReportForm ? 'Tutup Form Laporan' : '+ Kerusakan/Kehilangan' }}
-                        </button>
-
+                    <div class="mt-4 space-y-3">
                         <div
-                            v-if="showReturnReportForm"
-                            class="mt-4 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                            v-for="row in returnRows"
+                            :key="row.itemId"
+                            class="rounded-2xl border border-slate-200 bg-slate-50 p-4"
                         >
-                            <div class="grid gap-4 md:grid-cols-2">
-                                <label class="space-y-2 text-sm font-medium text-slate-700">
-                                    <span>Kategori *</span>
-                                    <select
-                                        v-model="returnReport.kategori"
-                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
-                                    >
-                                        <option value="">Pilih kategori</option>
-                                        <option value="kerusakan">Kerusakan</option>
-                                        <option value="kehilangan">Kehilangan</option>
-                                    </select>
-                                </label>
-                                <label class="space-y-2 text-sm font-medium text-slate-700">
-                                    <span>Alat *</span>
-                                    <select
-                                        v-model="returnReport.alat_id"
-                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
-                                    >
-                                        <option value="">Pilih alat</option>
-                                        <option v-for="tool in returnReportTools" :key="tool.alat_id" :value="tool.alat_id">
-                                            {{ tool.name }} ({{ tool.code }})
-                                        </option>
-                                    </select>
-                                </label>
-                                <label class="space-y-2 text-sm font-medium text-slate-700">
-                                    <span>Jumlah *</span>
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-900">{{ row.name }}</p>
+                                    <p class="mt-1 text-xs text-slate-500">{{ row.code }}</p>
+                                    <p class="mt-2 text-xs text-slate-500">
+                                        Disetujui: <span class="font-semibold text-emerald-700">{{ row.approvedQty }}</span>
+                                        <span class="mx-1 text-slate-300">|</span>
+                                        Sudah kembali: <span class="font-semibold text-indigo-700">{{ row.returnedQty }}</span>
+                                        <span class="mx-1 text-slate-300">|</span>
+                                        Sisa: <span class="font-semibold text-amber-700">{{ row.remainingQty }}</span>
+                                    </p>
+                                </div>
+                                <label class="w-full max-w-[140px] space-y-1 text-xs font-semibold text-slate-600">
+                                    <span>Jumlah kembali</span>
                                     <input
-                                        v-model.number="returnReport.jumlah"
+                                        v-model.number="row.returnQty"
                                         type="number"
-                                        min="1"
-                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
-                                    />
-                                </label>
-                                <label class="space-y-2 text-sm font-medium text-slate-700">
-                                    <span>Foto *</span>
-                                    <input
-                                        ref="returnReportFileInput"
-                                        type="file"
-                                        accept="image/*"
-                                        class="block w-full text-sm text-slate-600 file:mr-4 file:rounded-xl file:border-0 file:bg-amber-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-amber-700"
-                                        @change="handleReturnReportFileChange"
+                                        min="0"
+                                        :max="row.remainingQty"
+                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
                                     />
                                 </label>
                             </div>
-                            <label class="block space-y-2 text-sm font-medium text-slate-700">
-                                <span>Deskripsi *</span>
-                                <textarea
-                                    v-model="returnReport.deskripsi"
-                                    rows="3"
-                                    placeholder="Jelaskan kerusakan atau kehilangan yang terjadi..."
-                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
-                                />
-                            </label>
-                            <div v-if="returnReportPreviewUrl" class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                                <img :src="returnReportPreviewUrl" alt="Preview laporan alat" class="h-48 w-full object-cover" />
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div
+                            class="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                        >
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-900">Laporan Alat</p>
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        Tambahkan form laporan sesuai kebutuhan untuk kerusakan atau kehilangan.
+                                    </p>
+                                </div>
+                                <button
+                                    class="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100"
+                                    type="button"
+                                    @click="addReturnReport"
+                                >
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 5v14" />
+                                        <path d="M5 12h14" />
+                                    </svg>
+                                    Tambah Laporan
+                                </button>
+                            </div>
+
+                            <div v-if="!returnReports.length" class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500">
+                                Belum ada form laporan. Klik Tambah Laporan untuk menambahkan laporan kerusakan atau kehilangan.
+                            </div>
+
+                            <div
+                                v-for="report in returnReports"
+                                :key="report.key"
+                                class="space-y-4 rounded-2xl border border-slate-200 bg-white p-4"
+                            >
+                                <div class="flex items-center justify-between gap-3">
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-900">Laporan #{{ report.order }}</p>
+                                        <p class="mt-1 text-xs text-slate-500">
+                                            Isi detail laporan alat pada pengembalian ini.
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="rounded-full px-3 py-1 text-[11px] font-semibold"
+                                            :class="
+                                                report.kategori === 'kerusakan'
+                                                    ? 'bg-amber-100 text-amber-700'
+                                                    : report.kategori === 'kehilangan'
+                                                      ? 'bg-rose-100 text-rose-700'
+                                                      : 'bg-slate-100 text-slate-600'
+                                            "
+                                        >
+                                            {{ report.kategori ? report.label : 'Pilih kategori' }}
+                                        </span>
+                                        <button
+                                            class="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
+                                            type="button"
+                                            @click="removeReturnReport(report.key)"
+                                        >
+                                            Hapus
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <label class="space-y-2 text-sm font-medium text-slate-700">
+                                        <span>Kategori</span>
+                                        <select
+                                            v-model="report.kategori"
+                                            @change="report.label = getReturnReportLabel(report.kategori)"
+                                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                                        >
+                                            <option value="">Pilih kategori</option>
+                                            <option value="kerusakan">Kerusakan</option>
+                                            <option value="kehilangan">Kehilangan</option>
+                                        </select>
+                                    </label>
+                                    <label class="space-y-2 text-sm font-medium text-slate-700">
+                                        <span>Alat</span>
+                                        <select
+                                            v-model="report.alat_id"
+                                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                                        >
+                                            <option value="">Pilih alat</option>
+                                            <option v-for="tool in returnReportTools" :key="`${report.key}-${tool.alat_id}`" :value="tool.alat_id">
+                                                {{ tool.name }} ({{ tool.code }})
+                                            </option>
+                                        </select>
+                                    </label>
+                                    <label class="space-y-2 text-sm font-medium text-slate-700">
+                                        <span>Jumlah</span>
+                                        <input
+                                            v-model.number="report.jumlah"
+                                            type="number"
+                                            min="1"
+                                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                                        />
+                                    </label>
+                                    <label class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+                                        <span>Foto</span>
+                                        <input
+                                            :ref="(el) => setReturnReportFileInput(report.key, el)"
+                                            type="file"
+                                            accept="image/*"
+                                            class="block w-full text-sm text-slate-600 file:mr-4 file:rounded-xl file:border-0 file:bg-amber-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-amber-700"
+                                            @change="(event) => handleReturnReportFileChange(report.key, event)"
+                                        />
+                                    </label>
+                                </div>
+                                <label class="block space-y-2 text-sm font-medium text-slate-700">
+                                    <span>Deskripsi</span>
+                                    <textarea
+                                        v-model="report.deskripsi"
+                                        rows="3"
+                                        :placeholder="`Jelaskan ${report.kategori ? report.label.toLowerCase() : 'laporan'} yang terjadi...`"
+                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                                    />
+                                </label>
+                                <div v-if="report.previewUrl" class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                                    <img :src="report.previewUrl" :alt="`Preview ${report.label}`" class="h-48 w-full object-cover" />
+                                </div>
                             </div>
                             <p v-if="returnReportError" class="text-sm font-semibold text-rose-500">
                                 {{ returnReportError }}
@@ -406,7 +484,7 @@ defineOptions({
             {
                 title: 'Mutasi alat',
                 subtitle: 'Daftar pengiriman yang sudah diproses',
-                activeMenu: 'riwayat-pengiriman',
+                activeMenu: 'mutasi-alat',
             },
             () => page
         ),
@@ -429,7 +507,6 @@ const cachedUser = ref(loadCachedUser());
 const roleKey = computed(() =>
     (page.props.auth?.user?.role?.key ?? cachedUser.value?.role?.key ?? '').toLowerCase()
 );
-const isMgrTool = computed(() => roleKey.value === 'mgr_tool');
 const isUserRole = computed(() => roleKey.value === 'user');
 const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
 const activeAreaId = inject('activeAreaId', ref(null));
@@ -454,22 +531,37 @@ const suratJalanItem = ref(null);
 const returnItem = ref(null);
 const search = ref('');
 const isReturning = ref(false);
-const showReturnReportForm = ref(false);
-const returnReportFileInput = ref(null);
-const returnReportPreviewUrl = ref('');
 const returnReportError = ref('');
-const returnReport = ref({
+const returnRows = ref([]);
+const returnReportFileInputs = ref({});
+let returnReportSequence = 0;
+const getReturnReportLabel = (kategori) => {
+    if (kategori === 'kerusakan') {
+        return 'Kerusakan';
+    }
+    if (kategori === 'kehilangan') {
+        return 'Kehilangan';
+    }
+    return 'Laporan';
+};
+const createReturnReport = () => ({
+    key: `return-report-${returnReportSequence++}`,
+    order: 0,
+    label: 'Laporan',
     kategori: '',
     alat_id: '',
     jumlah: 1,
     deskripsi: '',
     foto: null,
+    previewUrl: '',
 });
+const returnReports = ref([]);
 
 const tabConfig = [
     { key: 'dikirim', label: 'Sedang Dikirim', status: 'Terkirim' },
     { key: 'diterima', label: 'Diterima', status: 'Diterima' },
-    { key: 'dikembalikan', label: 'Dikembalikan', status: 'Dikembalikan' },
+    { key: 'partials', label: 'Dikembalikan Parsial', status: 'Dikembalikan Partials' },
+    { key: 'dikembalikan-semuanya', label: 'Dikembalikan Semua', status: 'Dikembalikan Semuanya' },
 ];
 
 const activeTab = ref(tabConfig[0].key);
@@ -480,8 +572,10 @@ const statusLabel = (status) => {
             return 'Sudah Dikirim';
         case 'Diterima':
             return 'Diterima';
-        case 'Dikembalikan':
-            return 'Dikembalikan';
+        case 'Dikembalikan Partials':
+            return 'Dikembalikan Parsial';
+        case 'Dikembalikan Semuanya':
+            return 'Dikembalikan Semua';
         default:
             return status ?? '-';
     }
@@ -493,15 +587,22 @@ const statusBadge = (status) => {
             return 'bg-blue-100 text-blue-600';
         case 'Diterima':
             return 'bg-emerald-100 text-emerald-600';
-        case 'Dikembalikan':
-            return 'bg-slate-200 text-slate-700';
+        case 'Dikembalikan Partials':
+            return 'bg-violet-100 text-violet-700';
+        case 'Dikembalikan Semuanya':
+            return 'bg-indigo-100 text-indigo-700';
         default:
             return 'bg-slate-100 text-slate-600';
     }
 };
 
 const statusCountMap = computed(() => {
-    const base = { Terkirim: 0, Diterima: 0, Dikembalikan: 0 };
+    const base = {
+        Terkirim: 0,
+        Diterima: 0,
+        'Dikembalikan Partials': 0,
+        'Dikembalikan Semuanya': 0,
+    };
     items.value.forEach((item) => {
         if (base[item.status] !== undefined) {
             base[item.status] += 1;
@@ -545,7 +646,7 @@ const approvedLabel = (item) => {
 };
 
 const returnReportTools = computed(() =>
-    Array.isArray(returnItem.value?.tools) ? returnItem.value.tools : []
+    returnRows.value.filter((tool) => Number(tool.returnQty) > 0)
 );
 
 const normalizeHistory = (item) => {
@@ -557,6 +658,8 @@ const normalizeHistory = (item) => {
               code: tool?.code ?? '-',
               qty: Number.isFinite(tool?.qty) ? tool.qty : 0,
               approvedQty: Number.isFinite(tool?.approved_qty) ? tool.approved_qty : 0,
+              returnedQty: Number.isFinite(tool?.returned_qty) ? tool.returned_qty : 0,
+              remainingQty: Number.isFinite(tool?.remaining_qty) ? tool.remaining_qty : 0,
               reviewStatus: tool?.review_status ?? 'Menunggu Review',
               rejectionReason: tool?.rejection_reason ?? '',
               photos: Array.isArray(tool?.photos)
@@ -616,66 +719,136 @@ const openSuratJalan = (item) => {
 const openReturn = (item) => {
     returnItem.value = item;
     resetReturnReport();
+    returnRows.value = (Array.isArray(item?.tools) ? item.tools : [])
+        .filter((tool) => Number(tool?.remainingQty ?? 0) > 0)
+        .map((tool) => ({
+            itemId: tool.item_id,
+            alat_id: tool.alat_id,
+            name: tool.name,
+            code: tool.code,
+            approvedQty: Number(tool.approvedQty ?? 0),
+            returnedQty: Number(tool.returnedQty ?? 0),
+            remainingQty: Number(tool.remainingQty ?? 0),
+            returnQty: Number(tool.remainingQty ?? 0),
+        }));
 };
 
 const closeReturn = () => {
     returnItem.value = null;
+    returnRows.value = [];
     resetReturnReport();
 };
 
 const resetReturnReport = () => {
-    showReturnReportForm.value = false;
     returnReportError.value = '';
-    returnReport.value = {
-        kategori: '',
-        alat_id: '',
-        jumlah: 1,
-        deskripsi: '',
-        foto: null,
-    };
-    if (returnReportFileInput.value) {
-        returnReportFileInput.value.value = '';
-    }
-    if (returnReportPreviewUrl.value) {
-        URL.revokeObjectURL(returnReportPreviewUrl.value);
-        returnReportPreviewUrl.value = '';
-    }
+    Object.values(returnReportFileInputs.value).forEach((input) => {
+        if (input) {
+            input.value = '';
+        }
+    });
+    returnReports.value.forEach((report) => {
+        if (report.previewUrl) {
+            URL.revokeObjectURL(report.previewUrl);
+        }
+    });
+    returnReportFileInputs.value = {};
+    returnReports.value = [];
 };
 
-const toggleReturnReport = () => {
-    showReturnReportForm.value = !showReturnReportForm.value;
-    if (!showReturnReportForm.value) {
-        resetReturnReport();
-    }
+const addReturnReport = () => {
+    returnReports.value.push({
+        ...createReturnReport(),
+        order: returnReports.value.length + 1,
+    });
 };
 
-const handleReturnReportFileChange = (event) => {
+const removeReturnReport = (key) => {
+    const index = returnReports.value.findIndex((report) => report.key === key);
+    if (index === -1) {
+        return;
+    }
+
+    const [report] = returnReports.value.splice(index, 1);
+    if (report?.previewUrl) {
+        URL.revokeObjectURL(report.previewUrl);
+    }
+    delete returnReportFileInputs.value[key];
+    returnReports.value = returnReports.value.map((entry, entryIndex) => ({
+        ...entry,
+        order: entryIndex + 1,
+        label: getReturnReportLabel(entry.kategori),
+    }));
+};
+
+const setReturnReportFileInput = (key, element) => {
+    if (element) {
+        returnReportFileInputs.value[key] = element;
+        return;
+    }
+    delete returnReportFileInputs.value[key];
+};
+
+const handleReturnReportFileChange = (key, event) => {
     const file = event.target.files?.[0] ?? null;
-    returnReport.value.foto = file;
+    const report = returnReports.value.find((entry) => entry.key === key);
+    if (!report) {
+        return;
+    }
+
+    report.foto = file;
+    report.label = getReturnReportLabel(report.kategori);
     returnReportError.value = '';
-    if (returnReportPreviewUrl.value) {
-        URL.revokeObjectURL(returnReportPreviewUrl.value);
-        returnReportPreviewUrl.value = '';
+    if (report.previewUrl) {
+        URL.revokeObjectURL(report.previewUrl);
+        report.previewUrl = '';
     }
     if (file) {
-        returnReportPreviewUrl.value = URL.createObjectURL(file);
+        report.previewUrl = URL.createObjectURL(file);
     }
 };
 
 const validateReturnReport = () => {
-    if (!showReturnReportForm.value) {
-        return true;
+    const submittedRows = returnRows.value.filter((row) => Number(row.returnQty) > 0);
+    if (!submittedRows.length) {
+        returnReportError.value = 'Isi minimal satu jumlah pengembalian alat.';
+        return false;
     }
 
-    if (
-        !returnReport.value.kategori ||
-        !returnReport.value.alat_id ||
-        !returnReport.value.deskripsi.trim() ||
-        !returnReport.value.foto ||
-        Number(returnReport.value.jumlah) < 1
-    ) {
-        returnReportError.value = 'Lengkapi semua field laporan alat.';
+    const invalidRow = submittedRows.find(
+        (row) => Number(row.returnQty) < 1 || Number(row.returnQty) > Number(row.remainingQty)
+    );
+    if (invalidRow) {
+        returnReportError.value = `Jumlah kembali ${invalidRow.name} tidak valid.`;
         return false;
+    }
+
+    const activeReports = returnReports.value.filter((report) => {
+        return (
+            report.kategori ||
+            report.alat_id ||
+            report.deskripsi.trim() ||
+            report.foto ||
+            Number(report.jumlah) > 1
+        );
+    });
+
+    for (const report of activeReports) {
+        report.label = getReturnReportLabel(report.kategori);
+        if (!report.kategori || !report.alat_id || !report.deskripsi.trim() || !report.foto || Number(report.jumlah) < 1) {
+            returnReportError.value = `Lengkapi semua field laporan #${report.order}.`;
+            return false;
+        }
+
+        const selectedTool = submittedRows.find((row) => Number(row.alat_id) === Number(report.alat_id));
+        if (!selectedTool) {
+            returnReportError.value = `Pilih alat pada laporan #${report.order} dari item yang sedang dikembalikan.`;
+            return false;
+        }
+
+        if (Number(report.jumlah) > Number(selectedTool.returnQty)) {
+            returnReportError.value = `Jumlah laporan #${report.order} melebihi jumlah alat yang dikembalikan pada transaksi ini.`;
+            return false;
+        }
     }
 
     returnReportError.value = '';
@@ -695,24 +868,39 @@ const confirmReturn = async () => {
     }
     isReturning.value = true;
     let shouldClose = false;
+    let successMessage = 'Pengembalian berhasil dikonfirmasi.';
     try {
         const payload = new FormData();
+        returnRows.value
+            .filter((row) => Number(row.returnQty) > 0)
+            .forEach((row, index) => {
+                payload.append(`items[${index}][item_id]`, String(row.itemId));
+                payload.append(`items[${index}][returned_qty]`, String(row.returnQty));
+            });
 
-        if (showReturnReportForm.value) {
-            payload.append('laporan[kategori]', returnReport.value.kategori);
-            payload.append('laporan[alat_id]', String(returnReport.value.alat_id));
-            payload.append('laporan[jumlah]', String(returnReport.value.jumlah));
-            payload.append('laporan[deskripsi]', returnReport.value.deskripsi.trim());
-            payload.append('laporan[foto]', returnReport.value.foto);
-        }
+        returnReports.value
+            .filter((report) => report.kategori || report.alat_id || report.deskripsi.trim() || report.foto || Number(report.jumlah) > 1)
+            .forEach((report, index) => {
+                payload.append(`laporan[${index}][kategori]`, report.kategori);
+                payload.append(`laporan[${index}][alat_id]`, String(report.alat_id));
+                payload.append(`laporan[${index}][jumlah]`, String(report.jumlah));
+                payload.append(`laporan[${index}][deskripsi]`, report.deskripsi.trim());
+                payload.append(`laporan[${index}][foto]`, report.foto);
+            });
 
-        await axios.post(`/api/pengiriman/${returnItem.value.id}/kembalikan`, payload, {
+        const response = await axios.post(`/api/pengiriman/${returnItem.value.id}/kembalikan`, payload, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
         });
+        const nextStatus = response?.data?.status ?? '';
+        if (nextStatus === 'Dikembalikan Partials') {
+            successMessage = 'Pengembalian parsial berhasil disimpan.';
+        } else if (nextStatus === 'Dikembalikan Semuanya') {
+            successMessage = 'Semua alat berhasil dikembalikan.';
+        }
         await loadHistory();
-        showAlert('success', 'Pengembalian berhasil dikonfirmasi.');
+        showAlert('success', successMessage);
         shouldClose = true;
     } catch (error) {
         const message =
@@ -721,19 +909,23 @@ const confirmReturn = async () => {
         if (error?.response?.status === 422) {
             const errors = error.response?.data?.errors ?? {};
             returnReportError.value =
-                errors['laporan.kategori']?.[0] ??
-                errors['laporan.alat_id']?.[0] ??
-                errors['laporan.jumlah']?.[0] ??
-                errors['laporan.deskripsi']?.[0] ??
-                errors['laporan.foto']?.[0] ??
+                errors['laporan.0.kategori']?.[0] ??
+                errors['laporan.0.alat_id']?.[0] ??
+                errors['laporan.0.jumlah']?.[0] ??
+                errors['laporan.0.deskripsi']?.[0] ??
+                errors['laporan.0.foto']?.[0] ??
+                errors['laporan.1.kategori']?.[0] ??
+                errors['laporan.1.alat_id']?.[0] ??
+                errors['laporan.1.jumlah']?.[0] ??
+                errors['laporan.1.deskripsi']?.[0] ??
+                errors['laporan.1.foto']?.[0] ??
                 message;
         }
         showAlert('error', message);
     } finally {
         isReturning.value = false;
         if (shouldClose) {
-            returnItem.value = null;
-            resetReturnReport();
+            closeReturn();
         }
     }
 };
