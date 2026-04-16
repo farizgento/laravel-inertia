@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ImportAlatJob;
 use App\Models\Alat;
 use App\Models\AlatImport;
+use App\Models\Peminjaman;
 use App\Models\Role;
 use App\Services\AlatImportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -100,14 +102,15 @@ class AlatController extends Controller
         return DB::table('peminjaman_items as items')
             ->join('peminjamans as pem', 'pem.id', '=', 'items.peminjaman_id')
             ->whereIn('items.alat_id', $alatIds)
-            ->whereIn('pem.status', ['Menunggu Review', 'Dipesan', 'Disiapkan', 'Terkirim', 'Diterima'])
+            ->whereIn('pem.status', Peminjaman::stockHoldingStatuses())
             ->groupBy('items.alat_id')
             ->select(
                 'items.alat_id',
                 DB::raw(
                     "SUM(CASE
-                        WHEN pem.status = 'Menunggu Review' THEN items.qty
-                        WHEN pem.status IN ('Dipesan', 'Disiapkan', 'Terkirim', 'Diterima') THEN COALESCE(items.approved_qty, 0)
+                        WHEN pem.status = '" . Peminjaman::STATUS_MENUNGGU_REVIEW . "' THEN items.qty
+                        WHEN pem.status IN ('" . Peminjaman::STATUS_DIPESAN . "', '" . Peminjaman::STATUS_DISIAPKAN . "', '" . Peminjaman::STATUS_TERKIRIM . "') THEN COALESCE(items.approved_qty, 0)
+                        WHEN pem.status IN ('" . Peminjaman::STATUS_DITERIMA . "', '" . Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS . "') THEN GREATEST(COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0), 0)
                         ELSE 0
                     END) as total"
                 )
@@ -313,6 +316,17 @@ class AlatController extends Controller
         return response()->json([
             'import' => $alatImportService->formatImport($import->fresh()),
         ]);
+    }
+
+    public function downloadImport(Request $request, AlatImport $import, AlatImportService $alatImportService)
+    {
+        $actor = $request->user()?->loadMissing('role');
+        abort_unless($actor, 401);
+
+        $alatImportService->ensureImportAccessible($import, $actor);
+        abort_unless(Storage::disk('local')->exists($import->file_path), 404, 'File import tidak ditemukan.');
+
+        return Storage::disk('local')->download($import->file_path, $import->file_name);
     }
 
     public function destroy(Request $request, Alat $alat)

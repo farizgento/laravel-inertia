@@ -155,7 +155,7 @@ class ActivityLogController extends Controller
         ], true)) {
             $query->where('area_id', $actor->area_id);
         } elseif ($roleKey === Role::KEY_MGR_TOOL) {
-            $query->where('area_id', $areaId > 0 ? $areaId : $actor->area_id);
+            $query->where('area_id', $actor->area_id);
         } elseif ($areaId > 0) {
             $query->where('area_id', $areaId);
         }
@@ -260,6 +260,13 @@ class ActivityLogController extends Controller
             'alat_id' => 'Alat',
             'role_id' => 'Role',
             'peminjaman_id' => 'Peminjaman',
+            'file_name' => 'Nama File Import',
+            'file_download_url' => 'Link Download File Import',
+            'total_rows' => 'Total Baris',
+            'processed_rows' => 'Baris Diproses',
+            'created_count' => 'Data Baru',
+            'updated_count' => 'Data Diperbarui',
+            'error_message' => 'Pesan Error',
             default => Str::of($field)->replace('_', ' ')->title()->toString(),
         };
     }

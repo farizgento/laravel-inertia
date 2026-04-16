@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Area;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -18,10 +17,10 @@ class UserManagementController extends Controller
         Role::KEY_USER,
         Role::KEY_SP_TOOL,
         Role::KEY_PIC_TOOLS,
+        Role::KEY_MGR_TOOL,
     ];
 
     private const SUPER_ADMIN_EXTRA_ROLE_KEYS = [
-        Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
     ];
 
@@ -96,47 +95,6 @@ class UserManagementController extends Controller
         return Role::query()->where('key', $roleKey)->firstOrFail();
     }
 
-    private function resolveMgrArea(): ?Area
-    {
-        return Area::query()
-            ->whereRaw('upper(name) = ?', ['KS TUBUN'])
-            ->first();
-    }
-
-    private function resolveAreaIdForRole(Role $role, int $areaId, ?int $ignoreUserId = null): int
-    {
-        if ($role->key !== Role::KEY_MGR_TOOL) {
-            return $areaId;
-        }
-
-        $mgrArea = $this->resolveMgrArea();
-
-        if (! $mgrArea) {
-            abort(response()->json([
-                'message' => 'Area KS TUBUN belum tersedia.',
-                'errors' => [
-                    'area_id' => ['Area KS TUBUN belum tersedia.'],
-                ],
-            ], 422));
-        }
-
-        $mgrExists = User::query()
-            ->where('role_id', $role->id)
-            ->when($ignoreUserId, fn ($query) => $query->where('id', '!=', $ignoreUserId))
-            ->exists();
-
-        if ($mgrExists) {
-            abort(response()->json([
-                'message' => 'User Mgr Tool sudah tersedia.',
-                'errors' => [
-                    'role_key' => ['Mgr Tool hanya boleh satu user dan wajib berada di KS TUBUN.'],
-                ],
-            ], 422));
-        }
-
-        return (int) $mgrArea->id;
-    }
-
     public function index(Request $request): array
     {
         $actor = $this->authorizeActor($request);
@@ -207,14 +165,13 @@ class UserManagementController extends Controller
         ]);
 
         $role = $this->findRole($validated['role_key']);
-        $areaId = $this->resolveAreaIdForRole($role, (int) $validated['area_id']);
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => $validated['password'],
             'role_id' => $role->id,
-            'area_id' => $areaId,
+            'area_id' => (int) $validated['area_id'],
         ]);
 
         return response()->json([
@@ -240,13 +197,12 @@ class UserManagementController extends Controller
         ]);
 
         $role = $this->findRole($validated['role_key']);
-        $areaId = $this->resolveAreaIdForRole($role, (int) $validated['area_id'], $user->id);
 
         $payload = [
             'name' => $validated['name'],
             'email' => $validated['email'],
             'role_id' => $role->id,
-            'area_id' => $areaId,
+            'area_id' => (int) $validated['area_id'],
         ];
 
         if (! empty($validated['password'])) {

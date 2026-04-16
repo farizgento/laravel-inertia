@@ -77,9 +77,26 @@
                     <option value="Dipesan">Dipesan</option>
                     <option value="Disiapkan">Disiapkan</option>
                     <option value="Terkirim">Terkirim</option>
+                    <option value="Diterima">Diterima</option>
+                    <option value="Dikembalikan Partials">Dikembalikan Partials</option>
+                    <option value="Dikembalikan Semuanya">Dikembalikan Semuanya</option>
+                    <option value="Selesai">Selesai</option>
                     <option value="Ditolak">Ditolak</option>
                 </select>
             </div>
+            <button
+                class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+                type="button"
+                :disabled="isExporting"
+                @click="exportHistory"
+            >
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 3v12" />
+                    <path d="m7 10 5 5 5-5" />
+                    <path d="M5 21h14" />
+                </svg>
+                {{ isExporting ? 'Mengunduh...' : 'Export CSV' }}
+            </button>
         </div>
 
         <div class="mt-4">
@@ -90,9 +107,11 @@
             </p>
             <div v-else class="overflow-hidden rounded-2xl border border-slate-200">
                 <div class="overflow-x-auto">
-                    <table class="min-w-[980px] w-full text-sm">
+                    <table class="min-w-[1240px] w-full text-sm">
                         <thead class="bg-slate-50">
                             <tr class="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                <th class="px-4 py-3">Peminjam</th>
+                                <th class="px-4 py-3">Reviewer</th>
                                 <th class="px-4 py-3">Dibuat</th>
                                 <th class="px-4 py-3">Status</th>
                                 <th class="px-4 py-3">Keperluan</th>
@@ -108,6 +127,17 @@
                                 :key="item.id"
                                 class="align-top transition hover:bg-slate-50"
                             >
+                                <td class="px-4 py-4">
+                                    <p class="font-semibold text-slate-900">{{ item.userName }}</p>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span
+                                        class="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold"
+                                        :class="item.reviewerName === '-' ? 'bg-slate-100 text-slate-500' : 'bg-blue-50 text-blue-700'"
+                                    >
+                                        {{ item.reviewerName }}
+                                    </span>
+                                </td>
                                 <td class="px-4 py-4 text-slate-600">
                                     {{ item.createdAt }}
                                 </td>
@@ -298,10 +328,6 @@ const loadCachedUser = () => {
 };
 
 const cachedUser = ref(loadCachedUser());
-const roleKey = computed(() =>
-    (page.props.auth?.user?.role?.key ?? cachedUser.value?.role?.key ?? '').toLowerCase()
-);
-const isMgrTool = computed(() => roleKey.value === 'mgr_tool');
 const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
 const activeAreaId = inject('activeAreaId', ref(null));
 const setAreaSwitching = inject('setAreaSwitching', null);
@@ -314,6 +340,7 @@ const areaName = computed(() =>
 
 const items = ref([]);
 const isLoading = ref(false);
+const isExporting = ref(false);
 const loadError = ref('');
 const pagination = reactive({
     currentPage: 1,
@@ -372,6 +399,8 @@ const normalizeHistory = (item) => {
               code: tool?.code ?? '-',
               qty: Number.isFinite(tool?.qty) ? tool.qty : 0,
               approvedQty: Number.isFinite(tool?.approved_qty) ? tool.approved_qty : null,
+              returnedQty: Number.isFinite(tool?.returned_qty) ? tool.returned_qty : 0,
+              remainingQty: Number.isFinite(tool?.remaining_qty) ? tool.remaining_qty : 0,
               reviewStatus: tool?.review_status ?? 'Menunggu Review',
               rejectionReason: tool?.rejection_reason ?? '',
               photos: Array.isArray(tool?.photos)
@@ -409,6 +438,8 @@ const normalizeHistory = (item) => {
     return {
         id: item?.id ?? '',
         title: item?.title ?? '-',
+        userName: item?.user_name ?? '-',
+        reviewerName: item?.reviewed_by_name ?? '-',
         createdAt: item?.created_at ?? '-',
         borrowDate: item?.borrow_date ?? '-',
         returnDate: item?.return_date ?? '-',
@@ -457,15 +488,23 @@ const statusClass = (status) => {
         case 'Menunggu Review':
             return 'bg-blue-50 text-blue-600';
         case 'Dipesan':
-            return 'bg-slate-100 text-slate-700';
+            return 'bg-cyan-50 text-cyan-700';
         case 'Disiapkan':
-            return 'bg-amber-50 text-amber-600';
+            return 'bg-amber-50 text-amber-700';
         case 'Terkirim':
-            return 'bg-emerald-50 text-emerald-600';
+            return 'bg-emerald-50 text-emerald-700';
+        case 'Diterima':
+            return 'bg-teal-50 text-teal-700';
+        case 'Dikembalikan Partials':
+            return 'bg-violet-50 text-violet-700';
+        case 'Dikembalikan Semuanya':
+            return 'bg-indigo-50 text-indigo-700';
+        case 'Selesai':
+            return 'bg-slate-200 text-slate-700';
         case 'Dikembalikan':
             return 'bg-indigo-50 text-indigo-600';
         case 'Ditolak':
-            return 'bg-rose-50 text-rose-600';
+            return 'bg-rose-50 text-rose-700';
         default:
             return 'bg-slate-100 text-slate-600';
     }
@@ -530,6 +569,32 @@ const loadHistory = async () => {
     }
 };
 
+const exportHistory = async () => {
+    isExporting.value = true;
+    try {
+        const response = await axios.get('/api/peminjaman/export', {
+            params: buildFilterParams(),
+            responseType: 'blob',
+        });
+
+        const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const disposition = response.headers['content-disposition'] ?? '';
+        const match = disposition.match(/filename="?([^"]+)"?/i);
+        link.href = url;
+        link.download = match?.[1] ?? 'riwayat-peminjaman.csv';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        loadError.value = 'Gagal mengunduh export riwayat peminjaman.';
+    } finally {
+        isExporting.value = false;
+    }
+};
+
 onMounted(() => {
     cachedUser.value = loadCachedUser();
     if (isAreaSwitcherRole.value) {
@@ -576,4 +641,3 @@ watch(
     },
 );
 </script>
-

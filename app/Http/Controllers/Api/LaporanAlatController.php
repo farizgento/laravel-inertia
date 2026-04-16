@@ -18,7 +18,7 @@ class LaporanAlatController extends Controller
 {
     private function resolveActiveAreaId(Request $request, string $roleKey, $fallbackAreaId): ?int
     {
-        if (in_array($roleKey, [Role::KEY_MGR_TOOL, Role::KEY_SUPER_ADMIN], true) && $request->filled('area_id')) {
+        if ($roleKey === Role::KEY_SUPER_ADMIN && $request->filled('area_id')) {
             return (int) $request->input('area_id');
         }
 

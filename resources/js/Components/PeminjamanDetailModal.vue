@@ -101,7 +101,22 @@
                                         </span>
                                     </span>
                                 </p>
-                                <p v-else class="mt-2 text-xs text-slate-500">
+                                <p v-if="approvedQty(tool) > 0" class="mt-2 text-xs text-slate-500">
+                                    <span class="text-indigo-600">
+                                        Dikembalikan:
+                                        <span class="font-semibold text-indigo-700">
+                                            {{ returnedQty(tool) }}
+                                        </span>
+                                    </span>
+                                    <span class="mx-1 text-slate-300">|</span>
+                                    <span class="text-amber-600">
+                                        Sisa:
+                                        <span class="font-semibold text-amber-700">
+                                            {{ remainingQty(tool) }}
+                                        </span>
+                                    </span>
+                                </p>
+                                <p v-else-if="!hasReviewResult(tool)" class="mt-2 text-xs text-slate-500">
                                     Status: Menunggu Review
                                 </p>
                             </div>
@@ -236,6 +251,12 @@ const itemReports = computed(() =>
 );
 const approvedQty = (tool) =>
     Number.isFinite(tool?.approvedQty) ? tool.approvedQty : 0;
+
+const returnedQty = (tool) =>
+    Number.isFinite(tool?.returnedQty) ? tool.returnedQty : 0;
+
+const remainingQty = (tool) =>
+    Math.max(approvedQty(tool) - returnedQty(tool), 0);
 
 const rejectedQty = (tool) => {
     const requested = Number.isFinite(tool?.qty) ? tool.qty : 0;

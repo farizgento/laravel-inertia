@@ -319,14 +319,13 @@
                 <div class="relative max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
                     <div
                         v-if="isImporting"
-                        class="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl bg-white/85 backdrop-blur-[1px]"
+                        class="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl bg-white/90 px-8 text-center backdrop-blur-[1px]"
                     >
-                        <svg class="h-8 w-8 animate-spin text-emerald-600" viewBox="0 0 24 24" fill="none">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                            <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
-                        </svg>
-                        <p class="mt-3 text-sm font-semibold text-slate-700">Mengimpor data alat...</p>
-                        <p class="mt-1 text-xs text-slate-500">
+                        <p class="text-sm font-semibold text-emerald-700">Mengimpor data alat...</p>
+                        <div class="mt-4 h-2 w-full max-w-sm overflow-hidden rounded-full bg-emerald-100">
+                            <div class="h-full w-1/2 animate-pulse rounded-full bg-emerald-500"></div>
+                        </div>
+                        <p class="mt-3 text-xs text-slate-500">
                             {{ importSummary || 'Mohon tunggu, file sedang diproses.' }}
                         </p>
                     </div>
@@ -705,8 +704,17 @@ const stopImportPolling = () => {
     }
 };
 
+const handleImportFailure = (message) => {
+    stopImportPolling();
+    isImporting.value = false;
+    importError.value = message;
+    showAlert('error', message);
+};
+
 const pollImportStatus = async (importId) => {
-    const response = await axios.get(`/api/alats/imports/${importId}`);
+    const response = await axios.get(`/api/alats/imports/${importId}`, {
+        __skipGlobalLoading: true,
+    });
     currentImport.value = response.data?.import ?? null;
 
     const status = currentImport.value?.status;
@@ -714,7 +722,41 @@ const pollImportStatus = async (importId) => {
         stopImportPolling();
         isImporting.value = false;
         pagination.currentPage = 1;
-        await loadTools();
+        await axios.get('/api/alats', {
+            params: {
+                ...buildParams(),
+                page: pagination.currentPage,
+                per_page: pagination.perPage,
+            },
+            __skipGlobalLoading: true,
+        }).then((response) => {
+            const payload = response.data;
+            const data = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
+            tools.value = data.map((item) => ({
+                id: item.id,
+                kode: item.kode ?? '-',
+                nama: item.nama ?? '-',
+                jenis_alat: item.jenis_alat ?? '-',
+                klasifikasi_alat: item.klasifikasi_alat ?? '-',
+                total_aset: Number(item.total_aset ?? item.stok ?? 0),
+                stok_tersedia: Number(item.stok_tersedia ?? item.stok ?? 0),
+                area_name: item.area_name ?? item.lokasi ?? '-',
+                area_id: item.area_id ?? '',
+            }));
+            if (Array.isArray(payload)) {
+                pagination.currentPage = 1;
+                pagination.lastPage = 1;
+                pagination.total = tools.value.length;
+            } else {
+                const meta = payload?.meta ?? {};
+                pagination.currentPage = Number(meta.current_page ?? pagination.currentPage) || 1;
+                pagination.lastPage = Number(meta.last_page ?? 1);
+                pagination.perPage = Number(meta.per_page ?? pagination.perPage);
+                pagination.total = Number(meta.total ?? tools.value.length);
+            }
+        }).catch(() => {
+            loadError.value = 'Gagal memuat data alat.';
+        });
         showAlert(
             'success',
             `Import alat selesai. ${currentImport.value?.created_count ?? 0} data ditambahkan, ${currentImport.value?.updated_count ?? 0} data diperbarui.`
@@ -859,6 +901,7 @@ const submitImport = async () => {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
+            __skipGlobalLoading: true,
         });
         currentImport.value = response.data?.import ?? null;
 
@@ -869,22 +912,19 @@ const submitImport = async () => {
         stopImportPolling();
         importStatusInterval = setInterval(() => {
             pollImportStatus(currentImport.value.id).catch(() => {
-                stopImportPolling();
-                isImporting.value = false;
-                importError.value = 'Gagal memantau status import.';
+                handleImportFailure('Gagal memantau status import.');
             });
         }, 2000);
 
         await pollImportStatus(currentImport.value.id);
     } catch (error) {
         stopImportPolling();
+        isImporting.value = false;
         const validationErrors = error.response?.data?.errors?.file;
         importError.value = Array.isArray(validationErrors)
             ? validationErrors.join('\n')
             : error.response?.data?.message ?? 'Gagal mengimpor data.';
         showAlert('error', 'Import alat gagal.');
-    } finally {
-        isImporting.value = false;
     }
 };
 

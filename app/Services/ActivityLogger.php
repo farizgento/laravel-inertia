@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ActivityLog;
 use App\Models\Alat;
+use App\Models\AlatImport;
 use App\Models\Area;
 use App\Models\LaporanAlat;
 use App\Models\Peminjaman;
@@ -167,6 +168,12 @@ class ActivityLogger
             return $subject->area_id ? (int) $subject->area_id : null;
         }
 
+        if ($subject instanceof AlatImport) {
+            return $subject->user?->area_id
+                ? (int) $subject->user->area_id
+                : ($actor?->area_id ? (int) $actor->area_id : null);
+        }
+
         if ($subject instanceof LaporanAlat) {
             return $subject->alat?->area_id
                 ? (int) $subject->alat->area_id
@@ -200,6 +207,7 @@ class ActivityLogger
             $subject instanceof User => trim("{$subject->name} ({$subject->email})"),
             $subject instanceof Area => $subject->name,
             $subject instanceof Alat => $subject->nama,
+            $subject instanceof AlatImport => trim("Import Alat #{$subject->id} {$subject->file_name}"),
             $subject instanceof Peminjaman => trim("Peminjaman #{$subject->id} {$subject->keperluan}"),
             $subject instanceof LaporanAlat => trim(ucfirst($subject->kategori) . " #{$subject->id}"),
             $subject instanceof SuratJalan => "Surat Jalan #{$subject->peminjaman_id}",

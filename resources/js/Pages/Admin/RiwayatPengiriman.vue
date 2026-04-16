@@ -201,7 +201,7 @@ const detailItem = ref(null);
 const suratJalanItem = ref(null);
 const search = ref('');
 
-const statusOptions = ['Terkirim', 'Diterima', 'Dikembalikan'];
+const statusOptions = ['Terkirim', 'Diterima', 'Dikembalikan Partials', 'Dikembalikan Semuanya', 'Selesai'];
 const statusFilter = ref('Semua');
 
 const statusLabel = (status) => {
@@ -210,8 +210,12 @@ const statusLabel = (status) => {
             return 'Sudah Dikirim';
         case 'Diterima':
             return 'Diterima';
-        case 'Dikembalikan':
-            return 'Dikembalikan';
+        case 'Dikembalikan Partials':
+            return 'Dikembalikan Parsial';
+        case 'Dikembalikan Semuanya':
+            return 'Dikembalikan Semua';
+        case 'Selesai':
+            return 'Selesai';
         default:
             return status ?? '-';
     }
@@ -223,7 +227,11 @@ const statusBadge = (status) => {
             return 'bg-blue-100 text-blue-600';
         case 'Diterima':
             return 'bg-emerald-100 text-emerald-600';
-        case 'Dikembalikan':
+        case 'Dikembalikan Partials':
+            return 'bg-violet-100 text-violet-700';
+        case 'Dikembalikan Semuanya':
+            return 'bg-indigo-100 text-indigo-700';
+        case 'Selesai':
             return 'bg-slate-200 text-slate-700';
         default:
             return 'bg-slate-100 text-slate-600';
@@ -265,6 +273,8 @@ const normalizeHistory = (item) => {
               code: tool?.code ?? '-',
               qty: Number.isFinite(tool?.qty) ? tool.qty : 0,
               approvedQty: Number.isFinite(tool?.approved_qty) ? tool.approved_qty : 0,
+              returnedQty: Number.isFinite(tool?.returned_qty) ? tool.returned_qty : 0,
+              remainingQty: Number.isFinite(tool?.remaining_qty) ? tool.remaining_qty : 0,
               reviewStatus: tool?.review_status ?? 'Menunggu Review',
               rejectionReason: tool?.rejection_reason ?? '',
               photos: Array.isArray(tool?.photos)

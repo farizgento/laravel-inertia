@@ -18,8 +18,8 @@
                     </svg>
                 </div>
                 <div>
-                    <h1 class="text-sm font-semibold text-slate-900">IPTools Lite</h1>
-                    <p class="text-xs text-slate-500">BETA</p>
+                    <h1 class="text-sm font-bold text-slate-900">IPTOOLS LITE</h1>
+                    <p class="text-xs text-slate-500"><i>BETA</i></p>
                 </div>
             </div>
         </div>
@@ -413,12 +413,6 @@ const menuItems = computed(() => {
                       icon: 'area',
                   },
                   {
-                      key: 'activity-log',
-                      label: 'Log Activity',
-                      href: '/log-activity',
-                      icon: 'activity-log',
-                  },
-                  {
                       key: 'peminjaman',
                       label: 'Peminjaman',
                       href: '/peminjaman',
@@ -443,13 +437,19 @@ const menuItems = computed(() => {
                       icon: 'mutasi-alat',
                   },
                   {
+                      key: 'pengembalian',
+                      label: 'Pengembalian',
+                      href: '/pengembalian-alat',
+                      icon: 'mutasi-alat',
+                  },
+                  {
                       key: 'riwayat',
                       label: 'Riwayat Peminjaman',
                       href: '/riwayat-peminjaman',
                       icon: 'riwayat',
-                  },
-                  {
-                      key: 'laporan-kerusakan',
+                    },
+                    {
+                        key: 'laporan-kerusakan',
                       label: 'Laporan Kerusakan',
                       href: '/laporan-kerusakan',
                       icon: 'kerusakan',
@@ -459,7 +459,13 @@ const menuItems = computed(() => {
                       label: 'Laporan Kehilangan',
                       href: '/laporan-kehilangan',
                       icon: 'kehilangan',
-                  },
+                    },
+                    {
+                        key: 'activity-log',
+                        label: 'Log Activity',
+                        href: '/log-activity',
+                        icon: 'activity-log',
+                    },
               ]
             : isAdmin
             ? [
@@ -476,10 +482,10 @@ const menuItems = computed(() => {
                       icon: 'users',
                   },
                   {
-                      key: 'activity-log',
-                      label: 'Log Activity',
-                      href: '/log-activity',
-                      icon: 'activity-log',
+                      key: 'master-alat',
+                      label: 'Master Alat',
+                      href: '/master-alat',
+                      icon: 'master-alat',
                   },
                   {
                       key: 'pengiriman',
@@ -488,10 +494,10 @@ const menuItems = computed(() => {
                       icon: 'pengiriman',
                   },
                   {
-                      key: 'riwayat-pengiriman',
-                      label: 'Riwayat Pengiriman',
-                      href: '/riwayat-pengiriman',
-                      icon: 'riwayat',
+                      key: 'pengembalian',
+                      label: 'Pengembalian',
+                      href: '/pengembalian-alat',
+                      icon: 'mutasi-alat',
                   },
                   {
                       key: 'riwayat',
@@ -510,7 +516,13 @@ const menuItems = computed(() => {
                       label: 'Laporan Kerusakan',
                       href: '/laporan-kerusakan',
                       icon: 'kerusakan',
-                  },
+                    },
+                    {
+                        key: 'activity-log',
+                        label: 'Log Activity',
+                        href: '/log-activity',
+                        icon: 'activity-log',
+                    },
               ]
             : isPicTools
             ? [
@@ -533,10 +545,10 @@ const menuItems = computed(() => {
                       icon: 'pengiriman',
                   },
                   {
-                      key: 'riwayat-pengiriman',
-                      label: 'Riwayat Pengiriman',
-                      href: '/riwayat-pengiriman',
-                      icon: 'riwayat',
+                      key: 'pengembalian',
+                      label: 'Pengembalian',
+                      href: '/pengembalian-alat',
+                      icon: 'mutasi-alat',
                   },
                   {
                       key: 'riwayat',
@@ -590,12 +602,6 @@ const menuItems = computed(() => {
                         icon: 'riwayat',
                     },
                     {
-                        key: 'activity-log',
-                        label: 'Log Activity',
-                        href: '/log-activity',
-                        icon: 'activity-log',
-                    },
-                    {
                         key: 'laporan-kerusakan',
                         label: 'Daftar Kerusakan',
                         href: '/laporan-kerusakan',
@@ -606,6 +612,12 @@ const menuItems = computed(() => {
                         label: 'Daftar Kehilangan',
                         href: '/laporan-kehilangan',
                         icon: 'kehilangan',
+                    },
+                    {
+                        key: 'activity-log',
+                        label: 'Log Activity',
+                        href: '/log-activity',
+                        icon: 'activity-log',
                     },
                 ]
               : [
@@ -630,22 +642,10 @@ const menuItems = computed(() => {
                                   icon: 'master-alat',
                               },
                               {
-                                  key: 'riwayat-pengiriman',
-                                  label: 'Riwayat Pengiriman',
-                                  href: '/riwayat-pengiriman',
-                                  icon: 'riwayat',
-                              },
-                              {
                                   key: 'riwayat',
                                   label: 'Riwayat Peminjaman',
                                   href: '/riwayat-peminjaman',
                                   icon: 'riwayat',
-                              },
-                              {
-                                  key: 'activity-log',
-                                  label: 'Log Activity',
-                                  href: '/log-activity',
-                                  icon: 'activity-log',
                               },
                               {
                                   key: 'laporan-kerusakan',
@@ -658,7 +658,13 @@ const menuItems = computed(() => {
                                   label: 'Laporan Kehilangan',
                                   href: '/laporan-kehilangan',
                                   icon: 'kehilangan',
-                              },
+                                },
+                                {
+                                    key: 'activity-log',
+                                    label: 'Log Activity',
+                                    href: '/log-activity',
+                                    icon: 'activity-log',
+                                },
                           ]
                         : [
                               {

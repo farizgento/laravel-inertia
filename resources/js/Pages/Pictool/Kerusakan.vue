@@ -422,10 +422,6 @@ const loadCachedUser = () => {
 };
 
 const cachedUser = ref(loadCachedUser());
-const roleKey = computed(() =>
-    (page.props.auth?.user?.role?.key ?? cachedUser.value?.role?.key ?? '').toLowerCase()
-);
-const isMgrTool = computed(() => roleKey.value === 'mgr_tool');
 const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
 const activeAreaId = inject('activeAreaId', ref(null));
 const setAreaSwitching = inject('setAreaSwitching', null);
