@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('area_id')->nullable();
-            $table->string('status')->default('Menunggu Review');
+            $table->string('status')->default('Perlu Disetujui');
             $table->date('tanggal_pinjam');
             $table->date('tanggal_kembali');
-            $table->text('keperluan');
+            $table->text('pekerjaan');
             $table->text('catatan')->nullable();
             $table->timestamps();
         });

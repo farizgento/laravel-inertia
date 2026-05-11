@@ -1,4 +1,6 @@
 <template>
+    <Head title="Login | IPTOOLS Lite" />
+
     <div class="min-h-screen bg-slate-100">
         <div
             class="pointer-events-none absolute left-0 top-0 h-full w-full bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.18),_transparent_55%)]"
@@ -33,13 +35,13 @@
                     <div class="text-center">
                         <h2 class="text-lg font-semibold text-slate-900">Masuk ke Akun Anda</h2>
                         <p class="mt-1 text-sm text-slate-500">
-                            Silakan masukkan email dan password Anda
+                            Silakan masukkan username dan password Anda
                         </p>
                     </div>
 
                     <form class="mt-6 space-y-4" @submit.prevent="submit">
                         <div>
-                            <label class="text-sm font-medium text-slate-700">Email</label>
+                            <label class="text-sm font-medium text-slate-700">Username</label>
                             <div class="relative mt-2">
                                 <span
                                     class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400"
@@ -53,19 +55,19 @@
                                         stroke-linecap="round"
                                         stroke-linejoin="round"
                                     >
-                                        <path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
-                                        <path d="m22 6-10 7L2 6" />
+                                        <path d="M20 21a8 8 0 1 0-16 0" />
+                                        <circle cx="12" cy="7" r="4" />
                                     </svg>
                                 </span>
                                 <input
-                                    v-model="form.email"
-                                    type="email"
-                                    placeholder="nama@perusahaan.com"
+                                    v-model="form.username"
+                                    type="text"
+                                    placeholder="Masukkan username"
                                     class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                                 />
                             </div>
-                            <p v-if="errors.email" class="mt-1 text-xs text-red-500">
-                                {{ errors.email }}
+                            <p v-if="errors.username" class="mt-1 text-xs text-red-500">
+                                {{ errors.username }}
                             </p>
                         </div>
 
@@ -112,6 +114,14 @@
                             {{ processing ? 'Memproses...' : 'Masuk' }}
                         </button>
                     </form>
+                    <div class="mt-4 text-center">
+                        <Link
+                            href="/forgot-password"
+                            class="text-sm font-semibold text-blue-600 transition hover:text-blue-700"
+                        >
+                            Lupa password?
+                        </Link>
+                    </div>
                 </div>
 
                 <p class="mt-6 text-center text-xs text-slate-400">
@@ -123,12 +133,12 @@
 </template>
 
 <script setup>
-import { Link, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import { ref } from 'vue';
 
 const form = ref({
-    email: '',
+    username: '',
     password: '',
 });
 

@@ -46,7 +46,7 @@
                 <input
                     v-model="search"
                     type="text"
-                    placeholder="Cari nama, email, role, atau area..."
+                    placeholder="Cari nama, username, email, role, atau area..."
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
             </label>
@@ -94,6 +94,7 @@
                     <thead class="bg-slate-50">
                         <tr class="text-left font-semibold text-slate-500">
                             <th class="px-4 py-3">Nama</th>
+                            <th class="px-4 py-3">Username</th>
                             <th class="px-4 py-3">Email</th>
                             <th class="px-4 py-3">Role</th>
                             <th class="px-4 py-3">Area</th>
@@ -102,12 +103,12 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         <tr v-if="isLoading">
-                            <td colspan="5" class="px-4 py-6 text-center text-sm text-slate-500">
+                            <td colspan="6" class="px-4 py-6 text-center text-sm text-slate-500">
                                 Memuat data pengguna...
                             </td>
                         </tr>
                         <tr v-else-if="loadError">
-                            <td colspan="5" class="px-4 py-6 text-center text-sm text-rose-500">
+                            <td colspan="6" class="px-4 py-6 text-center text-sm text-rose-500">
                                 {{ loadError }}
                             </td>
                         </tr>
@@ -118,6 +119,7 @@
                                     <p class="mt-1 text-xs text-slate-500">ID #{{ user.id }}</p>
                                 </div>
                             </td>
+                            <td class="px-4 py-4 text-slate-600">{{ user.username }}</td>
                             <td class="px-4 py-4 text-slate-600">{{ user.email }}</td>
                             <td class="px-4 py-4">
                                 <span
@@ -155,7 +157,7 @@
                             </td>
                         </tr>
                         <tr v-if="!isLoading && !loadError && !users.length">
-                            <td colspan="5" class="px-4 py-6 text-center text-sm text-slate-500">
+                            <td colspan="6" class="px-4 py-6 text-center text-sm text-slate-500">
                                 Tidak ada data pengguna.
                             </td>
                         </tr>
@@ -242,6 +244,17 @@
                             class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         />
                         <p v-if="errors.name" class="text-xs text-rose-500">{{ errors.name }}</p>
+                    </label>
+
+                    <label class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+                        <span>Username *</span>
+                        <input
+                            v-model="form.username"
+                            type="text"
+                            placeholder="Username untuk login"
+                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        />
+                        <p v-if="errors.username" class="text-xs text-rose-500">{{ errors.username }}</p>
                     </label>
 
                     <label class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
@@ -391,6 +404,7 @@ const pagination = reactive({
 const form = reactive({
     id: null,
     name: '',
+    username: '',
     email: '',
     role_key: '',
     area_id: '',
@@ -505,6 +519,7 @@ const syncAreaSelection = () => {
 const resetForm = () => {
     form.id = null;
     form.name = '';
+    form.username = '';
     form.email = '';
     form.role_key = '';
     form.area_id = '';
@@ -523,6 +538,7 @@ const openCreate = () => {
 const openEdit = (user) => {
     form.id = user.id;
     form.name = user.name ?? '';
+    form.username = user.username ?? '';
     form.email = user.email ?? '';
     form.role_key = user.role_key ?? '';
     form.area_id = isAreaLocked.value ? adminAreaId.value : user.area_id ? String(user.area_id) : '';
@@ -613,6 +629,7 @@ const submitForm = async () => {
     try {
         const payload = {
             name: form.name,
+            username: form.username,
             email: form.email,
             role_key: form.role_key,
             area_id: form.area_id ? Number(form.area_id) : null,

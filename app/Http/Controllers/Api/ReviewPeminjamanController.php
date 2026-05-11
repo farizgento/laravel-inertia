@@ -41,13 +41,24 @@ class ReviewPeminjamanController extends Controller
         $status = trim((string) $request->query('status', ''));
 
         $query = Peminjaman::query()
-            ->with(['items.alat', 'user', 'area', 'reviewer'])
-            ->where('area_id', $areaId)
+            ->with(['items.alat.area', 'user', 'area', 'requesterArea', 'reviewer', 'requesterReviewer'])
+            ->where(function ($sub) use ($areaId) {
+                $sub->where(function ($sourceQuery) use ($areaId) {
+                    $sourceQuery
+                        ->where('area_id', $areaId)
+                        ->where('status', Peminjaman::STATUS_MENUNGGU_REVIEW);
+                })->orWhere(function ($requesterQuery) use ($areaId) {
+                    $requesterQuery
+                        ->where('is_inter_area', true)
+                        ->where('requester_area_id', $areaId)
+                        ->where('status', Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM);
+                });
+            })
             ->orderByDesc('created_at');
 
         if ($search !== '') {
             $query->where(function ($sub) use ($search) {
-                $sub->where('keperluan', 'like', '%' . $search . '%')
+                $sub->where('pekerjaan', 'like', '%' . $search . '%')
                     ->orWhere('id', $search);
             });
         }
@@ -58,15 +69,24 @@ class ReviewPeminjamanController extends Controller
 
         $peminjamans = $query->get();
 
-        return $peminjamans->map(function (Peminjaman $peminjaman) {
-            $tools = $peminjaman->items->map(function (PeminjamanItem $item) {
+        return $peminjamans->map(function (Peminjaman $peminjaman) use ($areaId) {
+            $tools = $peminjaman->items->map(function (PeminjamanItem $item) use ($peminjaman, $areaId) {
                 $alat = $item->alat;
+                $qty = (int) $item->qty;
+                if (
+                    $peminjaman->is_inter_area
+                    && $peminjaman->status === Peminjaman::STATUS_MENUNGGU_REVIEW
+                    && (int) $peminjaman->area_id === (int) $areaId
+                ) {
+                    $qty = (int) ($item->approved_qty ?? 0);
+                }
+
                 return [
                     'item_id' => $item->id,
                     'alat_id' => $item->alat_id,
                     'name' => $alat?->nama ?? '-',
-                    'code' => $alat ? sprintf('ALT-%03d', $alat->id) : '-',
-                    'qty' => (int) $item->qty,
+                    'code' => $alat?->kode ?? '-',
+                    'qty' => $qty,
                     'approved_qty' => (int) ($item->approved_qty ?? 0),
                     'review_status' => $item->review_status ?? 'Menunggu Review',
                     'rejection_reason' => $item->rejection_reason,
@@ -77,10 +97,15 @@ class ReviewPeminjamanController extends Controller
                 'id' => $peminjaman->id,
                 'area_id' => $peminjaman->area_id,
                 'area_name' => $peminjaman->area?->name ?? '-',
-                'title' => $peminjaman->keperluan,
+                'requester_area_id' => $peminjaman->requester_area_id,
+                'requester_area_name' => $peminjaman->requesterArea?->name ?? '-',
+                'is_inter_area' => (bool) $peminjaman->is_inter_area,
+                'title' => $peminjaman->pekerjaan,
                 'user_name' => $peminjaman->user?->name ?? '-',
                 'review_note' => $peminjaman->review_note,
                 'reviewed_by_name' => $peminjaman->reviewer?->name,
+                'requester_review_note' => $peminjaman->requester_review_note,
+                'requester_reviewed_by_name' => $peminjaman->requesterReviewer?->name,
                 'created_at' => $peminjaman->created_at
                     ? $peminjaman->created_at->format('d M Y H:i')
                     : null,
@@ -92,6 +117,7 @@ class ReviewPeminjamanController extends Controller
                     : null,
                 'item_count' => $peminjaman->items->sum('qty'),
                 'status' => $peminjaman->status,
+                'kategori' => $peminjaman->kategori ?? Peminjaman::KATEGORI_INTRA_AREA,
                 'tools' => $tools,
             ];
         })->values();
@@ -124,8 +150,18 @@ class ReviewPeminjamanController extends Controller
 
         return response()->json([
             'count' => Peminjaman::query()
-                ->where('area_id', $areaId)
-                ->where('status', 'Menunggu Review')
+                ->where(function ($sub) use ($areaId) {
+                    $sub->where(function ($sourceQuery) use ($areaId) {
+                        $sourceQuery
+                            ->where('area_id', $areaId)
+                            ->where('status', Peminjaman::STATUS_MENUNGGU_REVIEW);
+                    })->orWhere(function ($requesterQuery) use ($areaId) {
+                        $requesterQuery
+                            ->where('is_inter_area', true)
+                            ->where('requester_area_id', $areaId)
+                            ->where('status', Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM);
+                    });
+                })
                 ->count(),
         ]);
     }
@@ -151,11 +187,19 @@ class ReviewPeminjamanController extends Controller
             ? (int) $request->input('area_id')
             : $user->area_id;
 
-        if (! $areaId || (int) $peminjaman->area_id !== (int) $areaId) {
+        $isRequesterReviewStage = $peminjaman->is_inter_area
+            && $peminjaman->status === Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM;
+        $isSourceReviewStage = $peminjaman->status === Peminjaman::STATUS_MENUNGGU_REVIEW;
+
+        $expectedAreaId = $isRequesterReviewStage
+            ? $peminjaman->requester_area_id
+            : $peminjaman->area_id;
+
+        if (! $areaId || (int) $expectedAreaId !== (int) $areaId) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        if ($peminjaman->status !== 'Menunggu Review') {
+        if (! $isRequesterReviewStage && ! $isSourceReviewStage) {
             return response()->json([
                 'message' => 'Peminjaman ini sudah direview dan hanya dapat dilihat detailnya.',
             ], 422);
@@ -191,15 +235,18 @@ class ReviewPeminjamanController extends Controller
 
         $hasApproved = false;
 
-        DB::transaction(function () use ($items, $itemModels, $peminjaman, &$hasApproved, $validated, $user) {
+        DB::transaction(function () use ($items, $itemModels, $peminjaman, &$hasApproved, $validated, $user, $isRequesterReviewStage) {
             foreach ($items as $itemId => $payload) {
                 $item = $itemModels[$itemId];
                 $decision = $payload['decision'];
                 $requestedQty = (int) $item->qty;
+                $maxApprovedQty = ! $isRequesterReviewStage && $peminjaman->is_inter_area
+                    ? min($requestedQty, (int) ($item->approved_qty ?? 0))
+                    : $requestedQty;
 
                 $approvedQty = $decision === 'tolak'
                     ? 0
-                    : min((int) $payload['approved_qty'], $requestedQty);
+                    : min((int) $payload['approved_qty'], $maxApprovedQty);
 
                 if ($approvedQty > 0) {
                     $hasApproved = true;
@@ -214,12 +261,25 @@ class ReviewPeminjamanController extends Controller
                 ]);
             }
 
-            $peminjaman->update([
-                'review_note' => $validated['review_note'] ?? null,
-                'reviewed_at' => now(),
-                'reviewed_by' => $user->id,
-                'status' => $hasApproved ? 'Dipesan' : 'Ditolak',
-            ]);
+            if ($isRequesterReviewStage) {
+                $peminjaman->update([
+                    'requester_review_note' => $validated['review_note'] ?? null,
+                    'requester_reviewed_at' => now(),
+                    'requester_reviewed_by' => $user->id,
+                    'status' => $hasApproved
+                        ? Peminjaman::STATUS_MENUNGGU_REVIEW
+                        : Peminjaman::STATUS_DITOLAK,
+                ]);
+            } else {
+                $peminjaman->update([
+                    'review_note' => $validated['review_note'] ?? null,
+                    'reviewed_at' => now(),
+                    'reviewed_by' => $user->id,
+                    'status' => $hasApproved
+                        ? Peminjaman::STATUS_DIPESAN
+                        : Peminjaman::STATUS_DITOLAK,
+                ]);
+            }
         });
 
         return response()->json([

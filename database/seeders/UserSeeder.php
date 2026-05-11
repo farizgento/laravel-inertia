@@ -17,16 +17,14 @@ class UserSeeder extends Seeder
         Role::KEY_USER,
         Role::KEY_PIC_TOOLS,
         Role::KEY_SP_TOOL,
+        Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
     ];
 
     private const SINGLE_ROLE_USERS = [
-        Role::KEY_MGR_TOOL => [
-            'name' => 'Mgr Tool KS TUBUN',
-            'email' => 'mgr_tool.kstubun@example.com',
-        ],
         Role::KEY_SUPER_ADMIN => [
             'name' => 'Super Admin KS TUBUN',
+            'username' => 'super_admin.kstubun',
             'email' => 'super_admin.kstubun@example.com',
         ],
     ];
@@ -73,6 +71,7 @@ class UserSeeder extends Seeder
                 area: $ksTubunArea,
                 role: $role,
                 name: $account['name'],
+                username: $account['username'],
                 email: $account['email'],
             );
         }
@@ -84,10 +83,11 @@ class UserSeeder extends Seeder
 
         User::updateOrCreate(
             [
-                'email' => "{$role->key}.{$areaSlug}@example.com",
+                'username' => "{$role->key}.{$areaSlug}",
             ],
             [
                 'name' => "{$role->name} {$area->name}",
+                'email' => "{$role->key}.{$areaSlug}@example.com",
                 'password' => self::DEFAULT_PASSWORD,
                 'role_id' => $role->id,
                 'area_id' => $area->id,
@@ -95,19 +95,20 @@ class UserSeeder extends Seeder
         );
     }
 
-    private function seedSingleRoleUser(Area $area, Role $role, string $name, string $email): void
+    private function seedSingleRoleUser(Area $area, Role $role, string $name, string $username, string $email): void
     {
         User::query()
             ->where('role_id', $role->id)
-            ->where('email', '!=', $email)
+            ->where('username', '!=', $username)
             ->delete();
 
         User::updateOrCreate(
             [
-                'email' => $email,
+                'username' => $username,
             ],
             [
                 'name' => $name,
+                'email' => $email,
                 'password' => self::DEFAULT_PASSWORD,
                 'role_id' => $role->id,
                 'area_id' => $area->id,

@@ -283,6 +283,7 @@
         :unique-items="uniqueItems"
         :total-items="totalItems"
         :form="form"
+        :date-limits="checkoutDateLimits"
         :is-submitting="isSubmitting"
         :checkout-error="checkoutError"
         @submit="submitCheckout"
@@ -444,11 +445,15 @@ const normalizeTool = (item) => {
     const stok = Number.isFinite(item?.stok) ? item.stok : Number(item?.total_aset ?? 0);
     return {
         id,
-        kode: item?.kode ?? `ALT-${String(id).padStart(3, '0')}`,
+        kode: item?.kode ?? item?.code ?? '-',
         nama: item?.nama ?? '-',
         stok: Number.isFinite(stok) ? stok : 0,
         deskripsi: item?.deskripsi ?? '',
         lokasi: item?.lokasi ?? item?.area_name ?? '',
+        isSharedAreaStock: Boolean(item?.is_shared_area_stock),
+        sourcePeminjamanId: item?.source_peminjaman_id ?? null,
+        sourceBorrowDate: item?.source_borrow_date ?? '',
+        sourceReturnDate: item?.source_return_date ?? '',
     };
 };
 
@@ -597,6 +602,36 @@ const cartItems = computed(() =>
         .filter((item) => item && item.qty > 0),
 );
 
+const checkoutDateLimits = computed(() => {
+    const sharedItems = cartItems.value.filter((item) => item.isSharedAreaStock);
+    if (!sharedItems.length) {
+        return {
+            minBorrowDate: '',
+            maxReturnDate: '',
+            message: '',
+        };
+    }
+
+    const borrowDates = sharedItems
+        .map((item) => item.sourceBorrowDate)
+        .filter(Boolean)
+        .sort();
+    const returnDates = sharedItems
+        .map((item) => item.sourceReturnDate)
+        .filter(Boolean)
+        .sort();
+    const minBorrowDate = borrowDates[borrowDates.length - 1] ?? '';
+    const maxReturnDate = returnDates[0] ?? '';
+
+    return {
+        minBorrowDate,
+        maxReturnDate,
+        message: minBorrowDate && maxReturnDate
+            ? `Tanggal peminjaman alat antar area dibatasi ${minBorrowDate} sampai ${maxReturnDate}.`
+            : 'Tanggal peminjaman alat antar area dibatasi sesuai periode peminjaman antar area.',
+    };
+});
+
 const totalItems = computed(() => cart.value.reduce((total, item) => total + item.qty, 0));
 const uniqueItems = computed(() => cart.value.length);
 const viewMode = ref('grid');
@@ -701,7 +736,7 @@ const decreaseCart = (toolId) => {
 const form = ref({
     tanggal_pinjam: '',
     tanggal_kembali: '',
-    keperluan: '',
+    pekerjaan: '',
 });
 
 const openCheckout = () => {
@@ -709,6 +744,12 @@ const openCheckout = () => {
         return;
     }
     checkoutError.value = '';
+    if (checkoutDateLimits.value.minBorrowDate && (!form.value.tanggal_pinjam || form.value.tanggal_pinjam < checkoutDateLimits.value.minBorrowDate)) {
+        form.value.tanggal_pinjam = checkoutDateLimits.value.minBorrowDate;
+    }
+    if (checkoutDateLimits.value.maxReturnDate && (!form.value.tanggal_kembali || form.value.tanggal_kembali > checkoutDateLimits.value.maxReturnDate)) {
+        form.value.tanggal_kembali = checkoutDateLimits.value.maxReturnDate;
+    }
     checkoutOpen.value = true;
 };
 
@@ -716,7 +757,7 @@ const resetCheckout = () => {
     form.value = {
         tanggal_pinjam: '',
         tanggal_kembali: '',
-        keperluan: '',
+        pekerjaan: '',
     };
     cart.value = [];
     Object.keys(cartDrafts).forEach((key) => {
@@ -728,12 +769,20 @@ const resetCheckout = () => {
 };
 
 const submitCheckout = async () => {
-    if (!form.value.tanggal_pinjam || !form.value.tanggal_kembali || !form.value.keperluan) {
-        checkoutError.value = 'Lengkapi tanggal pinjam, tanggal kembali, dan keperluan.';
+    if (!form.value.tanggal_pinjam || !form.value.tanggal_kembali || !form.value.pekerjaan) {
+        checkoutError.value = 'Lengkapi tanggal pinjam, tanggal kembali, dan pekerjaan.';
         return;
     }
     if (!cartItems.value.length) {
         checkoutError.value = 'Keranjang masih kosong.';
+        return;
+    }
+    if (checkoutDateLimits.value.minBorrowDate && form.value.tanggal_pinjam < checkoutDateLimits.value.minBorrowDate) {
+        checkoutError.value = checkoutDateLimits.value.message;
+        return;
+    }
+    if (checkoutDateLimits.value.maxReturnDate && form.value.tanggal_kembali > checkoutDateLimits.value.maxReturnDate) {
+        checkoutError.value = checkoutDateLimits.value.message;
         return;
     }
     isSubmitting.value = true;
@@ -742,7 +791,7 @@ const submitCheckout = async () => {
         const payload = {
             tanggal_pinjam: form.value.tanggal_pinjam,
             tanggal_kembali: form.value.tanggal_kembali,
-            keperluan: form.value.keperluan,
+            pekerjaan: form.value.pekerjaan,
             ...(roleKey.value === 'super_admin' && areaId.value ? { area_id: areaId.value } : {}),
             items: cartItems.value.map((item) => ({ id: item.id, qty: item.qty })),
         };

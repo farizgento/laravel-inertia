@@ -57,11 +57,13 @@ class HandleInertiaRequests extends Middleware
         return [
             'id' => $user->id,
             'name' => $user->name,
+            'username' => $user->username,
             'email' => $user->email,
             'area' => $user->area
                 ? [
                     'id' => $user->area->id,
                     'name' => $user->area->name,
+                    'kode' => $user->area->kode,
                 ]
                 : null,
             'role' => $user->role

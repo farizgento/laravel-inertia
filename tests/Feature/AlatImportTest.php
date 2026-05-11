@@ -24,6 +24,7 @@ class AlatImportTest extends TestCase
         $area = Area::create([
             'name' => 'UPHK',
             'slug' => 'uphk',
+            'kode' => 'UPHK',
         ]);
 
         $user = User::factory()->create([
@@ -70,11 +71,13 @@ class AlatImportTest extends TestCase
         $ownArea = Area::create([
             'name' => 'Area 1.1',
             'slug' => 'I.1',
+            'kode' => 'Area1.1',
         ]);
 
         $otherArea = Area::create([
             'name' => 'UPHK',
             'slug' => 'uphk',
+            'kode' => 'UPHK',
         ]);
 
         $user = User::factory()->create([

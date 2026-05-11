@@ -9,7 +9,6 @@ use App\Models\Area;
 use App\Models\LaporanAlat;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanItem;
-use App\Models\PeminjamanItemPhoto;
 use App\Models\SuratJalan;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -188,12 +187,6 @@ class ActivityLogger
             return $subject->peminjaman?->area_id ? (int) $subject->peminjaman->area_id : null;
         }
 
-        if ($subject instanceof PeminjamanItemPhoto) {
-            return $subject->item?->peminjaman?->area_id
-                ? (int) $subject->item->peminjaman->area_id
-                : null;
-        }
-
         return $actor?->area_id ? (int) $actor->area_id : null;
     }
 
@@ -208,11 +201,10 @@ class ActivityLogger
             $subject instanceof Area => $subject->name,
             $subject instanceof Alat => $subject->nama,
             $subject instanceof AlatImport => trim("Import Alat #{$subject->id} {$subject->file_name}"),
-            $subject instanceof Peminjaman => trim("Peminjaman #{$subject->id} {$subject->keperluan}"),
+            $subject instanceof Peminjaman => trim("Peminjaman #{$subject->id} {$subject->pekerjaan}"),
             $subject instanceof LaporanAlat => trim(ucfirst($subject->kategori) . " #{$subject->id}"),
             $subject instanceof SuratJalan => "Surat Jalan #{$subject->peminjaman_id}",
             $subject instanceof PeminjamanItem => trim(($subject->alat?->nama ?? 'Item Peminjaman') . " #{$subject->id}"),
-            $subject instanceof PeminjamanItemPhoto => trim(($subject->original_name ?: 'Foto Bukti') . " #{$subject->id}"),
             default => class_basename($subject) . ' #' . $subject->getKey(),
         };
     }

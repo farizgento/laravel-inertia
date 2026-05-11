@@ -3,7 +3,7 @@
         <div class="border-b border-slate-200 px-4 py-4">
             <div class="flex items-center gap-3">
                 <div
-                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-sky-400 text-white shadow-lg shadow-blue-200"
+                    class="flex h-12 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-sky-400 text-white shadow-lg shadow-blue-200"
                 >
                     <svg
                         class="h-5 w-5"
@@ -378,10 +378,77 @@ const props = defineProps({
         type: Number,
         default: 0,
     },
+    pengirimanIntraAreaCount: {
+        type: Number,
+        default: 0,
+    },
+    pengirimanAntarAreaCount: {
+        type: Number,
+        default: 0,
+    },
+    mutasiAlatCount: {
+        type: Number,
+        default: 0,
+    },
 });
 
 const emit = defineEmits(['logout', 'navigate']);
 const page = usePage();
+
+const masterDataMenuKeys = new Set(['tambah-pengguna', 'area', 'master-alat']);
+const transaksiMenuKeys = new Set([
+    'peminjaman',
+    'pengiriman',
+    'pengiriman-antar-area',
+    'laporan-kerusakan',
+    'laporan-kehilangan',
+]);
+const laporanMenuKeys = new Set(['riwayat', 'alat-log', 'activity-log']);
+
+const groupMenuItems = (items) => {
+    const masterDataItems = items.filter((item) => masterDataMenuKeys.has(item.key));
+    const transaksiItems = items.filter((item) => transaksiMenuKeys.has(item.key));
+    const laporanItems = items.filter((item) => laporanMenuKeys.has(item.key));
+    const groupedKeys = new Set([
+        ...masterDataMenuKeys,
+        ...transaksiMenuKeys,
+        ...laporanMenuKeys,
+    ]);
+    const dashboardItem = items.find((item) => item.key === 'dashboard');
+    const remainingItems = items.filter((item) => item.key !== 'dashboard' && !groupedKeys.has(item.key));
+
+    return [
+        ...(dashboardItem ? [dashboardItem] : []),
+        ...(masterDataItems.length
+            ? [
+                  {
+                      key: 'master-data',
+                      label: 'Master Data',
+                      children: masterDataItems,
+                  },
+              ]
+            : []),
+        ...(transaksiItems.length
+            ? [
+                  {
+                      key: 'transaksi',
+                      label: 'Transaksi Alat',
+                      children: transaksiItems,
+                  },
+              ]
+            : []),
+        ...remainingItems,
+        ...(laporanItems.length
+            ? [
+                  {
+                      key: 'laporan',
+                      label: 'Laporan',
+                      children: laporanItems,
+                  },
+              ]
+            : []),
+    ];
+};
 
 const menuItems = computed(() => {
     const roleKey = props.roleKey?.toLowerCase() ?? 'user';
@@ -413,10 +480,16 @@ const menuItems = computed(() => {
                       icon: 'area',
                   },
                   {
-                      key: 'peminjaman',
-                      label: 'Peminjaman',
-                      href: '/peminjaman',
-                      icon: 'peminjaman',
+                      key: 'pengiriman',
+                      label: 'Intra Area',
+                      href: '/pengiriman-alat',
+                      icon: 'pengiriman',
+                  },
+                  {
+                      key: 'pengiriman-antar-area',
+                      label: 'Antar Area',
+                      href: '/pengiriman-antar-area',
+                      icon: 'pengiriman',
                   },
                   {
                       key: 'review',
@@ -426,7 +499,7 @@ const menuItems = computed(() => {
                   },
                   {
                       key: 'master-alat',
-                      label: 'Master Alat',
+                      label: 'Alat',
                       href: '/master-alat',
                       icon: 'master-alat',
                   },
@@ -434,12 +507,6 @@ const menuItems = computed(() => {
                       key: 'mutasi-alat',
                       label: 'Mutasi Alat',
                       href: '/mutasi-alat',
-                      icon: 'mutasi-alat',
-                  },
-                  {
-                      key: 'pengembalian',
-                      label: 'Pengembalian',
-                      href: '/pengembalian-alat',
                       icon: 'mutasi-alat',
                   },
                   {
@@ -459,6 +526,12 @@ const menuItems = computed(() => {
                       label: 'Laporan Kehilangan',
                       href: '/laporan-kehilangan',
                       icon: 'kehilangan',
+                    },
+                    {
+                        key: 'alat-log',
+                        label: 'Log Alat',
+                        href: '/log-alat',
+                        icon: 'activity-log',
                     },
                     {
                         key: 'activity-log',
@@ -483,21 +556,21 @@ const menuItems = computed(() => {
                   },
                   {
                       key: 'master-alat',
-                      label: 'Master Alat',
+                      label: 'Alat',
                       href: '/master-alat',
                       icon: 'master-alat',
                   },
                   {
                       key: 'pengiriman',
-                      label: 'Pengiriman',
+                      label: 'Intra Area',
                       href: '/pengiriman-alat',
                       icon: 'pengiriman',
                   },
                   {
-                      key: 'pengembalian',
-                      label: 'Pengembalian',
-                      href: '/pengembalian-alat',
-                      icon: 'mutasi-alat',
+                      key: 'pengiriman-antar-area',
+                      label: 'Antar Area',
+                      href: '/pengiriman-antar-area',
+                      icon: 'pengiriman',
                   },
                   {
                       key: 'riwayat',
@@ -516,6 +589,12 @@ const menuItems = computed(() => {
                       label: 'Laporan Kerusakan',
                       href: '/laporan-kerusakan',
                       icon: 'kerusakan',
+                    },
+                    {
+                        key: 'alat-log',
+                        label: 'Log Alat',
+                        href: '/log-alat',
+                        icon: 'activity-log',
                     },
                     {
                         key: 'activity-log',
@@ -534,21 +613,21 @@ const menuItems = computed(() => {
                   },
                   {
                       key: 'master-alat',
-                      label: 'Master Alat',
+                      label: 'Alat',
                       href: '/master-alat',
                       icon: 'master-alat',
                   },
                   {
                       key: 'pengiriman',
-                      label: 'Pengiriman',
+                      label: 'Intra Area',
                       href: '/pengiriman-alat',
                       icon: 'pengiriman',
                   },
                   {
-                      key: 'pengembalian',
-                      label: 'Pengembalian',
-                      href: '/pengembalian-alat',
-                      icon: 'mutasi-alat',
+                      key: 'pengiriman-antar-area',
+                      label: 'Antar Area',
+                      href: '/pengiriman-antar-area',
+                      icon: 'pengiriman',
                   },
                   {
                       key: 'riwayat',
@@ -568,6 +647,12 @@ const menuItems = computed(() => {
                       href: '/laporan-kehilangan',
                       icon: 'kehilangan',
                   },
+                  {
+                      key: 'alat-log',
+                      label: 'Log Alat',
+                      href: '/log-alat',
+                      icon: 'activity-log',
+                  },
               ]
             : isMgrTool
               ? [
@@ -585,7 +670,7 @@ const menuItems = computed(() => {
                     },
                     {
                         key: 'master-alat',
-                        label: 'Master Alat',
+                        label: 'Alat',
                         href: '/master-alat',
                         icon: 'master-alat',
                     },
@@ -614,6 +699,12 @@ const menuItems = computed(() => {
                         icon: 'kehilangan',
                     },
                     {
+                        key: 'alat-log',
+                        label: 'Log Alat',
+                        href: '/log-alat',
+                        icon: 'activity-log',
+                    },
+                    {
                         key: 'activity-log',
                         label: 'Log Activity',
                         href: '/log-activity',
@@ -637,7 +728,7 @@ const menuItems = computed(() => {
                               },
                               {
                                   key: 'master-alat',
-                                  label: 'Master Alat',
+                                  label: 'Alat',
                                   href: '/master-alat',
                                   icon: 'master-alat',
                               },
@@ -658,6 +749,12 @@ const menuItems = computed(() => {
                                   label: 'Laporan Kehilangan',
                                   href: '/laporan-kehilangan',
                                   icon: 'kehilangan',
+                                },
+                                {
+                                    key: 'alat-log',
+                                    label: 'Log Alat',
+                                    href: '/log-alat',
+                                    icon: 'activity-log',
                                 },
                                 {
                                     key: 'activity-log',
@@ -690,7 +787,7 @@ const menuItems = computed(() => {
                 ]),
     ];
 
-    return items;
+    return groupMenuItems(items);
 });
 
 const openGroups = ref({});
@@ -767,6 +864,12 @@ const badgeCountForItem = (item) => {
             return Number(props.kerusakanPendingCount ?? 0);
         case 'laporan-kehilangan':
             return Number(props.kehilanganPendingCount ?? 0);
+        case 'pengiriman':
+            return Number(props.pengirimanIntraAreaCount ?? 0);
+        case 'pengiriman-antar-area':
+            return Number(props.pengirimanAntarAreaCount ?? 0);
+        case 'mutasi-alat':
+            return Number(props.mutasiAlatCount ?? 0);
         default:
             return 0;
     }

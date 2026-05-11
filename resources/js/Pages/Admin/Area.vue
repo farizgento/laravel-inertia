@@ -42,7 +42,7 @@
                 <input
                     v-model="search"
                     type="text"
-                    placeholder="Cari nama atau slug area..."
+                    placeholder="Cari nama, kode, atau slug area..."
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
             </label>
@@ -54,6 +54,7 @@
                     <thead class="bg-slate-50">
                         <tr class="text-left font-semibold text-slate-500">
                             <th class="px-4 py-3">Nama</th>
+                            <th class="px-4 py-3">Kode</th>
                             <th class="px-4 py-3">Slug</th>
                             <th class="px-4 py-3 text-center">Pengguna</th>
                             <th class="px-4 py-3">Dibuat</th>
@@ -62,12 +63,12 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         <tr v-if="isLoading">
-                            <td colspan="5" class="px-4 py-6 text-center text-sm text-slate-500">
+                            <td colspan="6" class="px-4 py-6 text-center text-sm text-slate-500">
                                 Memuat data area...
                             </td>
                         </tr>
                         <tr v-else-if="loadError">
-                            <td colspan="5" class="px-4 py-6 text-center text-sm text-rose-500">
+                            <td colspan="6" class="px-4 py-6 text-center text-sm text-rose-500">
                                 {{ loadError }}
                             </td>
                         </tr>
@@ -78,6 +79,7 @@
                                     <p class="mt-1 text-xs text-slate-500">ID #{{ area.id }}</p>
                                 </div>
                             </td>
+                            <td class="px-4 py-4 font-semibold text-slate-700">{{ area.kode }}</td>
                             <td class="px-4 py-4 text-slate-600">{{ area.slug }}</td>
                             <td class="px-4 py-4 text-center font-semibold text-slate-700">{{ area.users_count }}</td>
                             <td class="px-4 py-4 text-slate-600">{{ area.created_at ?? '-' }}</td>
@@ -108,7 +110,7 @@
                             </td>
                         </tr>
                         <tr v-if="!isLoading && !loadError && !areas.length">
-                            <td colspan="5" class="px-4 py-6 text-center text-sm text-slate-500">
+                            <td colspan="6" class="px-4 py-6 text-center text-sm text-slate-500">
                                 Tidak ada data area.
                             </td>
                         </tr>
@@ -170,7 +172,7 @@
                             {{ isEdit ? 'Edit Area' : 'Tambah Area' }}
                         </h3>
                         <p class="mt-1 text-sm text-slate-500">
-                            {{ isEdit ? 'Perbarui nama area yang dipilih.' : 'Tambahkan area baru ke sistem.' }}
+                            {{ isEdit ? 'Perbarui area yang dipilih.' : 'Tambahkan area baru ke sistem.' }}
                         </p>
                     </div>
                     <button
@@ -191,16 +193,22 @@
                         <input
                             v-model="form.name"
                             type="text"
-                            placeholder="Contoh: KS TUBUN"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            placeholder="Contoh: Area 1.1"
+                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 mb-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         />
                         <p v-if="errors.name" class="text-xs text-rose-500">{{ errors.name }}</p>
                     </label>
 
-                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Slug Otomatis</p>
-                        <p class="mt-1 text-sm font-semibold text-slate-700">{{ previewSlug || 'area' }}</p>
-                    </div>
+                    <label class="space-y-2 text-sm font-medium text-slate-700">
+                        <span>Kode Area *</span>
+                        <input
+                            v-model="form.kode"
+                            type="text"
+                            placeholder="Kode Area"
+                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        />
+                        <p v-if="errors.kode" class="text-xs text-rose-500">{{ errors.kode }}</p>
+                    </label>
                 </div>
 
                 <p v-if="errors.general || formError" class="mt-3 text-sm font-semibold text-rose-500">
@@ -272,6 +280,7 @@ const pagination = reactive({
 const form = reactive({
     id: null,
     name: '',
+    kode: '',
 });
 
 const isEdit = computed(() => form.id !== null);
@@ -335,6 +344,7 @@ const closeAlert = () => {
 const resetForm = () => {
     form.id = null;
     form.name = '';
+    form.kode = '';
     formError.value = '';
     errors.value = {};
 };
@@ -347,6 +357,7 @@ const openCreate = () => {
 const openEdit = (area) => {
     form.id = area.id;
     form.name = area.name ?? '';
+    form.kode = area.kode ?? '';
     formError.value = '';
     errors.value = {};
     formOpen.value = true;
@@ -410,6 +421,7 @@ const submitForm = async () => {
     try {
         const payload = {
             name: form.name,
+            kode: form.kode,
         };
 
         if (isEdit.value) {

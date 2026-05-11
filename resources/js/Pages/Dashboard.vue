@@ -346,7 +346,7 @@ const summaryCards = computed(() => [
 
 const statusCards = computed(() => [
     {
-        title: 'Menunggu Review',
+        title: 'Perlu Review',
         value: formatNumber(summary.value.menunggu_review),
         description: 'Butuh tindak lanjut review peminjaman.',
         wrapperClass: 'border-amber-200 bg-amber-50/70',
@@ -357,7 +357,7 @@ const statusCards = computed(() => [
     {
         title: 'Sedang Berjalan',
         value: formatNumber(summary.value.sedang_berjalan),
-        description: 'Termasuk dipesan, disiapkan, terkirim, dan diterima.',
+        description: 'Termasuk dipesan, dikirim, dan diterima.',
         wrapperClass: 'border-blue-200 bg-blue-50/70',
         titleClass: 'text-blue-900',
         captionClass: 'text-blue-700/80',

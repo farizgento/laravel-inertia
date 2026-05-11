@@ -64,11 +64,12 @@ class DashboardController extends Controller
             'total_peminjaman' => (clone $peminjamanQuery)->count(),
             'total_aset_area' => (int) (clone $alatQuery)->sum('total_aset'),
             'total_jenis_alat_area' => (clone $alatQuery)->count(),
-            'menunggu_review' => (int) ($statusCounts['Menunggu Review'] ?? 0),
+            'menunggu_review' =>
+                (int) ($statusCounts[Peminjaman::STATUS_PERLU_DIREVIEW] ?? 0) +
+                (int) ($statusCounts[Peminjaman::STATUS_PERLU_DISETUJUI] ?? 0),
             'sedang_berjalan' =>
                 (int) ($statusCounts[Peminjaman::STATUS_DIPESAN] ?? 0) +
-                (int) ($statusCounts[Peminjaman::STATUS_DISIAPKAN] ?? 0) +
-                (int) ($statusCounts[Peminjaman::STATUS_TERKIRIM] ?? 0) +
+                (int) ($statusCounts[Peminjaman::STATUS_DIKIRIM] ?? 0) +
                 (int) ($statusCounts[Peminjaman::STATUS_DITERIMA] ?? 0) +
                 (int) ($statusCounts[Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS] ?? 0),
             'selesai' =>
@@ -106,9 +107,7 @@ class DashboardController extends Controller
     {
         return LaporanAlat::query()
             ->when($areaId, function (Builder $query) use ($areaId) {
-                $query->whereHas('alat', function (Builder $alatQuery) use ($areaId) {
-                    $alatQuery->where('area_id', $areaId);
-                });
+                $query->where('area_id', $areaId);
             }, function (Builder $query) {
                 $query->whereRaw('1 = 0');
             });

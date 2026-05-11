@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Alat;
+use App\Models\AreaAlatStock;
 use App\Models\LaporanAlat;
 use App\Models\Role;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,6 +24,25 @@ class LaporanAlatController extends Controller
         }
 
         return $fallbackAreaId ? (int) $fallbackAreaId : null;
+    }
+
+    private function applyReportAreaFilter(Builder $query, int $areaId): Builder
+    {
+        return $query->where('area_id', $areaId);
+    }
+
+    private function applyAccessibleToolFilter(Builder $query, int $areaId): Builder
+    {
+        return $query->where(function (Builder $builder) use ($areaId) {
+            $builder
+                ->where('area_id', $areaId)
+                ->orWhereHas('areaStocks', function (Builder $stockQuery) use ($areaId) {
+                    $stockQuery
+                        ->where('area_id', $areaId)
+                        ->where('active', true)
+                        ->where('qty', '>', 0);
+                });
+        });
     }
 
     public function pendingCounts(Request $request)
@@ -56,13 +76,9 @@ class LaporanAlatController extends Controller
                 ]);
             }
 
-            $baseQuery->whereHas('alat', function (Builder $sub) use ($areaId) {
-                $sub->where('area_id', $areaId);
-            });
+            $this->applyReportAreaFilter($baseQuery, $areaId);
         } elseif (! empty($areaId)) {
-            $baseQuery->whereHas('alat', function (Builder $sub) use ($areaId) {
-                $sub->where('area_id', $areaId);
-            });
+            $this->applyReportAreaFilter($baseQuery, $areaId);
         }
 
         $counts = (clone $baseQuery)
@@ -255,10 +271,10 @@ class LaporanAlatController extends Controller
         $alat = Alat::query()
             ->where('id', $validated['alat_id'])
             ->when($targetAreaId, function (Builder $query) use ($targetAreaId) {
-                $query->where('area_id', $targetAreaId);
+                $this->applyAccessibleToolFilter($query, $targetAreaId);
             }, function (Builder $query) use ($isAdmin, $user) {
                 if (! $isAdmin) {
-                    $query->where('area_id', $user->area_id);
+                    $this->applyAccessibleToolFilter($query, (int) $user->area_id);
                 }
             })
             ->first();
@@ -267,6 +283,16 @@ class LaporanAlatController extends Controller
             throw ValidationException::withMessages([
                 'alat_id' => [$isAdmin ? 'Alat tidak ditemukan.' : 'Alat tidak ditemukan di area anda.'],
             ]);
+        }
+
+        $sourcePeminjamanId = null;
+        if ($targetAreaId && (int) $alat->area_id !== (int) $targetAreaId) {
+            $sourcePeminjamanId = AreaAlatStock::query()
+                ->where('area_id', $targetAreaId)
+                ->where('alat_id', $alat->id)
+                ->where('active', true)
+                ->where('qty', '>', 0)
+                ->value('source_peminjaman_id');
         }
 
         $file = $validated['foto'];
@@ -289,13 +315,15 @@ class LaporanAlatController extends Controller
             'jumlah' => $validated['jumlah'],
             'alat_id' => $alat->id,
             'user_id' => $user->id,
+            'area_id' => $targetAreaId,
+            'source_peminjaman_id' => $sourcePeminjamanId,
             'path' => $path,
             'original_name' => $file->getClientOriginalName(),
             'mime' => $file->getClientMimeType(),
             'size' => $file->getSize(),
         ]);
 
-        return response()->json($this->mapLaporan($laporan->loadMissing(['alat.area', 'user'])), 201);
+        return response()->json($this->mapLaporan($laporan->loadMissing(['alat.area', 'area', 'user'])), 201);
     }
 
     private function updateStatusByKategori(Request $request, LaporanAlat $laporan, string $kategori)
@@ -325,13 +353,14 @@ class LaporanAlatController extends Controller
             'status' => ['required', 'in:Disetujui,Ditolak,Selesai'],
         ]);
 
-        $laporan->loadMissing('alat.area');
+        $laporan->loadMissing('alat.area', 'area');
         $alat = $laporan->alat;
         if (! $alat) {
             return response()->json(['message' => 'Alat tidak ditemukan.'], 422);
         }
 
-        if (($isSpTool || $isPicTools || $isMgrTool) && (! $targetAreaId || (int) $alat->area_id !== (int) $targetAreaId)) {
+        $laporanAreaId = (int) ($laporan->area_id ?? $alat->area_id);
+        if (($isSpTool || $isPicTools || $isMgrTool) && (! $targetAreaId || $laporanAreaId !== (int) $targetAreaId)) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -360,10 +389,36 @@ class LaporanAlatController extends Controller
                 }
 
                 $lockedAlat->decrement('total_aset', $jumlah);
+                if ($lockedLaporan->area_id && (int) $lockedLaporan->area_id !== (int) $lockedAlat->area_id) {
+                    $stock = AreaAlatStock::query()
+                        ->where('area_id', $lockedLaporan->area_id)
+                        ->where('alat_id', $lockedAlat->id)
+                        ->where('active', true)
+                        ->lockForUpdate()
+                        ->first();
+                    if ($stock) {
+                        $nextQty = max((int) $stock->qty - $jumlah, 0);
+                        $stock->update([
+                            'qty' => $nextQty,
+                            'active' => $nextQty > 0,
+                        ]);
+                    }
+                }
             }
 
             if ($wasApproved && ! $willBeApproved) {
                 $lockedAlat->increment('total_aset', $jumlah);
+                if ($lockedLaporan->area_id && (int) $lockedLaporan->area_id !== (int) $lockedAlat->area_id) {
+                    $stock = AreaAlatStock::query()
+                        ->firstOrNew([
+                            'area_id' => $lockedLaporan->area_id,
+                            'alat_id' => $lockedAlat->id,
+                            'source_peminjaman_id' => $lockedLaporan->source_peminjaman_id,
+                        ]);
+                    $stock->qty = (int) ($stock->qty ?? 0) + $jumlah;
+                    $stock->active = true;
+                    $stock->save();
+                }
             }
 
             $lockedLaporan->update([
@@ -373,7 +428,7 @@ class LaporanAlatController extends Controller
 
         return response()->json(
             $this->mapLaporan(
-                $laporan->fresh(['alat.area', 'user'])
+                $laporan->fresh(['alat.area', 'area', 'user'])
             )
         );
     }
@@ -419,17 +474,13 @@ class LaporanAlatController extends Controller
 
         $query = LaporanAlat::query()
             ->where('kategori', $kategori)
-            ->with(['alat.area', 'user'])
+            ->with(['alat.area', 'area', 'user'])
             ->orderByDesc('created_at');
 
         if ($context['is_sp_tool'] || $context['is_pic_tools'] || $context['is_mgr_tool']) {
-            $query->whereHas('alat', function (Builder $sub) use ($areaId) {
-                $sub->where('area_id', $areaId);
-            });
+            $this->applyReportAreaFilter($query, $areaId);
         } elseif (! empty($areaId)) {
-            $query->whereHas('alat', function (Builder $sub) use ($areaId) {
-                $sub->where('area_id', $areaId);
-            });
+            $this->applyReportAreaFilter($query, $areaId);
         }
 
         if (! empty($alatId)) {
@@ -462,7 +513,7 @@ class LaporanAlatController extends Controller
     private function mapLaporan(LaporanAlat $laporan): array
     {
         $alat = $laporan->alat;
-        $area = $alat?->area;
+        $area = $laporan->area ?: $alat?->area;
         $reporter = $laporan->user;
 
         return [
@@ -470,7 +521,7 @@ class LaporanAlatController extends Controller
             'kategori' => $laporan->kategori,
             'alat_id' => $laporan->alat_id,
             'alat_nama' => $alat?->nama ?? '-',
-            'alat_kode' => $alat ? sprintf('ALT-%03d', $alat->id) : '-',
+            'alat_kode' => $alat?->kode ?? '-',
             'area_id' => $area?->id,
             'area_name' => $area?->name ?? '-',
             'user_id' => $laporan->user_id,
