@@ -10,15 +10,15 @@
             <p class="mt-2 text-2xl font-semibold text-slate-900">{{ totalCount }}</p>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
-            <p class="text-sm text-slate-500">Menunggu Review</p>
+            <p class="text-sm text-slate-500">Perlu Review</p>
             <p class="mt-2 text-2xl font-semibold text-blue-600">{{ reviewCount }}</p>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
-            <p class="text-sm text-slate-500">Disiapkan</p>
+            <p class="text-sm text-slate-500">Dipesan</p>
             <p class="mt-2 text-2xl font-semibold text-amber-500">{{ processCount }}</p>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
-            <p class="text-sm text-slate-500">Terkirim</p>
+            <p class="text-sm text-slate-500">Dikirim</p>
             <p class="mt-2 text-2xl font-semibold text-emerald-600">{{ deliveredCount }}</p>
         </div>
     </section>
@@ -64,7 +64,7 @@
                     v-model="search"
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                     type="text"
-                    placeholder="Cari keperluan atau ID..."
+                    placeholder="Cari pekerjaan atau ID..."
                 />
             </div>
             <div class="w-full lg:w-56">
@@ -73,15 +73,25 @@
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 >
                     <option value="Semua">Semua Status</option>
-                    <option value="Menunggu Review">Menunggu Review</option>
+                    <option value="Perlu Direview">Perlu Direview</option>
+                    <option value="Perlu Disetujui">Perlu Disetujui</option>
                     <option value="Dipesan">Dipesan</option>
-                    <option value="Disiapkan">Disiapkan</option>
-                    <option value="Terkirim">Terkirim</option>
+                    <option value="Dikirim">Dikirim</option>
                     <option value="Diterima">Diterima</option>
                     <option value="Dikembalikan Partials">Dikembalikan Partials</option>
                     <option value="Dikembalikan Semuanya">Dikembalikan Semuanya</option>
                     <option value="Selesai">Selesai</option>
                     <option value="Ditolak">Ditolak</option>
+                </select>
+            </div>
+            <div class="w-full lg:w-56">
+                <select
+                    v-model="kategoriFilter"
+                    class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                >
+                    <option value="Semua">Semua Kategori</option>
+                    <option value="Intra Area">Intra Area</option>
+                    <option value="Antar Area">Antar Area</option>
                 </select>
             </div>
             <button
@@ -107,39 +117,43 @@
             </p>
             <div v-else class="overflow-hidden rounded-2xl border border-slate-200">
                 <div class="overflow-x-auto">
-                    <table class="min-w-[1240px] w-full text-sm">
+                    <table class="min-w-[1320px] w-full text-sm">
                         <thead class="bg-slate-50">
                             <tr class="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                                <th class="px-4 py-3">Peminjam</th>
-                                <th class="px-4 py-3">Reviewer</th>
                                 <th class="px-4 py-3">Dibuat</th>
+                                <th class="px-4 py-3">Pekerjaan</th>
+                                <th class="px-4 py-3">Peminjam</th>
+                                <th class="px-4 py-3">Direview/Disetujui</th>
                                 <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3">Keperluan</th>
+                                <th class="px-4 py-3">Kategori</th>
                                 <th class="px-4 py-3">Periode</th>
-                                <th class="px-4 py-3 text-center">Item</th>
-                                <th class="px-4 py-3">Foto</th>
+                                <th class="px-4 py-3">Item</th>
                                 <th class="px-4 py-3 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
                             <tr
-                                v-for="item in filteredItems"
-                                :key="item.id"
-                                class="align-top transition hover:bg-slate-50"
+                            v-for="item in filteredItems"
+                            :key="item.id"
+                            class="align-top transition hover:bg-slate-50"
                             >
-                                <td class="px-4 py-4">
+                            <td class="px-4 py-4 text-slate-600">
+                                {{ item.createdAt }}
+                            </td>
+                            <td class="px-4 py-4">
+                                <p class="font-semibold text-slate-900">{{ item.title }}</p>
+                                <p class="mt-1 text-xs text-slate-500">ID #{{ item.id }}</p>
+                            </td>
+                            <td class="px-4 py-4">
                                     <p class="font-semibold text-slate-900">{{ item.userName }}</p>
                                 </td>
                                 <td class="px-4 py-4">
                                     <span
                                         class="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold"
-                                        :class="item.reviewerName === '-' ? 'bg-slate-100 text-slate-500' : 'bg-blue-50 text-blue-700'"
+                                        :class="reviewApprovalLabel(item) === '-' || reviewApprovalLabel(item).endsWith('/-') ? 'bg-slate-100 text-slate-500' : 'bg-blue-50 text-blue-700'"
                                     >
-                                        {{ item.reviewerName }}
+                                        {{ reviewApprovalLabel(item) }}
                                     </span>
-                                </td>
-                                <td class="px-4 py-4 text-slate-600">
-                                    {{ item.createdAt }}
                                 </td>
                                 <td class="px-4 py-4">
                                     <span
@@ -150,8 +164,12 @@
                                     </span>
                                 </td>
                                 <td class="px-4 py-4">
-                                    <p class="font-semibold text-slate-900">{{ item.title }}</p>
-                                    <p class="mt-1 text-xs text-slate-500">ID #{{ item.id }}</p>
+                                    <span
+                                        class="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold"
+                                        :class="kategoriClass(item.kategori)"
+                                    >
+                                        {{ item.kategori }}
+                                    </span>
                                 </td>
                                 <td class="px-4 py-4 text-slate-600">
                                     <p>{{ item.borrowDate }}</p>
@@ -159,29 +177,6 @@
                                 </td>
                                 <td class="px-4 py-4 text-center font-semibold text-slate-700">
                                     {{ item.itemCount }}
-                                </td>
-                                <td class="px-4 py-4">
-                                    <div
-                                        v-if="item.photoPreview.length"
-                                        class="flex flex-wrap items-center gap-2"
-                                    >
-                                        <div
-                                            v-for="photo in item.photoPreview"
-                                            :key="photo.id ?? photo.url ?? photo.originalName"
-                                            class="h-10 w-10 overflow-hidden rounded-lg border border-slate-200 bg-white"
-                                        >
-                                            <img
-                                                :src="photoSrc(photo)"
-                                                :alt="photo.originalName || item.title"
-                                                class="h-full w-full object-cover"
-                                                loading="lazy"
-                                            />
-                                        </div>
-                                        <span v-if="item.photoExtraCount" class="text-xs text-slate-500">
-                                            +{{ item.photoExtraCount }}
-                                        </span>
-                                    </div>
-                                    <span v-else class="text-slate-400">-</span>
                                 </td>
                                 <td class="px-4 py-4">
                                     <div class="flex justify-end gap-2">
@@ -351,15 +346,18 @@ const pagination = reactive({
 
 const search = ref('');
 const statusFilter = ref('Semua');
+const kategoriFilter = ref('Semua');
 const selectedItem = ref(null);
 const suratJalanItem = ref(null);
 
 const filteredItems = computed(() => items.value);
 
 const totalCount = computed(() => (pagination.total ? pagination.total : items.value.length));
-const reviewCount = computed(() => items.value.filter((item) => item.status === 'Menunggu Review').length);
-const processCount = computed(() => items.value.filter((item) => item.status === 'Disiapkan').length);
-const deliveredCount = computed(() => items.value.filter((item) => item.status === 'Terkirim').length);
+const reviewCount = computed(() =>
+    items.value.filter((item) => ['Perlu Direview', 'Perlu Disetujui'].includes(item.status)).length
+);
+const processCount = computed(() => items.value.filter((item) => item.status === 'Dipesan').length);
+const deliveredCount = computed(() => items.value.filter((item) => item.status === 'Dikirim').length);
 
 const pageNumbers = computed(() => {
     const total = pagination.lastPage;
@@ -403,14 +401,6 @@ const normalizeHistory = (item) => {
               remainingQty: Number.isFinite(tool?.remaining_qty) ? tool.remaining_qty : 0,
               reviewStatus: tool?.review_status ?? 'Menunggu Review',
               rejectionReason: tool?.rejection_reason ?? '',
-              photos: Array.isArray(tool?.photos)
-                  ? tool.photos.map((photo) => ({
-                        id: photo?.id ?? null,
-                        url: photo?.url ?? photo?.path ?? '',
-                        path: photo?.path ?? '',
-                        originalName: photo?.original_name ?? '',
-                    }))
-                  : [],
               reports: Array.isArray(tool?.reports)
                   ? tool.reports.map((report) => ({
                         id: report?.id ?? null,
@@ -430,21 +420,23 @@ const normalizeHistory = (item) => {
           }))
         : [];
 
-    const allPhotos = tools
-        .flatMap((tool) => (Array.isArray(tool?.photos) ? tool.photos : []))
-        .filter((photo) => photo?.url || photo?.path);
-    const photoPreview = allPhotos.slice(0, 3);
-
     return {
         id: item?.id ?? '',
         title: item?.title ?? '-',
         userName: item?.user_name ?? '-',
         reviewerName: item?.reviewed_by_name ?? '-',
+        requesterReviewerName: item?.requester_reviewed_by_name ?? '-',
+        areaName: item?.area_name ?? '-',
+        areaId: item?.area_id ?? null,
+        requesterAreaName: item?.requester_area_name ?? '-',
+        requesterAreaId: item?.requester_area_id ?? null,
+        isInterArea: Boolean(item?.is_inter_area),
         createdAt: item?.created_at ?? '-',
         borrowDate: item?.borrow_date ?? '-',
         returnDate: item?.return_date ?? '-',
         itemCount: Number.isFinite(item?.item_count) ? item.item_count : 0,
-        status: item?.status ?? 'Menunggu Review',
+        status: item?.status ?? 'Perlu Disetujui',
+        kategori: item?.kategori ?? 'Intra Area',
         pengirimNama: item?.pengirim_nama ?? '',
         suratJalanUrl: item?.surat_jalan_url ?? '',
         suratJalanPath: item?.surat_jalan_path ?? '',
@@ -465,33 +457,28 @@ const normalizeHistory = (item) => {
                   originalName: report?.original_name ?? '',
               }))
             : [],
-        photoPreview,
-        photoExtraCount: Math.max(allPhotos.length - photoPreview.length, 0),
     };
 };
 
-const photoSrc = (photo) => {
-    if (!photo) {
-        return '';
-    }
-    if (photo.url) {
-        return photo.url;
-    }
-    if (!photo.path) {
-        return '';
-    }
-    return photo.path.startsWith('/storage/') ? photo.path : `/storage/${photo.path}`;
+const reviewApprovalLabel = (item) => {
+    const reviewer = item?.requesterReviewerName && item.requesterReviewerName !== '-'
+        ? item.requesterReviewerName
+        : item?.reviewerName && item.reviewerName !== '-'
+            ? item.reviewerName
+            : '-';
+    const approver = item?.reviewerName && item.reviewerName !== '-' ? item.reviewerName : '-';
+
+    return item?.kategori === 'Antar Area' ? `${reviewer}/${approver}` : approver;
 };
 
 const statusClass = (status) => {
     switch (status) {
-        case 'Menunggu Review':
+        case 'Perlu Direview':
+        case 'Perlu Disetujui':
             return 'bg-blue-50 text-blue-600';
         case 'Dipesan':
             return 'bg-cyan-50 text-cyan-700';
-        case 'Disiapkan':
-            return 'bg-amber-50 text-amber-700';
-        case 'Terkirim':
+        case 'Dikirim':
             return 'bg-emerald-50 text-emerald-700';
         case 'Diterima':
             return 'bg-teal-50 text-teal-700';
@@ -510,6 +497,17 @@ const statusClass = (status) => {
     }
 };
 
+const kategoriClass = (kategori) => {
+    switch (kategori) {
+        case 'Antar Area':
+            return 'bg-purple-50 text-purple-700';
+        case 'Intra Area':
+            return 'bg-sky-50 text-sky-700';
+        default:
+            return 'bg-slate-100 text-slate-600';
+    }
+};
+
 let filterTimeout = null;
 
 const buildFilterParams = () => {
@@ -523,6 +521,9 @@ const buildFilterParams = () => {
     }
     if (statusFilter.value && statusFilter.value !== 'Semua') {
         params.status = statusFilter.value;
+    }
+    if (kategoriFilter.value && kategoriFilter.value !== 'Semua') {
+        params.kategori = kategoriFilter.value;
     }
     if (isAreaSwitcherRole.value && activeAreaId.value) {
         params.area_id = activeAreaId.value;
@@ -629,7 +630,7 @@ watch(
 );
 
 watch(
-    [() => search.value, () => statusFilter.value],
+    [() => search.value, () => statusFilter.value, () => kategoriFilter.value],
     () => {
         if (filterTimeout) {
             clearTimeout(filterTimeout);

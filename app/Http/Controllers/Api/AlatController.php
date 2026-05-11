@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ImportAlatJob;
 use App\Models\Alat;
 use App\Models\AlatImport;
+use App\Models\AreaAlatStock;
 use App\Models\Peminjaman;
 use App\Models\Role;
 use App\Services\AlatImportService;
@@ -42,6 +43,14 @@ class AlatController extends Controller
         return $areaId ? (int) $areaId : null;
     }
 
+    private function canBrowseInterAreaSource(Request $request): bool
+    {
+        $roleKey = strtolower((string) ($request->user()?->role?->key ?? ''));
+
+        return in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool', Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true)
+            && $request->boolean('inter_area_source');
+    }
+
     private function applyWritableArea(Request $request, array $data): array
     {
         $authorizedAreaId = $this->getAuthorizedAreaId($request);
@@ -72,25 +81,27 @@ class AlatController extends Controller
         }
     }
 
-    private function formatAlat(Alat $alat, int $borrowedQty = 0): array
+    private function formatAlat(Alat $alat, int $borrowedQty = 0, ?int $totalOverride = null, array $extra = []): array
     {
-        $stokTersedia = max(((int) $alat->total_aset) - $borrowedQty, 0);
+        $totalAset = $totalOverride ?? (int) $alat->total_aset;
+        $stokTersedia = max($totalAset - $borrowedQty, 0);
 
         return [
             'id' => $alat->id,
-            'kode' => sprintf('ALT-%03d', $alat->id),
+            'kode' => $alat->kode,
             'nama' => $alat->nama,
             'jenis_alat' => $alat->jenis_alat,
             'klasifikasi_alat' => $alat->klasifikasi_alat,
             'stok' => $stokTersedia,
-            'total_aset' => (int) $alat->total_aset,
+            'total_aset' => $totalAset,
             'stok_tersedia' => $stokTersedia,
             'deskripsi' => '',
             'lokasi' => $alat->area?->name ?? 'Area tidak diketahui',
             'area_name' => $alat->area?->name ?? 'Area tidak diketahui',
             'area_slug' => $alat->area?->slug,
+            'area_kode' => $alat->area?->kode,
             'area_id' => $alat->area_id,
-        ];
+        ] + $extra;
     }
 
     private function borrowedMap(array $alatIds): array
@@ -108,8 +119,36 @@ class AlatController extends Controller
                 'items.alat_id',
                 DB::raw(
                     "SUM(CASE
-                        WHEN pem.status = '" . Peminjaman::STATUS_MENUNGGU_REVIEW . "' THEN items.qty
-                        WHEN pem.status IN ('" . Peminjaman::STATUS_DIPESAN . "', '" . Peminjaman::STATUS_DISIAPKAN . "', '" . Peminjaman::STATUS_TERKIRIM . "') THEN COALESCE(items.approved_qty, 0)
+                        WHEN pem.status IN ('" . Peminjaman::STATUS_PERLU_DISETUJUI . "', '" . Peminjaman::STATUS_PERLU_DIREVIEW . "') THEN items.qty
+                        WHEN pem.status IN ('" . Peminjaman::STATUS_DIPESAN . "', '" . Peminjaman::STATUS_DIKIRIM . "') THEN COALESCE(items.approved_qty, 0)
+                        WHEN pem.status IN ('" . Peminjaman::STATUS_DITERIMA . "', '" . Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS . "') THEN GREATEST(COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0), 0)
+                        ELSE 0
+                    END) as total"
+                )
+            )
+            ->pluck('total', 'alat_id')
+            ->map(fn ($value) => (int) $value)
+            ->all();
+    }
+
+    private function borrowedMapForArea(array $alatIds, int $areaId): array
+    {
+        if (! $alatIds) {
+            return [];
+        }
+
+        return DB::table('peminjaman_items as items')
+            ->join('peminjamans as pem', 'pem.id', '=', 'items.peminjaman_id')
+            ->whereIn('items.alat_id', $alatIds)
+            ->where('pem.area_id', $areaId)
+            ->whereIn('pem.status', Peminjaman::stockHoldingStatuses())
+            ->groupBy('items.alat_id')
+            ->select(
+                'items.alat_id',
+                DB::raw(
+                    "SUM(CASE
+                        WHEN pem.status IN ('" . Peminjaman::STATUS_PERLU_DISETUJUI . "', '" . Peminjaman::STATUS_PERLU_DIREVIEW . "') THEN items.qty
+                        WHEN pem.status IN ('" . Peminjaman::STATUS_DIPESAN . "', '" . Peminjaman::STATUS_DIKIRIM . "') THEN COALESCE(items.approved_qty, 0)
                         WHEN pem.status IN ('" . Peminjaman::STATUS_DITERIMA . "', '" . Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS . "') THEN GREATEST(COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0), 0)
                         ELSE 0
                     END) as total"
@@ -123,10 +162,11 @@ class AlatController extends Controller
     private function buildIndexQuery(Request $request)
     {
         $search = trim((string) $request->query('search', ''));
+        $classification = trim((string) ($request->query('klasifikasi_alat', $request->query('classification', ''))));
         $areaId = $request->query('area_id');
         $authorizedAreaId = $this->getAuthorizedAreaId($request);
 
-        if ($request->user() && $authorizedAreaId !== null) {
+        if ($request->user() && $authorizedAreaId !== null && ! $this->canBrowseInterAreaSource($request)) {
             $areaId = $authorizedAreaId;
         }
 
@@ -137,8 +177,15 @@ class AlatController extends Controller
             $query->where(function ($builder) use ($keyword) {
                 $builder
                     ->whereRaw('LOWER(nama) LIKE ?', ['%'.$keyword.'%'])
-                    ->orWhereRaw('LOWER(jenis_alat) LIKE ?', ['%'.$keyword.'%']);
+                    ->orWhereRaw('LOWER(jenis_alat) LIKE ?', ['%'.$keyword.'%'])
+                    ->orWhereHas('area', function ($areaQuery) use ($keyword) {
+                        $areaQuery->whereRaw('LOWER(kode) LIKE ?', ['%'.$keyword.'%']);
+                    });
             });
+        }
+
+        if ($classification !== '') {
+            $query->where('klasifikasi_alat', $classification);
         }
 
         if (! empty($areaId)) {
@@ -172,6 +219,14 @@ class AlatController extends Controller
         }
 
         $query = $this->buildIndexQuery($request);
+        $areaId = $request->query('area_id');
+        if ($request->user() && $authorizedAreaId !== null && ! $this->canBrowseInterAreaSource($request)) {
+            $areaId = $authorizedAreaId;
+        }
+
+        if (! empty($areaId) && ! $this->canBrowseInterAreaSource($request)) {
+            return $this->indexForArea((int) $areaId, $query, $request, $shouldPaginate, $perPageNormalized);
+        }
 
         if ($shouldPaginate) {
             $alats = $query->orderBy('nama')->paginate($perPageNormalized ?: 8);
@@ -202,6 +257,89 @@ class AlatController extends Controller
 
             return $this->formatAlat($alat, $borrowedQty);
         })->values();
+    }
+
+    private function indexForArea(int $areaId, $ownedQuery, Request $request, bool $shouldPaginate, int $perPageNormalized)
+    {
+        $ownedAlats = $ownedQuery->orderBy('nama')->get();
+        $sharedStocks = AreaAlatStock::query()
+            ->with(['alat.area', 'sourcePeminjaman'])
+            ->where('area_id', $areaId)
+            ->where('active', true)
+            ->where('qty', '>', 0)
+            ->whereHas('alat', function ($query) use ($areaId, $request) {
+                $query->where('area_id', '!=', $areaId);
+                $search = trim((string) $request->query('search', ''));
+                $classification = trim((string) ($request->query('klasifikasi_alat', $request->query('classification', ''))));
+                if ($search !== '') {
+                    $keyword = mb_strtolower($search);
+                    $query->where(function ($builder) use ($keyword) {
+                        $builder
+                            ->whereRaw('LOWER(nama) LIKE ?', ['%'.$keyword.'%'])
+                            ->orWhereRaw('LOWER(jenis_alat) LIKE ?', ['%'.$keyword.'%'])
+                            ->orWhereHas('area', function ($areaQuery) use ($keyword) {
+                                $areaQuery->whereRaw('LOWER(kode) LIKE ?', ['%'.$keyword.'%']);
+                            });
+                    });
+                }
+                if ($classification !== '') {
+                    $query->where('klasifikasi_alat', $classification);
+                }
+            })
+            ->get();
+
+        $alatIds = $ownedAlats
+            ->pluck('id')
+            ->merge($sharedStocks->pluck('alat_id'))
+            ->unique()
+            ->values()
+            ->all();
+        $borrowedMap = $this->borrowedMapForArea($alatIds, $areaId);
+
+        $rows = $ownedAlats->toBase()->map(function (Alat $alat) use ($borrowedMap) {
+            return $this->formatAlat($alat, $borrowedMap[$alat->id] ?? 0, null, [
+                'is_shared_area_stock' => false,
+            ]);
+        });
+
+        $sharedRows = $sharedStocks
+            ->toBase()
+            ->filter(fn (AreaAlatStock $stock) => $stock->alat)
+            ->map(function (AreaAlatStock $stock) use ($borrowedMap) {
+                $alat = $stock->alat;
+
+                return $this->formatAlat($alat, $borrowedMap[$alat->id] ?? 0, (int) $stock->qty, [
+                    'is_shared_area_stock' => true,
+                    'source_area_name' => $alat->area?->name ?? 'Area tidak diketahui',
+                    'source_peminjaman_id' => $stock->source_peminjaman_id,
+                    'source_borrow_date' => $stock->sourcePeminjaman?->tanggal_pinjam?->toDateString(),
+                    'source_return_date' => $stock->sourcePeminjaman?->tanggal_kembali?->toDateString(),
+                ]);
+            });
+
+        $data = $rows
+            ->merge($sharedRows)
+            ->sortBy('nama')
+            ->values();
+
+        if (! $shouldPaginate) {
+            return $data;
+        }
+
+        $perPage = $perPageNormalized ?: 8;
+        $currentPage = max((int) $request->query('page', 1), 1);
+        $total = $data->count();
+        $pageData = $data->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        return [
+            'data' => $pageData,
+            'meta' => [
+                'current_page' => $currentPage,
+                'last_page' => max((int) ceil($total / $perPage), 1),
+                'per_page' => $perPage,
+                'total' => $total,
+            ],
+        ];
     }
 
     public function export(Request $request): StreamedResponse

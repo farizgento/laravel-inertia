@@ -7,7 +7,6 @@ use App\Models\Area;
 use App\Models\LaporanAlat;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanItem;
-use App\Models\PeminjamanItemPhoto;
 use App\Models\SuratJalan;
 use App\Models\User;
 use App\Observers\ModelActivityObserver;
@@ -35,7 +34,6 @@ class AppServiceProvider extends ServiceProvider
         Alat::observe($observer);
         Peminjaman::observe($observer);
         PeminjamanItem::observe($observer);
-        PeminjamanItemPhoto::observe($observer);
         SuratJalan::observe($observer);
         LaporanAlat::observe($observer);
     }

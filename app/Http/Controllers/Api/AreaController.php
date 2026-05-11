@@ -18,7 +18,7 @@ class AreaController extends Controller
     {
         return Area::query()
             ->orderBy('name')
-            ->get(['id', 'name', 'slug']);
+            ->get(['id', 'name', 'slug', 'kode']);
     }
 
     private function authorizeSuperAdmin(Request $request): User
@@ -37,6 +37,7 @@ class AreaController extends Controller
             'id' => $area->id,
             'name' => $area->name,
             'slug' => $area->slug,
+            'kode' => $area->kode,
             'users_count' => (int) ($area->users_count ?? 0),
             'created_at' => $area->created_at?->format('d M Y H:i'),
         ];
@@ -81,7 +82,8 @@ class AreaController extends Controller
             $query->where(function ($builder) use ($search) {
                 $builder
                     ->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('slug', 'like', '%' . $search . '%');
+                    ->orWhere('slug', 'like', '%' . $search . '%')
+                    ->orWhere('kode', 'like', '%' . $search . '%');
             });
         }
 
@@ -106,11 +108,13 @@ class AreaController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('areas', 'name')],
+            'kode' => ['required', 'string', 'max:255', Rule::unique('areas', 'kode')],
         ]);
 
         $area = Area::create([
             'name' => $validated['name'],
             'slug' => $this->generateUniqueSlug($validated['name']),
+            'kode' => $validated['kode'],
         ]);
 
         $area->loadCount('users');
@@ -127,11 +131,13 @@ class AreaController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('areas', 'name')->ignore($area->id)],
+            'kode' => ['required', 'string', 'max:255', Rule::unique('areas', 'kode')->ignore($area->id)],
         ]);
 
         $area->update([
             'name' => $validated['name'],
             'slug' => $this->generateUniqueSlug($validated['name'], $area->id),
+            'kode' => $validated['kode'],
         ]);
 
         $area->loadCount('users');

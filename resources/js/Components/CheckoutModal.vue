@@ -54,6 +54,8 @@
                             <input
                                 v-model="form.tanggal_pinjam"
                                 type="date"
+                                :min="dateLimits.minBorrowDate || undefined"
+                                :max="dateLimits.maxReturnDate || undefined"
                                 required
                                 class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                             />
@@ -63,19 +65,28 @@
                             <input
                                 v-model="form.tanggal_kembali"
                                 type="date"
-                                :min="form.tanggal_pinjam"
+                                :min="form.tanggal_pinjam || dateLimits.minBorrowDate || undefined"
+                                :max="dateLimits.maxReturnDate || undefined"
                                 required
                                 class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                             />
                         </label>
                     </div>
 
+                    <p
+                        v-if="dateLimits.message"
+                        class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-700"
+                    >
+                        {{ dateLimits.message }}
+                    </p>
+
                     <label class="space-y-2 text-sm font-medium text-slate-700">
-                        <span>Keperluan *</span>
+                        <span>Pekerjaan *</span><br>
+                        <span><i class="font-light text-red-500">Format penamaan : Jenis Pekerjaan - Unit - Tahun. Contoh : SI - Unit 1 - 2026</i></span>
                         <textarea
-                            v-model="form.keperluan"
+                            v-model="form.pekerjaan"
                             rows="3"
-                            placeholder="Jelaskan keperluan peminjaman..."
+                            placeholder="Jelaskan pekerjaan peminjaman..."
                             required
                             class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         />
@@ -138,6 +149,14 @@ defineProps({
     checkoutError: {
         type: String,
         default: '',
+    },
+    dateLimits: {
+        type: Object,
+        default: () => ({
+            minBorrowDate: '',
+            maxReturnDate: '',
+            message: '',
+        }),
     },
 });
 

@@ -55,7 +55,7 @@
                         {{ submitError }}
                     </p>
                     <button
-                        v-if="canAccept"
+                        v-if="acceptEnabled && canAccept"
                         class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
                         type="button"
                         :disabled="isSubmitting"
@@ -110,6 +110,14 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    canAcceptOverride: {
+        type: Boolean,
+        default: false,
+    },
+    acceptEnabled: {
+        type: Boolean,
+        default: true,
+    },
 });
 
 const emit = defineEmits(['close', 'accepted']);
@@ -120,7 +128,7 @@ const submitError = ref('');
 const roleKey = computed(() => String(page.props.auth?.user?.role?.key ?? '').toLowerCase());
 
 const canAccept = computed(
-    () => roleKey.value === 'user' && props.peminjamanStatus === 'Terkirim' && !!props.peminjamanId
+    () => (roleKey.value === 'user' || props.canAcceptOverride) && props.peminjamanStatus === 'Dikirim' && !!props.peminjamanId
 );
 
 const extension = computed(() => {

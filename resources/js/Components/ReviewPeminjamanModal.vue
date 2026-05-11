@@ -20,9 +20,7 @@
                         <p v-if="item?.userName" class="mt-1 text-sm text-slate-500">
                             Peminjam: {{ item.userName }}
                         </p>
-                        <p v-if="item?.reviewerName && item.reviewerName !== '-'" class="mt-1 text-sm text-slate-500">
-                            Direview oleh: {{ item.reviewerName }}
-                        </p>
+                        
                     </div>
                     <button
                         class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:text-slate-700"
@@ -47,6 +45,30 @@
                         <p class="text-xs text-slate-400">Jumlah Item</p>
                         <p class="mt-2 text-sm font-semibold text-slate-800">
                             {{ item?.itemCount ?? 0 }}
+                        </p>
+                    </div>
+                    <div v-if="isInterArea" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-xs text-slate-400">Area Alat</p>
+                        <p class="mt-2 text-sm font-semibold text-slate-800">
+                            {{ sourceAreaName }}
+                        </p>
+                    </div>
+                    <div v-if="isInterArea" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-xs text-slate-400">Area Peminjam</p>
+                        <p class="mt-2 text-sm font-semibold text-slate-800">
+                            {{ requesterAreaName }}
+                        </p>
+                    </div>
+                    <div v-if="isInterArea" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-xs text-slate-400">Direview</p>
+                        <p class="mt-2 text-sm font-semibold text-slate-800">
+                            {{ requesterReviewerName }}
+                        </p>
+                    </div>
+                    <div v-if="isInterArea" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-xs text-slate-400">Disetujui</p>
+                        <p class="mt-2 text-sm font-semibold text-slate-800">
+                            {{ approverName }}
                         </p>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
@@ -197,7 +219,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps({
     open: {
@@ -223,6 +245,23 @@ const emit = defineEmits(['close', 'submit']);
 const reviewRows = ref([]);
 const reviewNote = ref('');
 const validationError = ref('');
+
+const isInterArea = computed(() =>
+    Boolean(props.item?.isInterArea ?? props.item?.is_inter_area)
+    || props.item?.kategori === 'Antar Area'
+);
+const sourceAreaName = computed(
+    () => props.item?.areaName ?? props.item?.area_name ?? '-'
+);
+const requesterAreaName = computed(
+    () => props.item?.requesterAreaName ?? props.item?.requester_area_name ?? '-'
+);
+const requesterReviewerName = computed(
+    () => props.item?.requesterReviewerName ?? props.item?.requester_reviewed_by_name ?? '-'
+);
+const approverName = computed(
+    () => props.item?.reviewerName ?? props.item?.reviewed_by_name ?? '-'
+);
 
 const buildRows = (tools) =>
     (Array.isArray(tools) ? tools : []).map((tool) => {

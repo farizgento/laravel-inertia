@@ -112,7 +112,15 @@
                                 {{ tool.kode }}
                             </td>
                             <td class="px-4 py-4 font-semibold text-slate-900 capitalize">
-                                {{ tool.nama }}
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span>{{ tool.nama }}</span>
+                                    <span
+                                        v-if="tool.is_shared_area_stock"
+                                        class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700"
+                                    >
+                                        Antar Area
+                                    </span>
+                                </div>
                             </td>
                             <td class="px-4 py-4 text-slate-600">{{ tool.jenis_alat }}</td>
                             <td class="px-4 py-4 text-slate-600">{{ tool.klasifikasi_alat }}</td>
@@ -120,7 +128,7 @@
                             <td class="px-4 py-4 text-slate-600">{{ tool.total_aset }}</td>
                             <td class="px-4 py-4 text-slate-600">{{ tool.stok_tersedia }}</td>
                             <td v-if="canManageTools" class="px-4 py-4 text-right">
-                                <div class="inline-flex items-center gap-2">
+                                <div v-if="!tool.is_shared_area_stock" class="inline-flex items-center gap-2">
                                     <button
                                         class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-blue-200 hover:text-blue-600"
                                         type="button"
@@ -143,6 +151,7 @@
                                         </svg>
                                     </button>
                                 </div>
+                                <span v-else class="text-xs font-semibold text-slate-400">Pinjaman</span>
                             </td>
                         </tr>
                         <tr v-if="!isLoading && !loadError && !tools.length">
@@ -323,7 +332,11 @@
                     >
                         <p class="text-sm font-semibold text-emerald-700">Mengimpor data alat...</p>
                         <div class="mt-4 h-2 w-full max-w-sm overflow-hidden rounded-full bg-emerald-100">
-                            <div class="h-full w-1/2 animate-pulse rounded-full bg-emerald-500"></div>
+                            <div
+                                class="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                                :class="currentImport?.total_rows ? '' : 'animate-pulse'"
+                                :style="{ width: `${importProgress}%` }"
+                            ></div>
                         </div>
                         <p class="mt-3 text-xs text-slate-500">
                             {{ importSummary || 'Mohon tunggu, file sedang diproses.' }}
@@ -394,7 +407,7 @@
                         {{ importError }}
                     </p>
                     <div
-                        v-if="currentImport && !isImporting && currentImport.status === 'completed'"
+                        v-if="currentImport && !isImporting && normalizedImportStatus === 'completed'"
                         class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
                     >
                         Import selesai. {{ currentImport.created_count ?? 0 }} data ditambahkan, {{ currentImport.updated_count ?? 0 }} data diperbarui.
@@ -485,7 +498,7 @@
 
 <script setup>
 import axios from 'axios';
-import { computed, inject, onMounted, reactive, ref, watch } from 'vue';
+import { computed, inject, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ToastNotification from '../../Components/ToastNotification.vue';
@@ -572,9 +585,32 @@ const normalizeAreaId = (value) => (value === null || value === undefined || val
 
 const isEdit = computed(() => form.id !== null);
 const importFileName = computed(() => importFile.value?.name ?? '');
-const importSummary = computed(() => currentImport.value
-    ? `Diproses ${currentImport.value.processed_rows ?? 0} dari ${currentImport.value.total_rows ?? 0} baris`
-    : '');
+const normalizedImportStatus = computed(() => normalizeImportStatus(currentImport.value?.status));
+const importProgress = computed(() => {
+    const processed = Number(currentImport.value?.processed_rows ?? 0);
+    const total = Number(currentImport.value?.total_rows ?? 0);
+
+    if (total > 0) {
+        return Math.min(Math.max((processed / total) * 100, 8), 100);
+    }
+
+    return normalizedImportStatus.value === 'completed' ? 100 : 45;
+});
+const importSummary = computed(() => {
+    if (!currentImport.value) {
+        return '';
+    }
+
+    if (normalizedImportStatus.value === 'completed') {
+        return `Selesai. ${currentImport.value.created_count ?? 0} data ditambahkan, ${currentImport.value.updated_count ?? 0} data diperbarui.`;
+    }
+
+    if (normalizedImportStatus.value === 'failed') {
+        return currentImport.value.error_message || 'Import alat gagal.';
+    }
+
+    return `Diproses ${currentImport.value.processed_rows ?? 0} dari ${currentImport.value.total_rows ?? 0} baris`;
+});
 
 const pageNumbers = computed(() => {
     const total = pagination.lastPage;
@@ -656,10 +692,7 @@ const resetImport = () => {
     importFile.value = null;
     importError.value = '';
     currentImport.value = null;
-    if (importStatusInterval) {
-        clearInterval(importStatusInterval);
-        importStatusInterval = null;
-    }
+    stopImportPolling();
     if (importInput.value) {
         importInput.value.value = '';
     }
@@ -699,7 +732,7 @@ const handleImportFileChange = (event) => {
 
 const stopImportPolling = () => {
     if (importStatusInterval) {
-        clearInterval(importStatusInterval);
+        clearTimeout(importStatusInterval);
         importStatusInterval = null;
     }
 };
@@ -711,56 +744,48 @@ const handleImportFailure = (message) => {
     showAlert('error', message);
 };
 
+const normalizeImportStatus = (status) => {
+    const normalized = String(status ?? '').toLowerCase();
+    if (['completed', 'complete', 'done', 'success', 'succeeded'].includes(normalized)) {
+        return 'completed';
+    }
+    if (['failed', 'fail', 'error', 'errored'].includes(normalized)) {
+        return 'failed';
+    }
+    if (['processing', 'running', 'working'].includes(normalized)) {
+        return 'processing';
+    }
+    return normalized || 'pending';
+};
+
+const scheduleImportPolling = (importId) => {
+    stopImportPolling();
+    importStatusInterval = setTimeout(() => {
+        pollImportStatus(importId).catch(() => {
+            handleImportFailure('Gagal memantau status import.');
+        });
+    }, 1500);
+};
+
 const pollImportStatus = async (importId) => {
     const response = await axios.get(`/api/alats/imports/${importId}`, {
         __skipGlobalLoading: true,
     });
     currentImport.value = response.data?.import ?? null;
 
-    const status = currentImport.value?.status;
+    const status = normalizeImportStatus(currentImport.value?.status);
     if (status === 'completed') {
         stopImportPolling();
         isImporting.value = false;
         pagination.currentPage = 1;
-        await axios.get('/api/alats', {
-            params: {
-                ...buildParams(),
-                page: pagination.currentPage,
-                per_page: pagination.perPage,
-            },
-            __skipGlobalLoading: true,
-        }).then((response) => {
-            const payload = response.data;
-            const data = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
-            tools.value = data.map((item) => ({
-                id: item.id,
-                kode: item.kode ?? '-',
-                nama: item.nama ?? '-',
-                jenis_alat: item.jenis_alat ?? '-',
-                klasifikasi_alat: item.klasifikasi_alat ?? '-',
-                total_aset: Number(item.total_aset ?? item.stok ?? 0),
-                stok_tersedia: Number(item.stok_tersedia ?? item.stok ?? 0),
-                area_name: item.area_name ?? item.lokasi ?? '-',
-                area_id: item.area_id ?? '',
-            }));
-            if (Array.isArray(payload)) {
-                pagination.currentPage = 1;
-                pagination.lastPage = 1;
-                pagination.total = tools.value.length;
-            } else {
-                const meta = payload?.meta ?? {};
-                pagination.currentPage = Number(meta.current_page ?? pagination.currentPage) || 1;
-                pagination.lastPage = Number(meta.last_page ?? 1);
-                pagination.perPage = Number(meta.per_page ?? pagination.perPage);
-                pagination.total = Number(meta.total ?? tools.value.length);
-            }
-        }).catch(() => {
-            loadError.value = 'Gagal memuat data alat.';
-        });
+        await loadTools({ skipGlobalLoading: true });
         showAlert(
             'success',
             `Import alat selesai. ${currentImport.value?.created_count ?? 0} data ditambahkan, ${currentImport.value?.updated_count ?? 0} data diperbarui.`
         );
+        importOpen.value = false;
+        resetImport();
+        return;
     }
 
     if (status === 'failed') {
@@ -768,7 +793,10 @@ const pollImportStatus = async (importId) => {
         isImporting.value = false;
         importError.value = currentImport.value?.error_message ?? 'Import alat gagal.';
         showAlert('error', 'Import alat gagal.');
+        return;
     }
+
+    scheduleImportPolling(importId);
 };
 
 const loadAreas = async () => {
@@ -792,8 +820,11 @@ const buildParams = () => {
     return params;
 };
 
-const loadTools = async () => {
-    isLoading.value = true;
+const loadTools = async (options = {}) => {
+    const skipGlobalLoading = Boolean(options.skipGlobalLoading);
+    if (!skipGlobalLoading) {
+        isLoading.value = true;
+    }
     loadError.value = '';
     try {
         const response = await axios.get('/api/alats', {
@@ -802,6 +833,7 @@ const loadTools = async () => {
                 page: pagination.currentPage,
                 per_page: pagination.perPage,
             },
+            __skipGlobalLoading: skipGlobalLoading,
         });
         const payload = response.data;
         const data = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
@@ -815,6 +847,7 @@ const loadTools = async () => {
             stok_tersedia: Number(item.stok_tersedia ?? item.stok ?? 0),
             area_name: item.area_name ?? item.lokasi ?? '-',
             area_id: item.area_id ?? '',
+            is_shared_area_stock: Boolean(item.is_shared_area_stock),
         }));
         if (Array.isArray(payload)) {
             pagination.currentPage = 1;
@@ -831,7 +864,9 @@ const loadTools = async () => {
         tools.value = [];
         loadError.value = 'Gagal memuat data alat.';
     } finally {
-        isLoading.value = false;
+        if (!skipGlobalLoading) {
+            isLoading.value = false;
+        }
     }
 };
 
@@ -908,13 +943,6 @@ const submitImport = async () => {
         if (!currentImport.value?.id) {
             throw new Error('Import id tidak ditemukan.');
         }
-
-        stopImportPolling();
-        importStatusInterval = setInterval(() => {
-            pollImportStatus(currentImport.value.id).catch(() => {
-                handleImportFailure('Gagal memantau status import.');
-            });
-        }, 2000);
 
         await pollImportStatus(currentImport.value.id);
     } catch (error) {
@@ -1056,5 +1084,9 @@ onMounted(() => {
             setAreaSwitching?.(false);
         }
     });
+});
+
+onBeforeUnmount(() => {
+    stopImportPolling();
 });
 </script>

@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AreaAlatStock;
 use App\Models\Alat;
 use App\Models\LaporanAlat;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanItem;
-use App\Models\PeminjamanItemPhoto;
 use App\Models\Role;
 use App\Models\SuratJalan;
 use Illuminate\Http\Request;
@@ -22,6 +22,124 @@ use Intervention\Image\ImageManager;
 
 class PengirimanController extends Controller
 {
+    private function applyRoleAreaFilter(
+        $query,
+        Request $request,
+        bool $includeIncomingInterArea = false,
+        bool $includeRequesterInterArea = false
+    )
+    {
+        $user = $request->user();
+        $user->loadMissing('role');
+        $roleKey = strtolower((string) ($user->role?->key ?? ''));
+        $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
+        $areaIdParam = $request->query('area_id');
+
+        if ($isAdmin) {
+            if (! empty($areaIdParam)) {
+                if ($includeIncomingInterArea) {
+                    $query->where(function ($sub) use ($areaIdParam) {
+                        $sub->where('area_id', $areaIdParam)
+                            ->orWhere(function ($incoming) use ($areaIdParam) {
+                                $incoming
+                                    ->where('is_inter_area', true)
+                                    ->where('requester_area_id', $areaIdParam)
+                                    ->where('status', Peminjaman::STATUS_DIKIRIM);
+                            });
+                    });
+                } elseif ($includeRequesterInterArea) {
+                    $query->where(function ($sub) use ($areaIdParam) {
+                        $sub->where('area_id', $areaIdParam)
+                            ->orWhere(function ($requester) use ($areaIdParam) {
+                                $requester
+                                    ->where('is_inter_area', true)
+                                    ->where('requester_area_id', $areaIdParam);
+                            });
+                    });
+                } else {
+                    $query->where('area_id', $areaIdParam);
+                }
+            }
+
+            return null;
+        }
+
+        if (! $user->area_id) {
+            return response()->json([]);
+        }
+
+        if ($includeIncomingInterArea) {
+            $query->where(function ($sub) use ($user) {
+                $sub->where('area_id', $user->area_id)
+                    ->orWhere(function ($incoming) use ($user) {
+                        $incoming
+                            ->where('is_inter_area', true)
+                            ->where('requester_area_id', $user->area_id)
+                            ->where('status', Peminjaman::STATUS_DIKIRIM);
+                    });
+            });
+
+            return null;
+        }
+
+        if ($includeRequesterInterArea) {
+            $query->where(function ($sub) use ($user) {
+                $sub->where('area_id', $user->area_id)
+                    ->orWhere(function ($requester) use ($user) {
+                        $requester
+                            ->where('is_inter_area', true)
+                            ->where('requester_area_id', $user->area_id);
+                    });
+            });
+
+            return null;
+        }
+
+        $query->where('area_id', $user->area_id);
+
+        return null;
+    }
+
+    private function applyKategoriFilter($query, Request $request): void
+    {
+        $kategori = trim((string) ($request->query('kategori', $request->query('category', ''))));
+
+        $this->applyKategoriValueFilter($query, $kategori);
+    }
+
+    private function applyKategoriValueFilter($query, string $kategori): void
+    {
+        if ($kategori === Peminjaman::KATEGORI_ANTAR_AREA) {
+            $query->where(function ($sub) {
+                $sub->where('kategori', Peminjaman::KATEGORI_ANTAR_AREA)
+                    ->orWhere('is_inter_area', true);
+            });
+
+            return;
+        }
+
+        if ($kategori === Peminjaman::KATEGORI_INTRA_AREA) {
+            $query
+                ->where(function ($sub) {
+                    $sub->where('kategori', Peminjaman::KATEGORI_INTRA_AREA)
+                        ->orWhereNull('kategori');
+                })
+                ->where(function ($sub) {
+                    $sub->where('is_inter_area', false)
+                        ->orWhereNull('is_inter_area');
+                });
+        }
+    }
+
+    private function baseShippingCountQuery(array $statuses)
+    {
+        return Peminjaman::query()
+            ->whereIn('status', $statuses)
+            ->whereHas('items', function ($sub) {
+                $sub->where('approved_qty', '>', 0);
+            });
+    }
+
     private function formatPeminjaman(Peminjaman $peminjaman): array
     {
         $alatIds = $peminjaman->items
@@ -31,7 +149,7 @@ class PengirimanController extends Controller
             ->values();
 
         $laporansByAlat = LaporanAlat::query()
-            ->with('alat')
+            ->with('alat.area')
             ->where('user_id', $peminjaman->user_id)
             ->when($alatIds->isNotEmpty(), function ($reportQuery) use ($alatIds) {
                 $reportQuery->whereIn('alat_id', $alatIds->all());
@@ -56,7 +174,7 @@ class PengirimanController extends Controller
                         'id' => $laporan->id,
                         'alat_id' => $laporan->alat_id,
                         'alat_name' => $alat?->nama ?? '-',
-                        'alat_code' => $alat ? sprintf('ALT-%03d', $alat->id) : '-',
+                        'alat_code' => $alat?->kode ?? '-',
                         'kategori' => $laporan->kategori,
                         'status' => $laporan->status ?? 'Dilaporkan',
                         'jumlah' => (int) $laporan->jumlah,
@@ -77,21 +195,13 @@ class PengirimanController extends Controller
                 'item_id' => $item->id,
                 'alat_id' => $item->alat_id,
                 'name' => $alat?->nama ?? '-',
-                'code' => $alat ? sprintf('ALT-%03d', $alat->id) : '-',
+                'code' => $alat?->kode ?? '-',
                 'qty' => (int) $item->qty,
                 'approved_qty' => (int) ($item->approved_qty ?? 0),
                 'returned_qty' => (int) ($item->returned_qty ?? 0),
                 'remaining_qty' => max((int) ($item->approved_qty ?? 0) - (int) ($item->returned_qty ?? 0), 0),
                 'review_status' => $item->review_status ?? 'Menunggu Review',
                 'rejection_reason' => $item->rejection_reason,
-                'photos' => $item->photos
-                    ? $item->photos->map(fn (PeminjamanItemPhoto $photo) => [
-                        'id' => $photo->id,
-                        'path' => $photo->path,
-                        'url' => url('/storage/' . ltrim($photo->path, '/')),
-                        'original_name' => $photo->original_name,
-                    ])->values()
-                    : [],
                 'reports' => $toolReports,
             ];
         })->values();
@@ -102,10 +212,15 @@ class PengirimanController extends Controller
 
         return [
             'id' => $peminjaman->id,
-            'title' => $peminjaman->keperluan,
+            'title' => $peminjaman->pekerjaan,
             'user_name' => $peminjaman->user?->name ?? '-',
             'area_name' => $peminjaman->area?->name ?? 'Area tidak diketahui',
             'area_id' => $peminjaman->area_id,
+            'requester_area_name' => $peminjaman->requesterArea?->name ?? '-',
+            'requester_area_id' => $peminjaman->requester_area_id,
+            'is_inter_area' => (bool) $peminjaman->is_inter_area,
+            'reviewed_by_name' => $peminjaman->reviewer?->name ?? '-',
+            'requester_reviewed_by_name' => $peminjaman->requesterReviewer?->name ?? '-',
             'created_at' => $peminjaman->created_at
                 ? $peminjaman->created_at->format('d M Y H:i')
                 : null,
@@ -117,6 +232,7 @@ class PengirimanController extends Controller
                 : null,
             'item_count' => $peminjaman->items->sum('approved_qty'),
             'status' => $peminjaman->status,
+            'kategori' => $peminjaman->kategori ?? Peminjaman::KATEGORI_INTRA_AREA,
             'pengirim_nama' => $peminjaman->suratJalan?->pengirim_nama,
             'surat_jalan_path' => $peminjaman->suratJalan?->path,
             'surat_jalan_url' => $peminjaman->suratJalan?->path
@@ -144,43 +260,39 @@ class PengirimanController extends Controller
         }
 
         $search = trim((string) $request->query('search', ''));
-        $areaIdParam = $request->query('area_id');
 
         $query = Peminjaman::query()
             ->with([
                 'items' => function ($sub) {
                     $sub->where('approved_qty', '>', 0);
                 },
-                'items.alat',
-                'items.photos',
+                'items.alat.area',
                 'suratJalan',
                 'area',
+                'requesterArea',
+                'reviewer',
+                'requesterReviewer',
                 'user',
             ])
-            ->whereIn('status', ['Dipesan', 'Disiapkan', 'Terkirim'])
+            ->whereIn('status', [Peminjaman::STATUS_DIPESAN, Peminjaman::STATUS_DIKIRIM])
             ->whereHas('items', function ($sub) {
                 $sub->where('approved_qty', '>', 0);
             })
             ->orderByDesc('created_at');
 
-        if ($isAdmin) {
-            if (! empty($areaIdParam)) {
-                $query->where('area_id', $areaIdParam);
-            }
-        } else {
-            if (! $user->area_id) {
-                return response()->json([]);
-            }
-
-            $query->where('area_id', $user->area_id);
+        $blockedResponse = $this->applyRoleAreaFilter($query, $request, true);
+        if ($blockedResponse) {
+            return $blockedResponse;
         }
 
         if ($search !== '') {
             $query->where(function ($sub) use ($search) {
-                $sub->where('keperluan', 'like', '%' . $search . '%')
+                $sub->where('pekerjaan', 'like', '%' . $search . '%')
                     ->orWhere('id', $search);
             });
         }
+
+        $this->applyKategoriFilter($query, $request);
 
         $peminjamans = $query->get();
 
@@ -204,51 +316,58 @@ class PengirimanController extends Controller
         }
 
         $search = trim((string) $request->query('search', ''));
-        $areaIdParam = $request->query('area_id');
+        $kategori = trim((string) ($request->query('kategori', $request->query('category', ''))));
+        $statuses = [
+            Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS,
+            Peminjaman::STATUS_DIKEMBALIKAN_SEMUANYA,
+        ];
+
+        if ($kategori === Peminjaman::KATEGORI_ANTAR_AREA) {
+            array_unshift($statuses, Peminjaman::STATUS_DITERIMA);
+        }
 
         $query = Peminjaman::query()
             ->with([
                 'items' => function ($sub) {
                     $sub->where('approved_qty', '>', 0);
                 },
-                'items.alat',
-                'items.photos',
+                'items.alat.area',
                 'suratJalan',
                 'area',
+                'requesterArea',
+                'reviewer',
+                'requesterReviewer',
                 'user',
             ])
-            ->whereIn('status', [
-                Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS,
-                Peminjaman::STATUS_DIKEMBALIKAN_SEMUANYA,
-            ])
+            ->whereIn('status', $statuses)
             ->whereHas('items', function ($sub) {
                 $sub->where('approved_qty', '>', 0);
             })
             ->orderByDesc('updated_at');
 
-        if ($isAdmin) {
-            if (! empty($areaIdParam)) {
-                $query->where('area_id', $areaIdParam);
-            }
-        } else {
-            if (! $user->area_id) {
-                return response()->json([]);
-            }
-
-            $query->where('area_id', $user->area_id);
+        $blockedResponse = $this->applyRoleAreaFilter(
+            $query,
+            $request,
+            false,
+            $kategori === Peminjaman::KATEGORI_ANTAR_AREA
+        );
+        if ($blockedResponse) {
+            return $blockedResponse;
         }
 
         if ($search !== '') {
             $query->where(function ($sub) use ($search) {
-                $sub->where('keperluan', 'like', '%' . $search . '%')
+                $sub->where('pekerjaan', 'like', '%' . $search . '%')
                     ->orWhere('id', $search);
             });
         }
 
+        $this->applyKategoriFilter($query, $request);
+
         return $query->get()->map(fn (Peminjaman $peminjaman) => $this->formatPeminjaman($peminjaman))->values();
     }
 
-    public function siapkan(Request $request, Peminjaman $peminjaman)
+    public function notificationCounts(Request $request)
     {
         $user = $request->user();
         if (! $user) {
@@ -264,86 +383,43 @@ class PengirimanController extends Controller
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        if ($isPicTools && (! $user->area_id || $peminjaman->area_id !== $user->area_id)) {
-            return response()->json(['message' => 'Forbidden.'], 403);
-        }
-
-        if ($peminjaman->status !== 'Dipesan') {
-            return response()->json(['message' => 'Peminjaman tidak dalam status Dipesan.'], 422);
-        }
-
-        $validated = $request->validate([
-            'items' => ['nullable', 'array'],
-            'items.*.item_id' => ['required', 'integer'],
-            'items.*.photos' => ['required', 'array', 'min:1'],
-            'items.*.photos.*' => ['required', 'image', 'max:5120'],
-        ]);
-
-        $submittedItems = collect($validated['items'] ?? [])->keyBy('item_id');
-
-        $peminjaman->loadMissing('items');
-        $itemModels = $peminjaman->items->keyBy('id');
-        $approvedItems = $itemModels->filter(
-            fn (PeminjamanItem $item) => (int) ($item->approved_qty ?? 0) > 0
-        );
-
-        if ($approvedItems->isEmpty()) {
-            throw ValidationException::withMessages([
-                'items' => ['Tidak ada item yang disetujui untuk disiapkan.'],
+        $countForCategory = function (string $kategori) use ($request): int {
+            $shippingQuery = $this->baseShippingCountQuery([
+                Peminjaman::STATUS_DIPESAN,
+                Peminjaman::STATUS_DIKIRIM,
             ]);
-        }
-
-        foreach ($submittedItems as $itemId => $payload) {
-            if (! $itemModels->has($itemId)) {
-                throw ValidationException::withMessages([
-                    'items' => ['Item tidak ditemukan dalam peminjaman ini.'],
-                ]);
+            $this->applyKategoriValueFilter($shippingQuery, $kategori);
+            $blockedResponse = $this->applyRoleAreaFilter($shippingQuery, $request, true);
+            if ($blockedResponse) {
+                return 0;
             }
 
-            if (! $approvedItems->has($itemId)) {
-                throw ValidationException::withMessages([
-                    'items' => ['Item belum disetujui sehingga tidak perlu diunggah.'],
-                ]);
-            }
-        }
-
-        $missingApproved = $approvedItems->keys()->diff($submittedItems->keys());
-        if ($missingApproved->isNotEmpty()) {
-            throw ValidationException::withMessages([
-                'items' => ['Semua item yang disetujui harus diunggah fotonya.'],
-            ]);
-        }
-
-        DB::transaction(function () use ($submittedItems, $itemModels, $peminjaman) {
-            foreach ($submittedItems as $itemId => $payload) {
-                $item = $itemModels[$itemId];
-                $photos = $payload['photos'] ?? [];
-
-                foreach ($photos as $photo) {
-                    if (! $photo instanceof UploadedFile) {
-                        continue;
-                    }
-
-                    $stored = $this->storeCompressedPhoto($photo, "pengiriman/{$peminjaman->id}");
-
-                    PeminjamanItemPhoto::create([
-                        'peminjaman_item_id' => $item->id,
-                        'path' => $stored['path'],
-                        'original_name' => $photo->getClientOriginalName(),
-                        'mime' => $stored['mime'],
-                        'size' => $stored['size'],
-                    ]);
-                }
+            $returnStatuses = [
+                Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS,
+                Peminjaman::STATUS_DIKEMBALIKAN_SEMUANYA,
+            ];
+            if ($kategori === Peminjaman::KATEGORI_ANTAR_AREA) {
+                array_unshift($returnStatuses, Peminjaman::STATUS_DITERIMA);
             }
 
-            $peminjaman->update([
-                'status' => 'Disiapkan',
-            ]);
-        });
+            $returnQuery = $this->baseShippingCountQuery($returnStatuses);
+            $this->applyKategoriValueFilter($returnQuery, $kategori);
+            $blockedResponse = $this->applyRoleAreaFilter(
+                $returnQuery,
+                $request,
+                false,
+                $kategori === Peminjaman::KATEGORI_ANTAR_AREA
+            );
+            if ($blockedResponse) {
+                return 0;
+            }
+
+            return (int) $shippingQuery->count() + (int) $returnQuery->count();
+        };
 
         return response()->json([
-            'id' => $peminjaman->id,
-            'status' => $peminjaman->status,
+            'intra_area' => $countForCategory(Peminjaman::KATEGORI_INTRA_AREA),
+            'antar_area' => $countForCategory(Peminjaman::KATEGORI_ANTAR_AREA),
         ]);
     }
 
@@ -367,8 +443,8 @@ class PengirimanController extends Controller
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        if ($peminjaman->status !== 'Disiapkan') {
-            return response()->json(['message' => 'Peminjaman tidak dalam status Disiapkan.'], 422);
+        if ($peminjaman->status !== Peminjaman::STATUS_DIPESAN) {
+            return response()->json(['message' => 'Peminjaman tidak dalam status Dipesan.'], 422);
         }
 
         $validated = $request->validate([
@@ -407,7 +483,7 @@ class PengirimanController extends Controller
             );
 
             $peminjaman->update([
-                'status' => 'Terkirim',
+                'status' => Peminjaman::STATUS_DIKIRIM,
             ]);
         });
 
@@ -435,20 +511,47 @@ class PengirimanController extends Controller
         }
 
         if ($isPicTools) {
-            if (! $user->area_id || $peminjaman->area_id !== $user->area_id) {
+            $allowedAreaId = $peminjaman->is_inter_area
+                ? $peminjaman->requester_area_id
+                : $peminjaman->area_id;
+            if (! $user->area_id || (int) $allowedAreaId !== (int) $user->area_id) {
                 return response()->json(['message' => 'Forbidden.'], 403);
             }
         } elseif (! $isAdmin && (string) $peminjaman->user_id !== (string) $user->id) {
             return response()->json(['message' => 'user id tidak sama.'], 403);
         }
 
-        if ($peminjaman->status !== Peminjaman::STATUS_TERKIRIM) {
-            return response()->json(['message' => 'Peminjaman tidak dalam status Terkirim.'], 422);
+        if ($peminjaman->status !== Peminjaman::STATUS_DIKIRIM) {
+            return response()->json(['message' => 'Peminjaman tidak dalam status Dikirim.'], 422);
         }
 
-        $peminjaman->update([
-            'status' => Peminjaman::STATUS_DITERIMA,
-        ]);
+        DB::transaction(function () use ($peminjaman) {
+            $peminjaman->loadMissing('items');
+            if ($peminjaman->is_inter_area && $peminjaman->requester_area_id) {
+                foreach ($peminjaman->items as $item) {
+                    $approvedQty = (int) ($item->approved_qty ?? 0);
+                    if ($approvedQty < 1) {
+                        continue;
+                    }
+
+                    AreaAlatStock::updateOrCreate(
+                        [
+                            'area_id' => $peminjaman->requester_area_id,
+                            'alat_id' => $item->alat_id,
+                            'source_peminjaman_id' => $peminjaman->id,
+                        ],
+                        [
+                            'qty' => $approvedQty,
+                            'active' => true,
+                        ]
+                    );
+                }
+            }
+
+            $peminjaman->update([
+                'status' => Peminjaman::STATUS_DITERIMA,
+            ]);
+        });
 
         return response()->json([
             'id' => $peminjaman->id,
@@ -465,11 +568,18 @@ class PengirimanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        if ($roleKey !== 'user') {
+        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
+        $isInterAreaPicRequester = $peminjaman->is_inter_area
+            && $isPicTools
+            && $user->area_id
+            && (int) $peminjaman->requester_area_id === (int) $user->area_id;
+
+        if ($roleKey !== 'user' && ! $isInterAreaPicRequester && ! $isAdmin) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        if ((string) $peminjaman->user_id !== (string) $user->id) {
+        if ($roleKey === 'user' && (string) $peminjaman->user_id !== (string) $user->id) {
             return response()->json(['message' => 'user id tidak sama.'], 403);
         }
 
@@ -563,9 +673,27 @@ class PengirimanController extends Controller
         DB::transaction(function () use ($peminjaman, $user, $submittedItems, $itemModels, $laporans) {
             foreach ($submittedItems as $itemId => $payload) {
                 $item = $itemModels[$itemId];
+                $returnedQty = (int) ($payload['returned_qty'] ?? 0);
                 $item->update([
-                    'returned_qty' => (int) ($item->returned_qty ?? 0) + (int) ($payload['returned_qty'] ?? 0),
+                    'returned_qty' => (int) ($item->returned_qty ?? 0) + $returnedQty,
                 ]);
+
+                if ($peminjaman->is_inter_area && $peminjaman->requester_area_id) {
+                    $stock = AreaAlatStock::query()
+                        ->where('area_id', $peminjaman->requester_area_id)
+                        ->where('alat_id', $item->alat_id)
+                        ->where('source_peminjaman_id', $peminjaman->id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($stock) {
+                        $nextQty = max((int) $stock->qty - $returnedQty, 0);
+                        $stock->update([
+                            'qty' => $nextQty,
+                            'active' => $nextQty > 0,
+                        ]);
+                    }
+                }
             }
 
             $peminjaman->refresh();
@@ -659,6 +787,7 @@ class PengirimanController extends Controller
         }
 
         $stored = $this->storeCompressedPhoto($file, "{$payload['kategori']}/{$alat->id}");
+        $reportAreaId = $peminjaman->requester_area_id ?: $peminjaman->area_id;
 
         LaporanAlat::create([
             'kategori' => $payload['kategori'],
@@ -667,6 +796,8 @@ class PengirimanController extends Controller
             'jumlah' => $jumlah,
             'alat_id' => $alat->id,
             'user_id' => $userId,
+            'area_id' => $reportAreaId,
+            'source_peminjaman_id' => $peminjaman->id,
             'path' => $stored['path'],
             'original_name' => $file->getClientOriginalName(),
             'mime' => $stored['mime'],

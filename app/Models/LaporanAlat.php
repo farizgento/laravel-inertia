@@ -22,6 +22,8 @@ class LaporanAlat extends Model
         'jumlah',
         'alat_id',
         'user_id',
+        'area_id',
+        'source_peminjaman_id',
         'path',
         'original_name',
         'mime',
@@ -36,5 +38,15 @@ class LaporanAlat extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function area(): BelongsTo
+    {
+        return $this->belongsTo(Area::class);
+    }
+
+    public function sourcePeminjaman(): BelongsTo
+    {
+        return $this->belongsTo(Peminjaman::class, 'source_peminjaman_id');
     }
 }

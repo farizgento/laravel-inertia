@@ -8,8 +8,8 @@
     />
 
     <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-slate-900">Mutasi alat</h1>
-        <p class="mt-1 text-sm text-slate-500">Daftar pengiriman yang sudah diproses</p>
+        <h1 class="text-2xl font-semibold text-slate-900">{{ pageTitle }}</h1>
+        <p class="mt-1 text-sm text-slate-500">{{ pageSubtitle }}</p>
     </div>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
@@ -31,7 +31,7 @@
                 </svg>
             </div>
             <div>
-                <h2 class="text-lg font-semibold text-slate-900">Mutasi alat</h2>
+                <h2 class="text-lg font-semibold text-slate-900">{{ pageTitle }}</h2>
                 <p class="mt-1 text-sm text-slate-500">Filter berdasarkan status pengiriman</p>
             </div>
         </div>
@@ -56,7 +56,7 @@
                     v-model="search"
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                     type="text"
-                    placeholder="Cari keperluan atau ID..."
+                    placeholder="Cari pekerjaan atau ID..."
                 />
             </div>
         </div>
@@ -106,7 +106,7 @@
         </div>
 
         <div class="mt-6">
-            <p v-if="isLoading" class="text-sm text-slate-500">Memuat Mutasi alat...</p>
+            <p v-if="isLoading" class="text-sm text-slate-500">Memuat {{ pageTitle }}...</p>
             <p v-else-if="loadError" class="text-sm text-rose-500">{{ loadError }}</p>
             <p v-else-if="!filteredItems.length" class="text-sm text-slate-500">
                 Tidak ada riwayat pada kategori ini.
@@ -203,7 +203,19 @@
                             Surat Jalan
                         </button>
                         <button
-                            v-if="isUserRole && ['Diterima', 'Dikembalikan Partials'].includes(item.status)"
+                            v-if="canAcceptSuratJalan(item)"
+                            class="inline-flex flex-1 basis-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                            type="button"
+                            :disabled="isAccepting === item.id"
+                            @click="acceptPeminjaman(item)"
+                        >
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 6 9 17l-5-5" />
+                            </svg>
+                            {{ isAccepting === item.id ? 'Memproses...' : 'Terima' }}
+                        </button>
+                        <button
+                            v-if="canReturnItem(item)"
                             class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:border-amber-300"
                             type="button"
                             @click="openReturn(item)"
@@ -234,8 +246,8 @@
         :pengirim-name="suratJalanItem?.pengirimNama"
         :peminjaman-id="suratJalanItem?.id"
         :peminjaman-status="suratJalanItem?.status"
+        :accept-enabled="false"
         @close="suratJalanItem = null"
-        @accepted="handleSuratJalanAccepted"
     />
 
     <teleport to="body">
@@ -482,15 +494,19 @@ defineOptions({
         h(
             AppLayout,
             {
-                title: 'Mutasi alat',
-                subtitle: 'Daftar pengiriman yang sudah diproses',
-                activeMenu: 'mutasi-alat',
+                title: page.props?.mutasiPageTitle ?? 'Mutasi alat',
+                subtitle: page.props?.mutasiPageSubtitle ?? 'Daftar pengiriman yang sudah diproses',
+                activeMenu: page.props?.mutasiActiveMenu ?? 'mutasi-alat',
             },
             () => page
         ),
 });
 
 const page = usePage();
+const pageTitle = computed(() => page.props.mutasiPageTitle ?? 'Mutasi alat');
+const pageSubtitle = computed(() => page.props.mutasiPageSubtitle ?? 'Daftar pengiriman yang sudah diproses');
+const mutasiCategory = computed(() => page.props.mutasiCategory ?? '');
+const mutasiAreaScope = computed(() => page.props.mutasiAreaScope ?? '');
 const loadCachedUser = () => {
     if (typeof window === 'undefined') {
         return null;
@@ -508,10 +524,18 @@ const roleKey = computed(() =>
     (page.props.auth?.user?.role?.key ?? cachedUser.value?.role?.key ?? '').toLowerCase()
 );
 const isUserRole = computed(() => roleKey.value === 'user');
+const isAdminRole = computed(() => ['admin', 'super_admin'].includes(roleKey.value));
+const userAreaId = computed(() => page.props.auth?.user?.area_id ?? cachedUser.value?.area_id ?? null);
 const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
 const activeAreaId = inject('activeAreaId', ref(null));
+const currentAreaId = computed(() =>
+    isAreaSwitcherRole.value
+        ? activeAreaId.value
+        : userAreaId.value
+);
 const setAreaSwitching = inject('setAreaSwitching', null);
 const activeAreaName = inject('activeAreaName', ref('Area tidak diketahui'));
+const refreshMailboxActions = inject('refreshMailboxActions', async () => {});
 const areaName = computed(() =>
     isAreaSwitcherRole.value
         ? activeAreaName.value
@@ -531,6 +555,7 @@ const suratJalanItem = ref(null);
 const returnItem = ref(null);
 const search = ref('');
 const isReturning = ref(false);
+const isAccepting = ref(null);
 const returnReportError = ref('');
 const returnRows = ref([]);
 const returnReportFileInputs = ref({});
@@ -558,17 +583,25 @@ const createReturnReport = () => ({
 const returnReports = ref([]);
 
 const tabConfig = [
-    { key: 'dikirim', label: 'Sedang Dikirim', status: 'Terkirim' },
+    { key: 'dikirim', label: 'Sedang Dikirim', status: 'Dikirim' },
     { key: 'diterima', label: 'Diterima', status: 'Diterima' },
     { key: 'partials', label: 'Dikembalikan Parsial', status: 'Dikembalikan Partials' },
     { key: 'dikembalikan-semuanya', label: 'Dikembalikan Semua', status: 'Dikembalikan Semuanya' },
 ];
 
-const activeTab = ref(tabConfig[0].key);
+const initialTab = () => {
+    if (typeof window === 'undefined') {
+        return tabConfig[0].key;
+    }
+    const queryTab = new URLSearchParams(window.location.search).get('tab');
+    return tabConfig.some((tab) => tab.key === queryTab) ? queryTab : tabConfig[0].key;
+};
+
+const activeTab = ref(initialTab());
 
 const statusLabel = (status) => {
     switch (status) {
-        case 'Terkirim':
+        case 'Dikirim':
             return 'Sudah Dikirim';
         case 'Diterima':
             return 'Diterima';
@@ -583,7 +616,7 @@ const statusLabel = (status) => {
 
 const statusBadge = (status) => {
     switch (status) {
-        case 'Terkirim':
+        case 'Dikirim':
             return 'bg-blue-100 text-blue-600';
         case 'Diterima':
             return 'bg-emerald-100 text-emerald-600';
@@ -598,7 +631,7 @@ const statusBadge = (status) => {
 
 const statusCountMap = computed(() => {
     const base = {
-        Terkirim: 0,
+        Dikirim: 0,
         Diterima: 0,
         'Dikembalikan Partials': 0,
         'Dikembalikan Semuanya': 0,
@@ -620,7 +653,7 @@ const tabs = computed(() =>
 
 const activeStatus = computed(() => {
     const match = tabConfig.find((tab) => tab.key === activeTab.value);
-    return match?.status ?? 'Terkirim';
+    return match?.status ?? 'Dikirim';
 });
 
 const filteredItems = computed(() => {
@@ -662,13 +695,6 @@ const normalizeHistory = (item) => {
               remainingQty: Number.isFinite(tool?.remaining_qty) ? tool.remaining_qty : 0,
               reviewStatus: tool?.review_status ?? 'Menunggu Review',
               rejectionReason: tool?.rejection_reason ?? '',
-              photos: Array.isArray(tool?.photos)
-                  ? tool.photos.map((photo) => ({
-                        id: photo?.id ?? null,
-                        url: photo?.url ?? photo?.path ?? '',
-                        originalName: photo?.original_name ?? '',
-                    }))
-                  : [],
           }))
         : [];
 
@@ -676,11 +702,18 @@ const normalizeHistory = (item) => {
         id: item?.id ?? '',
         title: item?.title ?? '-',
         userName: item?.user_name ?? '-',
+        reviewerName: item?.reviewed_by_name ?? '-',
+        requesterReviewerName: item?.requester_reviewed_by_name ?? '-',
+        areaName: item?.area_name ?? '-',
+        areaId: item?.area_id ?? null,
+        requesterAreaName: item?.requester_area_name ?? '-',
+        requesterAreaId: item?.requester_area_id ?? null,
+        isInterArea: Boolean(item?.is_inter_area),
         createdAt: item?.created_at ?? '-',
         borrowDate: item?.borrow_date ?? '-',
         returnDate: item?.return_date ?? '-',
         itemCount: Number.isFinite(item?.item_count) ? item.item_count : 0,
-        status: item?.status ?? 'Terkirim',
+        status: item?.status ?? 'Dikirim',
         pengirimNama: item?.pengirim_nama ?? '',
         suratJalanUrl: item?.surat_jalan_url ?? '',
         suratJalanPath: item?.surat_jalan_path ?? '',
@@ -696,12 +729,19 @@ const loadHistory = async () => {
         if (isAreaSwitcherRole.value && activeAreaId.value) {
             params.area_id = activeAreaId.value;
         }
+        if (mutasiCategory.value) {
+            params.kategori = mutasiCategory.value;
+        }
+        if (mutasiAreaScope.value) {
+            params.area_scope = mutasiAreaScope.value;
+        }
         const response = await axios.get('/api/riwayat-pengiriman', { params });
         const data = Array.isArray(response.data) ? response.data : [];
         items.value = data.map((item) => normalizeHistory(item));
+        await refreshMailboxActions({ silent: true });
     } catch (error) {
         items.value = [];
-        loadError.value = 'Gagal memuat Mutasi alat.';
+        loadError.value = `Gagal memuat ${pageTitle.value}.`;
         showAlert('error', loadError.value);
     } finally {
         isLoading.value = false;
@@ -714,6 +754,44 @@ const openDetail = (item) => {
 
 const openSuratJalan = (item) => {
     suratJalanItem.value = item;
+};
+
+const isInterAreaRequester = (item) =>
+    Boolean(item?.isInterArea)
+    && Number(item?.requesterAreaId) === Number(currentAreaId.value);
+
+const canAcceptSuratJalan = (item) =>
+    item?.status === 'Dikirim'
+    && (
+        isAdminRole.value
+        || (['pic_tools', 'pic_tool'].includes(roleKey.value) && isInterAreaRequester(item))
+    );
+
+const canReturnItem = (item) =>
+    ['Diterima', 'Dikembalikan Partials'].includes(item?.status)
+    && (
+        isUserRole.value
+        || isAdminRole.value
+        || (['pic_tools', 'pic_tool'].includes(roleKey.value) && isInterAreaRequester(item))
+    );
+
+const acceptPeminjaman = async (item) => {
+    if (!canAcceptSuratJalan(item) || isAccepting.value) {
+        return;
+    }
+    isAccepting.value = item.id;
+    try {
+        await axios.post(`/api/pengiriman/${item.id}/terima`);
+        await loadHistory();
+        showAlert('success', 'Peminjaman berhasil diterima.');
+    } catch (error) {
+        showAlert(
+            'error',
+            error?.response?.data?.message ?? 'Gagal menerima peminjaman.'
+        );
+    } finally {
+        isAccepting.value = null;
+    }
 };
 
 const openReturn = (item) => {
@@ -928,12 +1006,6 @@ const confirmReturn = async () => {
             closeReturn();
         }
     }
-};
-
-const handleSuratJalanAccepted = async () => {
-    await loadHistory();
-    suratJalanItem.value = null;
-    showAlert('success', 'Peminjaman berhasil diterima.');
 };
 
 const showAlert = (type, message) => {

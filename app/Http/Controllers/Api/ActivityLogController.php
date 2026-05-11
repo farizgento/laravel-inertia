@@ -16,18 +16,23 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ActivityLogController extends Controller
 {
-    private function authorizeActor(Request $request): User
+    private function authorizeActor(Request $request, bool $includePicTools = false): User
     {
         $actor = $request->user();
         $actor?->loadMissing('role');
+        $allowedRoles = [
+            Role::KEY_SP_TOOL,
+            Role::KEY_MGR_TOOL,
+            Role::KEY_ADMIN,
+            Role::KEY_SUPER_ADMIN,
+        ];
+
+        if ($includePicTools) {
+            $allowedRoles[] = Role::KEY_PIC_TOOLS;
+        }
 
         abort_unless(
-            $actor && in_array($actor->role?->key, [
-                Role::KEY_SP_TOOL,
-                Role::KEY_MGR_TOOL,
-                Role::KEY_ADMIN,
-                Role::KEY_SUPER_ADMIN,
-            ], true),
+            $actor && in_array($actor->role?->key, $allowedRoles, true),
             403
         );
 
@@ -137,6 +142,86 @@ class ActivityLogController extends Controller
         ]);
     }
 
+    public function alatIndex(Request $request): array
+    {
+        $actor = $this->authorizeActor($request, true);
+        $perPage = (int) $request->query('per_page', 10);
+        $perPage = $perPage > 0 ? min($perPage, 100) : 10;
+
+        $logs = $this->buildAlatLogQuery($request, $actor)->paginate($perPage);
+
+        return [
+            'data' => $logs->getCollection()
+                ->map(fn (ActivityLog $log) => $this->mapAlatLog($log))
+                ->values(),
+            'meta' => [
+                'current_page' => $logs->currentPage(),
+                'last_page' => $logs->lastPage(),
+                'per_page' => $logs->perPage(),
+                'total' => $logs->total(),
+            ],
+        ];
+    }
+
+    public function alatExport(Request $request): StreamedResponse
+    {
+        $actor = $this->authorizeActor($request, true);
+        $filename = 'log-alat-' . now()->format('Ymd-His') . '.csv';
+
+        return response()->streamDownload(function () use ($request, $actor) {
+            $handle = fopen('php://output', 'w');
+            if ($handle === false) {
+                return;
+            }
+
+            fwrite($handle, "\xEF\xBB\xBF");
+            fwrite($handle, "sep=;\n");
+
+            fputcsv($handle, [
+                'Tanggal',
+                'Nama Pengubah',
+                'Role',
+                'Area',
+                'Aksi',
+                'Kode Alat',
+                'Nama Alat',
+                'Jenis Alat',
+                'Klasifikasi Alat',
+                'Total Aset Sebelum',
+                'Total Aset Sesudah',
+                'Perubahan Stok',
+                'Detail Perubahan',
+            ], ';');
+
+            $this->buildAlatLogQuery($request, $actor)
+                ->chunk(500, function ($logs) use ($handle) {
+                    foreach ($logs as $log) {
+                        $row = $this->mapAlatLog($log);
+
+                        fputcsv($handle, [
+                            $row['created_at'],
+                            $row['actor_name'],
+                            $row['actor_role_label'],
+                            $row['area_name'],
+                            $row['action_label'],
+                            $row['alat_code'],
+                            $row['alat_name'],
+                            $row['jenis_alat'],
+                            $row['klasifikasi_alat'],
+                            $row['total_aset_before'],
+                            $row['total_aset_after'],
+                            $row['stock_delta_label'],
+                            $row['change_summary'],
+                        ], ';');
+                    }
+                });
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
     private function buildFilteredQuery(Request $request, User $actor): Builder
     {
         $search = trim((string) $request->query('search', ''));
@@ -151,6 +236,7 @@ class ActivityLogController extends Controller
 
         if (in_array($roleKey, [
             Role::KEY_SP_TOOL,
+            Role::KEY_PIC_TOOLS,
             Role::KEY_ADMIN,
         ], true)) {
             $query->where('area_id', $actor->area_id);
@@ -176,6 +262,13 @@ class ActivityLogController extends Controller
         }
 
         return $query;
+    }
+
+    private function buildAlatLogQuery(Request $request, User $actor): Builder
+    {
+        return $this->buildFilteredQuery($request, $actor)
+            ->where('subject_type', 'Alat')
+            ->whereIn('action', ['create', 'update', 'delete']);
     }
 
     private function mapLog(ActivityLog $log): array
@@ -214,6 +307,87 @@ class ActivityLogController extends Controller
         ];
     }
 
+    private function mapAlatLog(ActivityLog $log): array
+    {
+        $oldValues = is_array($log->old_values) ? $log->old_values : [];
+        $newValues = is_array($log->new_values) ? $log->new_values : [];
+        $currentValues = $newValues ?: $oldValues;
+        $changes = $this->mapChanges($log);
+        $oldTotal = $oldValues['total_aset'] ?? null;
+        $newTotal = $newValues['total_aset'] ?? null;
+        $stockDelta = is_numeric($oldTotal) && is_numeric($newTotal)
+            ? (int) $newTotal - (int) $oldTotal
+            : null;
+
+        return [
+            'id' => $log->id,
+            'created_at' => $log->created_at?->format('d M Y H:i:s'),
+            'actor_name' => $log->actor_name ?? '-',
+            'actor_role_label' => $log->actor_role_key
+                ? Str::of($log->actor_role_key)->replace('_', ' ')->title()->toString()
+                : '-',
+            'area_name' => $log->area?->name ?? '-',
+            'action' => $log->action,
+            'action_label' => $this->alatActionLabel($log->action, $stockDelta),
+            'alat_code' => $log->subject_id ? (($log->area?->kode ?: 'AREA') . '-' . $log->subject_id) : '-',
+            'alat_name' => $currentValues['nama'] ?? $log->subject_label ?? '-',
+            'jenis_alat' => $currentValues['jenis_alat'] ?? '-',
+            'klasifikasi_alat' => $currentValues['klasifikasi_alat'] ?? '-',
+            'total_aset_before' => $oldTotal ?? '-',
+            'total_aset_after' => $newTotal ?? '-',
+            'stock_delta' => $stockDelta,
+            'stock_delta_label' => $stockDelta === null
+                ? '-'
+                : ($stockDelta > 0 ? '+' . $stockDelta : (string) $stockDelta),
+            'change_summary' => $this->changeSummary($changes),
+            'changes' => array_map(
+                fn (array $change) => [
+                    'field' => $change['field'],
+                    'label' => $change['label'],
+                    'before' => $change['before'],
+                    'after' => $change['after'],
+                ],
+                $changes
+            ),
+        ];
+    }
+
+    private function alatActionLabel(string $action, ?int $stockDelta): string
+    {
+        if ($action === 'create') {
+            return 'Penambahan Alat Baru';
+        }
+
+        if ($action === 'delete') {
+            return 'Penghapusan Alat';
+        }
+
+        if ($action === 'update' && $stockDelta !== null) {
+            if ($stockDelta > 0) {
+                return 'Penambahan Stok';
+            }
+
+            if ($stockDelta < 0) {
+                return 'Pengurangan Stok';
+            }
+        }
+
+        return 'Update Data Alat';
+    }
+
+    private function changeSummary(array $changes): string
+    {
+        if (! $changes) {
+            return '-';
+        }
+
+        return collect($changes)
+            ->map(fn (array $change) => $change['label'] . ': '
+                . $this->stringifyValue($change['before']) . ' -> '
+                . $this->stringifyValue($change['after']))
+            ->implode('; ');
+    }
+
     private function mapChanges(ActivityLog $log): array
     {
         $oldValues = is_array($log->old_values) ? $log->old_values : [];
@@ -250,7 +424,7 @@ class ActivityLogController extends Controller
             'reviewed_at' => 'Di Review Pada',
             'tanggal_pinjam' => 'Tanggal Pinjam',
             'tanggal_kembali' => 'Tanggal Kembali',
-            'keperluan' => 'Keperluan',
+            'pekerjaan' => 'Pekerjaan',
             'approved_qty' => 'Qty Disetujui',
             'review_status' => 'Status Review',
             'rejection_reason' => 'Alasan Penolakan',
@@ -267,6 +441,10 @@ class ActivityLogController extends Controller
             'created_count' => 'Data Baru',
             'updated_count' => 'Data Diperbarui',
             'error_message' => 'Pesan Error',
+            'nama' => 'Nama Alat',
+            'jenis_alat' => 'Jenis Alat',
+            'klasifikasi_alat' => 'Klasifikasi Alat',
+            'total_aset' => 'Total Aset',
             default => Str::of($field)->replace('_', ' ')->title()->toString(),
         };
     }
@@ -282,7 +460,7 @@ class ActivityLogController extends Controller
             'area_id' => Area::query()->find($value)?->name ?? $value,
             'role_id' => Role::query()->find($value)?->name ?? $value,
             'alat_id' => Alat::query()->find($value)?->nama ?? $value,
-            'peminjaman_id' => Peminjaman::query()->find($value)?->keperluan ?? "Peminjaman #{$value}",
+            'peminjaman_id' => Peminjaman::query()->find($value)?->pekerjaan ?? "Peminjaman #{$value}",
             default => $value,
         };
     }

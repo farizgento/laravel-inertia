@@ -24,6 +24,17 @@ Route::get('/login', function () {
     return Inertia::render('Auth/Login');
 })->name('login');
 
+Route::get('/forgot-password', function () {
+    return Inertia::render('Auth/ForgotPassword');
+})->name('password.request');
+
+Route::get('/reset-password/{token}', function (string $token) {
+    return Inertia::render('Auth/ResetPassword', [
+        'token' => $token,
+        'email' => request('email', ''),
+    ]);
+})->name('password.reset');
+
 Route::get('/register', function () {
     return Inertia::render('Auth/Register');
 })->name('register');
@@ -44,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
         return Inertia::render('User/Peminjaman');
     })->middleware('role:' . implode(',', [
         Role::KEY_USER,
+        Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
     ]))->name('peminjaman.create');
 
@@ -93,15 +105,49 @@ Route::middleware('auth:sanctum')->group(function () {
     ]))->name('persiapan-alat');
 
     Route::get('pengiriman-alat', function () {
-        return Inertia::render('Pictool/Pengiriman');
+        return Inertia::render('Pictool/Pengiriman', [
+            'shippingCategory' => 'Intra Area',
+            'shippingPageTitle' => 'Transaksi Intra Area',
+            'shippingPageSubtitle' => 'Kelola pengiriman dan pengembalian peminjaman alat intra area',
+            'shippingActiveMenu' => 'pengiriman',
+        ]);
     })->middleware('role:' . implode(',', [
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
         Role::KEY_PIC_TOOLS,
     ]))->name('pengiriman-alat');
 
+    Route::get('pengiriman-antar-area', function () {
+        return Inertia::render('Pictool/Pengiriman', [
+            'shippingCategory' => 'Antar Area',
+            'shippingPageTitle' => 'Transaksi Antar Area',
+            'shippingPageSubtitle' => 'Kelola peminjaman, pengiriman, dan pengembalian alat antar area',
+            'shippingActiveMenu' => 'pengiriman-antar-area',
+        ]);
+    })->middleware('role:' . implode(',', [
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+        Role::KEY_PIC_TOOLS,
+    ]))->name('pengiriman-antar-area');
+
+    Route::get('pengembalian-antar-area', function () {
+        return redirect()->route('pengiriman-antar-area');
+    })->middleware('role:' . implode(',', [
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+        Role::KEY_PIC_TOOLS,
+    ]))->name('pengembalian-antar-area');
+
+    Route::get('peminjaman-antar-area', function () {
+        return Inertia::render('Pictool/PeminjamanAntarArea');
+    })->middleware('role:' . implode(',', [
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+        Role::KEY_PIC_TOOLS,
+    ]))->name('peminjaman-antar-area');
+
     Route::get('pengembalian-alat', function () {
-        return Inertia::render('Pictool/Pengembalian');
+        return redirect()->route('pengiriman-alat');
     })->middleware('role:' . implode(',', [
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
@@ -143,6 +189,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
     ]))->name('activity-log');
+
+    Route::get('/log-alat', function () {
+        return Inertia::render('Admin/AlatLog');
+    })->middleware('role:' . implode(',', [
+        Role::KEY_SP_TOOL,
+        Role::KEY_PIC_TOOLS,
+        Role::KEY_MGR_TOOL,
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+    ]))->name('alat-log');
 
     Route::get('/area', function () {
         return Inertia::render('Admin/Area');

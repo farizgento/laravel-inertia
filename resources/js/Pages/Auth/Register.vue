@@ -52,6 +52,19 @@
                         </div>
 
                         <div>
+                            <label class="text-sm font-medium text-slate-700">Username</label>
+                            <input
+                                v-model="form.username"
+                                type="text"
+                                placeholder="Username untuk login"
+                                class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            />
+                            <p v-if="errors.username" class="mt-1 text-xs text-red-500">
+                                {{ errors.username }}
+                            </p>
+                        </div>
+
+                        <div>
                             <label class="text-sm font-medium text-slate-700">Email</label>
                             <div class="relative mt-2">
                                 <span
@@ -212,6 +225,7 @@ import { onMounted, ref } from 'vue';
 
 const form = ref({
     name: '',
+    username: '',
     email: '',
     area_id: '',
     password: '',

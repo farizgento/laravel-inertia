@@ -67,8 +67,12 @@ class AlatImportService
         ]);
 
         $areaMap = Area::query()
-            ->get(['id', 'slug'])
-            ->mapWithKeys(fn (Area $area) => [mb_strtolower(trim((string) $area->slug)) => $area->id])
+            ->get(['id', 'name', 'slug', 'kode'])
+            ->flatMap(function (Area $area) {
+                return collect([$area->slug, $area->kode, $area->name])
+                    ->filter(fn ($value) => trim((string) $value) !== '')
+                    ->mapWithKeys(fn ($value) => [mb_strtolower(trim((string) $value)) => $area->id]);
+            })
             ->all();
 
         $user = $import->user()->with('role')->first();
@@ -124,9 +128,9 @@ class AlatImportService
                     $rowErrors[] = 'total aset harus berupa angka bulat >= 0';
                 }
                 if ($areaSlug === '') {
-                    $rowErrors[] = 'area wajib diisi dengan slug area';
+                    $rowErrors[] = 'area wajib diisi dengan kode atau slug area';
                 } elseif (! array_key_exists($areaSlug, $areaMap)) {
-                    $rowErrors[] = 'slug area tidak ditemukan';
+                    $rowErrors[] = 'kode atau slug area tidak ditemukan';
                 } elseif ($authorizedAreaId !== null && (int) $areaMap[$areaSlug] !== $authorizedAreaId) {
                     $rowErrors[] = 'anda hanya dapat import alat ke area anda sendiri';
                 }
@@ -137,22 +141,48 @@ class AlatImportService
                     continue;
                 }
 
-                $alat = Alat::updateOrCreate(
-                    [
-                        'nama' => $nama,
-                        'jenis_alat' => $jenisAlat,
-                        'klasifikasi_alat' => $klasifikasiAlat,
-                        'area_id' => $areaMap[$areaSlug],
-                    ],
-                    [
+                $lookup = [
+                    'nama' => $nama,
+                    'jenis_alat' => $jenisAlat,
+                    'klasifikasi_alat' => $klasifikasiAlat,
+                    'area_id' => $areaMap[$areaSlug],
+                ];
+                $alat = Alat::query()->where($lookup)->first();
+                $oldValues = $alat?->getAttributes() ?? [];
+
+                $alat = Alat::withoutEvents(function () use ($alat, $lookup, $totalAset) {
+                    if ($alat) {
+                        $alat->update([
+                            'total_aset' => $totalAset,
+                        ]);
+
+                        return $alat->refresh();
+                    }
+
+                    return Alat::create([
+                        ...$lookup,
                         'total_aset' => $totalAset,
-                    ]
-                );
+                    ]);
+                });
 
                 if ($alat->wasRecentlyCreated) {
                     $created += 1;
+                    $this->logImportedAlatActivity('create', $alat, [], [
+                        'nama' => $alat->nama,
+                        'jenis_alat' => $alat->jenis_alat,
+                        'klasifikasi_alat' => $alat->klasifikasi_alat,
+                        'total_aset' => (int) $alat->total_aset,
+                        'area_id' => (int) $alat->area_id,
+                    ], $import);
                 } else {
                     $updated += 1;
+                    if ((int) ($oldValues['total_aset'] ?? 0) !== (int) $totalAset) {
+                        $this->logImportedAlatActivity('update', $alat, [
+                            'total_aset' => (int) ($oldValues['total_aset'] ?? 0),
+                        ], [
+                            'total_aset' => (int) $totalAset,
+                        ], $import);
+                    }
                 }
 
                 $processed += 1;
@@ -197,10 +227,13 @@ class AlatImportService
 
     public function formatImport(AlatImport $import): array
     {
+        $status = $this->normalizeStatus($import->status);
+
         return [
             'id' => $import->id,
             'file_name' => $import->file_name,
-            'status' => $import->status,
+            'status' => $status,
+            'raw_status' => $import->status,
             'total_rows' => (int) $import->total_rows,
             'processed_rows' => (int) $import->processed_rows,
             'created_count' => (int) $import->created_count,
@@ -209,7 +242,30 @@ class AlatImportService
             'finished_at' => $import->finished_at?->toISOString(),
             'created_at' => $import->created_at?->toISOString(),
             'download_url' => $this->downloadUrl($import),
+            'is_finished' => in_array($status, [AlatImport::STATUS_COMPLETED, AlatImport::STATUS_FAILED], true),
         ];
+    }
+
+    private function normalizeStatus(?string $status): string
+    {
+        $normalized = strtolower((string) $status);
+
+        if (in_array($normalized, ['done', 'complete', 'success', 'succeeded'], true)) {
+            return AlatImport::STATUS_COMPLETED;
+        }
+
+        if (in_array($normalized, ['fail', 'error', 'errored'], true)) {
+            return AlatImport::STATUS_FAILED;
+        }
+
+        return in_array($normalized, [
+            AlatImport::STATUS_PENDING,
+            AlatImport::STATUS_PROCESSING,
+            AlatImport::STATUS_COMPLETED,
+            AlatImport::STATUS_FAILED,
+        ], true)
+            ? $normalized
+            : AlatImport::STATUS_PENDING;
     }
 
     public function ensureImportAccessible(AlatImport $import, User $user): void
@@ -268,6 +324,28 @@ class AlatImportService
             'properties' => [
                 'import_id' => $import->id,
                 'finished_at' => $import->finished_at?->format('Y-m-d H:i:s'),
+            ],
+        ]);
+    }
+
+    private function logImportedAlatActivity(string $action, Alat $alat, array $oldValues, array $newValues, AlatImport $import): void
+    {
+        $actor = $import->user;
+        $actionLabel = $action === 'create' ? 'menambahkan' : 'memperbarui';
+
+        ActivityLogger::log($action, $alat, [
+            'actor' => $actor,
+            'area_id' => $alat->area_id,
+            'subject_type' => 'Alat',
+            'subject_label' => $alat->nama,
+            'description' => trim(($actor?->name ?? 'System') . " {$actionLabel} Alat {$alat->nama} melalui import {$import->file_name}"),
+            'method' => 'QUEUE',
+            'route' => 'api/alats/import',
+            'old_values' => $oldValues,
+            'new_values' => $newValues,
+            'properties' => [
+                'import_id' => $import->id,
+                'file_name' => $import->file_name,
             ],
         ]);
     }

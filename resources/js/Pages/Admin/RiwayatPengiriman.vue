@@ -56,7 +56,7 @@
                     v-model="search"
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                     type="text"
-                    placeholder="Cari keperluan atau ID..."
+                    placeholder="Cari pekerjaan atau ID..."
                 />
             </div>
             <div class="w-full lg:w-60">
@@ -85,7 +85,7 @@
                             <tr>
                                 <th class="px-4 py-3">ID</th>
                                 <th class="px-4 py-3">Peminjam</th>
-                                <th class="px-4 py-3">Keperluan</th>
+                                <th class="px-4 py-3">Pekerjaan</th>
                                 <th class="px-4 py-3">Tanggal</th>
                                 <th class="px-4 py-3">Status</th>
                                 <th class="px-4 py-3">Pengirim</th>
@@ -201,12 +201,12 @@ const detailItem = ref(null);
 const suratJalanItem = ref(null);
 const search = ref('');
 
-const statusOptions = ['Terkirim', 'Diterima', 'Dikembalikan Partials', 'Dikembalikan Semuanya', 'Selesai'];
+const statusOptions = ['Dikirim', 'Diterima', 'Dikembalikan Partials', 'Dikembalikan Semuanya', 'Selesai'];
 const statusFilter = ref('Semua');
 
 const statusLabel = (status) => {
     switch (status) {
-        case 'Terkirim':
+        case 'Dikirim':
             return 'Sudah Dikirim';
         case 'Diterima':
             return 'Diterima';
@@ -223,7 +223,7 @@ const statusLabel = (status) => {
 
 const statusBadge = (status) => {
     switch (status) {
-        case 'Terkirim':
+        case 'Dikirim':
             return 'bg-blue-100 text-blue-600';
         case 'Diterima':
             return 'bg-emerald-100 text-emerald-600';
@@ -277,13 +277,6 @@ const normalizeHistory = (item) => {
               remainingQty: Number.isFinite(tool?.remaining_qty) ? tool.remaining_qty : 0,
               reviewStatus: tool?.review_status ?? 'Menunggu Review',
               rejectionReason: tool?.rejection_reason ?? '',
-              photos: Array.isArray(tool?.photos)
-                  ? tool.photos.map((photo) => ({
-                        id: photo?.id ?? null,
-                        url: photo?.url ?? photo?.path ?? '',
-                        originalName: photo?.original_name ?? '',
-                    }))
-                  : [],
           }))
         : [];
 
@@ -295,7 +288,7 @@ const normalizeHistory = (item) => {
         borrowDate: item?.borrow_date ?? '-',
         returnDate: item?.return_date ?? '-',
         itemCount: Number.isFinite(item?.item_count) ? item.item_count : 0,
-        status: item?.status ?? 'Terkirim',
+        status: item?.status ?? 'Dikirim',
         pengirimNama: item?.pengirim_nama ?? '',
         suratJalanUrl: item?.surat_jalan_url ?? '',
         suratJalanPath: item?.surat_jalan_path ?? '',

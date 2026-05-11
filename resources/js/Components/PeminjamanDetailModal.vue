@@ -23,6 +23,17 @@
                         <p v-if="pengirimName" class="mt-1 text-sm text-slate-500">
                             Pengirim: {{ pengirimName }}
                         </p>
+                        <template v-if="isInterArea">
+                            <p class="mt-1 text-sm text-slate-500">
+                                Area alat: {{ sourceAreaName }}
+                            </p>
+                            <p class="mt-1 text-sm text-slate-500">
+                                Direview: {{ requesterReviewerName }}
+                            </p>
+                            <p class="mt-1 text-sm text-slate-500">
+                                Disetujui: {{ approverName }}
+                            </p>
+                        </template>
                     </div>
                     <button
                         class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:text-slate-700"
@@ -44,9 +55,33 @@
                         </p>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                        <p class="text-xs text-slate-400">Jumlah Item</p>
+                        <p class="text-xs text-slate-400">Jumlah Item disetujui</p>
                         <p class="mt-2 text-sm font-semibold text-slate-800">
-                            {{ item?.itemCount ?? 0 }}
+                            {{ approvedItemCount }}
+                        </p>
+                    </div>
+                    <div v-if="isInterArea" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-xs text-slate-400">Area Alat</p>
+                        <p class="mt-2 text-sm font-semibold text-slate-800">
+                            {{ sourceAreaName }}
+                        </p>
+                    </div>
+                    <div v-if="isInterArea" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-xs text-slate-400">Area Peminjam</p>
+                        <p class="mt-2 text-sm font-semibold text-slate-800">
+                            {{ requesterAreaName }}
+                        </p>
+                    </div>
+                    <div v-if="isInterArea" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-xs text-slate-400">Direview</p>
+                        <p class="mt-2 text-sm font-semibold text-slate-800">
+                            {{ requesterReviewerName }}
+                        </p>
+                    </div>
+                    <div v-if="isInterArea" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-xs text-slate-400">Disetujui</p>
+                        <p class="mt-2 text-sm font-semibold text-slate-800">
+                            {{ approverName }}
                         </p>
                     </div>
                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
@@ -127,37 +162,6 @@
                         <p v-if="!(item?.tools || []).length" class="px-4 py-4 text-sm text-slate-500">
                             Tidak ada detail alat.
                         </p>
-                    </div>
-                </div>
-
-                <div v-if="hasAnyPhotos(item)" class="mt-6 rounded-xl border border-slate-200 bg-white">
-                    <div class="border-b border-slate-200 px-4 py-3">
-                        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Bukti Foto</p>
-                    </div>
-                    <div class="space-y-4 px-4 py-4">
-                        <div
-                            v-for="tool in item?.tools || []"
-                            :key="tool.name + tool.code + '-photos'"
-                            class="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
-                        >
-                            <p class="text-sm font-semibold text-slate-900">{{ tool.name }}</p>
-                            <p class="mt-1 text-xs text-slate-500">{{ tool.code }}</p>
-                            <div v-if="toolPhotos(tool).length" class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                <div
-                                    v-for="photo in toolPhotos(tool)"
-                                    :key="photo.id ?? photo.url ?? photo.originalName"
-                                    class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
-                                >
-                                    <img
-                                        :src="photoSrc(photo)"
-                                        :alt="photo.originalName || tool.name"
-                                        class="h-32 w-full object-cover"
-                                        loading="lazy"
-                                    />
-                                </div>
-                            </div>
-                            <p v-else class="mt-3 text-xs text-slate-500">Belum ada foto.</p>
-                        </div>
                     </div>
                 </div>
 
@@ -246,11 +250,35 @@ const isPicTools = computed(() => {
 const pengirimName = computed(
     () => props.item?.pengirimNama ?? props.item?.pengirim_nama ?? ''
 );
+const isInterArea = computed(() =>
+    Boolean(props.item?.isInterArea ?? props.item?.is_inter_area)
+    || props.item?.kategori === 'Antar Area'
+);
+const sourceAreaName = computed(
+    () => props.item?.areaName ?? props.item?.area_name ?? '-'
+);
+const requesterAreaName = computed(
+    () => props.item?.requesterAreaName ?? props.item?.requester_area_name ?? '-'
+);
+const requesterReviewerName = computed(
+    () => props.item?.requesterReviewerName ?? props.item?.requester_reviewed_by_name ?? '-'
+);
+const approverName = computed(
+    () => props.item?.reviewerName ?? props.item?.reviewed_by_name ?? '-'
+);
 const itemReports = computed(() =>
     Array.isArray(props.item?.reports) ? props.item.reports : []
 );
 const approvedQty = (tool) =>
     Number.isFinite(tool?.approvedQty) ? tool.approvedQty : 0;
+const approvedItemCount = computed(() => {
+    const tools = Array.isArray(props.item?.tools) ? props.item.tools : [];
+    if (tools.length) {
+        return tools.reduce((total, tool) => total + approvedQty(tool), 0);
+    }
+
+    return props.item?.itemCount ?? 0;
+});
 
 const returnedQty = (tool) =>
     Number.isFinite(tool?.returnedQty) ? tool.returnedQty : 0;
@@ -266,27 +294,6 @@ const rejectedQty = (tool) => {
 
 const hasReviewResult = (tool) =>
     tool?.reviewStatus && tool.reviewStatus !== 'Menunggu Review';
-
-const toolPhotos = (tool) =>
-    Array.isArray(tool?.photos)
-        ? tool.photos.filter((photo) => photo?.url || photo?.path)
-        : [];
-
-const hasAnyPhotos = (item) =>
-    Array.isArray(item?.tools) && item.tools.some((tool) => toolPhotos(tool).length);
-
-const photoSrc = (photo) => {
-    if (!photo) {
-        return '';
-    }
-    if (photo.url) {
-        return photo.url;
-    }
-    if (!photo.path) {
-        return '';
-    }
-    return photo.path.startsWith('/storage/') ? photo.path : `/storage/${photo.path}`;
-};
 
 const displayQty = (tool) => (isPicTools.value ? approvedQty(tool) : Number.isFinite(tool?.qty) ? tool.qty : 0);
 

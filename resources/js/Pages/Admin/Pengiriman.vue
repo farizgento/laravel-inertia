@@ -19,7 +19,7 @@
         </div>
 
         <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-2">
-            <div class="grid gap-2 md:grid-cols-3">
+            <div class="grid gap-2 md:grid-cols-2">
                 <button
                     v-for="tab in tabs"
                     :key="tab.key"
@@ -31,11 +31,7 @@
                     @click="activeTab = tab.key"
                 >
                     <span class="text-slate-400">
-                        <svg v-if="tab.key === 'menunggu-disiapkan'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="16" rx="2" />
-                            <path d="M7 8h10M7 12h6M7 16h4" />
-                        </svg>
-                        <svg v-else-if="tab.key === 'menunggu-pengiriman'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg v-if="tab.key === 'siap-dikirim'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 7h11v10H3z" />
                             <path d="M14 10h4l3 3v4h-7z" />
                             <circle cx="7.5" cy="19" r="1.5" />
@@ -133,7 +129,7 @@
                             Lihat Detail
                         </button>
                         <button
-                            v-if="item.status === 'Terkirim' && item.suratJalanUrl"
+                            v-if="item.status === 'Dikirim' && item.suratJalanUrl"
                             class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
                             type="button"
                             @click="openSuratJalan(item)"
@@ -148,7 +144,7 @@
                             Surat Jalan
                         </button>
                         <button
-                            v-if="item.status === 'Disiapkan'"
+                            v-if="item.status === 'Dipesan'"
                             class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-700 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
                             type="button"
                             @click="openShipping(item)"
@@ -161,18 +157,6 @@
                             </svg>
                             Pengiriman
                         </button>
-                        <button
-                            v-if="item.status === 'Dipesan'"
-                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
-                            type="button"
-                            @click="openPrepare(item)"
-                        >
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M7 8h10M7 12h6M7 16h4" />
-                                <rect x="3" y="4" width="18" height="16" rx="2" />
-                            </svg>
-                            Siapkan
-                        </button>
                     </div>
                 </article>
             </div>
@@ -183,13 +167,6 @@
         :open="!!detailItem"
         :item="detailItem"
         @close="detailItem = null"
-    />
-    <PreparePengirimanModal
-        :open="!!prepareItem"
-        :item="prepareItem"
-        :is-submitting="isSubmitting"
-        @close="prepareItem = null"
-        @submit="submitPrepare"
     />
     <KirimPengirimanModal
         :open="!!shippingItem"
@@ -217,7 +194,6 @@ import { computed, onMounted, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import PeminjamanDetailModal from '../../Components/PeminjamanDetailModal.vue';
-import PreparePengirimanModal from '../../Components/PreparePengirimanModal.vue';
 import KirimPengirimanModal from '../../Components/KirimPengirimanModal.vue';
 import SuratJalanModal from '../../Components/SuratJalanModal.vue';
 import ToastNotification from '../../Components/ToastNotification.vue';
@@ -240,7 +216,6 @@ const areaName = computed(() => page.props.auth?.user?.area?.name ?? 'Area tidak
 
 const items = ref([]);
 const isLoading = ref(false);
-const isSubmitting = ref(false);
 const isShipping = ref(false);
 const loadError = ref('');
 const alertMessage = ref('');
@@ -249,14 +224,12 @@ const alertTitle = ref('');
 let alertTimeout = null;
 
 const detailItem = ref(null);
-const prepareItem = ref(null);
 const shippingItem = ref(null);
 const suratJalanItem = ref(null);
 
 const tabConfig = [
-    { key: 'menunggu-disiapkan', label: 'Menunggu Disiapkan', status: 'Dipesan' },
-    { key: 'menunggu-pengiriman', label: 'Menunggu Pengiriman', status: 'Disiapkan' },
-    { key: 'dikirim', label: 'Dalam Perjalanan', status: 'Terkirim' },
+    { key: 'siap-dikirim', label: 'Siap Dikirim', status: 'Dipesan' },
+    { key: 'dikirim', label: 'Dikirim', status: 'Dikirim' },
 ];
 
 const activeTab = ref(tabConfig[0].key);
@@ -264,11 +237,9 @@ const activeTab = ref(tabConfig[0].key);
 const statusLabel = (status) => {
     switch (status) {
         case 'Dipesan':
-            return 'Menunggu Disiapkan';
-        case 'Disiapkan':
-            return 'Menunggu Pengiriman';
-        case 'Terkirim':
-            return 'Dalam Perjalanan';
+            return 'Siap Dikirim';
+        case 'Dikirim':
+            return 'Dikirim';
         default:
             return status ?? '-';
     }
@@ -278,9 +249,7 @@ const statusBadge = (status) => {
     switch (status) {
         case 'Dipesan':
             return 'bg-amber-100 text-amber-600';
-        case 'Disiapkan':
-            return 'bg-blue-100 text-blue-600';
-        case 'Terkirim':
+        case 'Dikirim':
             return 'bg-emerald-100 text-emerald-600';
         default:
             return 'bg-slate-100 text-slate-600';
@@ -288,7 +257,7 @@ const statusBadge = (status) => {
 };
 
 const statusCountMap = computed(() => {
-    const base = { Dipesan: 0, Disiapkan: 0, Terkirim: 0 };
+    const base = { Dipesan: 0, Dikirim: 0 };
     items.value.forEach((item) => {
         if (base[item.status] !== undefined) {
             base[item.status] += 1;
@@ -329,14 +298,7 @@ const normalizeHistory = (item) => {
               approvedQty: Number.isFinite(tool?.approved_qty) ? tool.approved_qty : 0,
               reviewStatus: tool?.review_status ?? 'Menunggu Review',
               rejectionReason: tool?.rejection_reason ?? '',
-              photos: Array.isArray(tool?.photos)
-                  ? tool.photos.map((photo) => ({
-                        id: photo?.id ?? null,
-                        url: photo?.url ?? photo?.path ?? '',
-                        originalName: photo?.original_name ?? '',
-                    }))
-                  : [],
-          }))
+        }))
         : [];
 
         return {
@@ -375,10 +337,6 @@ const openDetail = (item) => {
     detailItem.value = item;
 };
 
-const openPrepare = (item) => {
-    prepareItem.value = item;
-};
-
 const openShipping = (item) => {
     shippingItem.value = item;
 };
@@ -391,34 +349,6 @@ const handleSuratJalanAccepted = async () => {
     await loadHistory();
     suratJalanItem.value = null;
     showAlert('success', 'Peminjaman berhasil diterima.');
-};
-
-const submitPrepare = async (payload) => {
-    if (!payload?.peminjamanId) {
-        return;
-    }
-    isSubmitting.value = true;
-    loadError.value = '';
-    try {
-        const formData = new FormData();
-        payload.items.forEach((row, index) => {
-            formData.append(`items[${index}][item_id]`, row.item_id);
-            row.files.forEach((file) => {
-                formData.append(`items[${index}][photos][]`, file);
-            });
-        });
-        await axios.post(`/api/pengiriman/${payload.peminjamanId}/siapkan`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        await loadHistory();
-        prepareItem.value = null;
-        showAlert('success', 'Peminjaman berhasil disiapkan.');
-    } catch (error) {
-        loadError.value = error.response?.data?.message ?? 'Gagal menyiapkan peminjaman.';
-        showAlert('error', loadError.value);
-    } finally {
-        isSubmitting.value = false;
-    }
 };
 
 const submitShipping = async (payload) => {

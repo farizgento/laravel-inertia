@@ -12,15 +12,19 @@ class Peminjaman extends Model
 {
     use HasFactory;
 
-    public const STATUS_MENUNGGU_REVIEW = 'Menunggu Review';
+    public const STATUS_PERLU_DISETUJUI = 'Perlu Disetujui';
+
+    public const STATUS_PERLU_DIREVIEW = 'Perlu Direview';
+
+    public const STATUS_MENUNGGU_REVIEW = self::STATUS_PERLU_DISETUJUI;
+
+    public const STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM = self::STATUS_PERLU_DIREVIEW;
 
     public const STATUS_DIPESAN = 'Dipesan';
 
     public const STATUS_DITOLAK = 'Ditolak';
 
-    public const STATUS_DISIAPKAN = 'Disiapkan';
-
-    public const STATUS_TERKIRIM = 'Terkirim';
+    public const STATUS_DIKIRIM = 'Dikirim';
 
     public const STATUS_DITERIMA = 'Diterima';
 
@@ -30,25 +34,37 @@ class Peminjaman extends Model
 
     public const STATUS_SELESAI = 'Selesai';
 
+    public const KATEGORI_INTRA_AREA = 'Intra Area';
+
+    public const KATEGORI_ANTAR_AREA = 'Antar Area';
+
     protected $table = 'peminjamans';
 
     protected $fillable = [
         'user_id',
         'area_id',
-        'keperluan',
+        'requester_area_id',
+        'is_inter_area',
+        'pekerjaan',
         'catatan',
         'status',
+        'kategori',
         'tanggal_pinjam',
         'tanggal_kembali',
         'review_note',
         'reviewed_at',
         'reviewed_by',
+        'requester_review_note',
+        'requester_reviewed_at',
+        'requester_reviewed_by',
     ];
 
     protected $casts = [
         'tanggal_pinjam' => 'date',
         'tanggal_kembali' => 'date',
         'reviewed_at' => 'datetime',
+        'requester_reviewed_at' => 'datetime',
+        'is_inter_area' => 'boolean',
     ];
 
     public function items(): HasMany
@@ -66,6 +82,11 @@ class Peminjaman extends Model
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
+    public function requesterReviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'requester_reviewed_by');
+    }
+
     public function suratJalan(): HasOne
     {
         return $this->hasOne(SuratJalan::class, 'peminjaman_id');
@@ -76,13 +97,18 @@ class Peminjaman extends Model
         return $this->belongsTo(Area::class);
     }
 
+    public function requesterArea(): BelongsTo
+    {
+        return $this->belongsTo(Area::class, 'requester_area_id');
+    }
+
     public static function stockHoldingStatuses(): array
     {
         return [
             self::STATUS_MENUNGGU_REVIEW,
+            self::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM,
             self::STATUS_DIPESAN,
-            self::STATUS_DISIAPKAN,
-            self::STATUS_TERKIRIM,
+            self::STATUS_DIKIRIM,
             self::STATUS_DITERIMA,
             self::STATUS_DIKEMBALIKAN_PARTIALS,
         ];
@@ -91,7 +117,7 @@ class Peminjaman extends Model
     public static function shippingHistoryStatuses(): array
     {
         return [
-            self::STATUS_TERKIRIM,
+            self::STATUS_DIKIRIM,
             self::STATUS_DITERIMA,
             self::STATUS_DIKEMBALIKAN_PARTIALS,
             self::STATUS_DIKEMBALIKAN_SEMUANYA,

@@ -53,6 +53,9 @@
                     :review-pending-count="reviewPendingCount"
                     :kerusakan-pending-count="kerusakanPendingCount"
                     :kehilangan-pending-count="kehilanganPendingCount"
+                    :pengiriman-intra-area-count="pengirimanIntraAreaCount"
+                    :pengiriman-antar-area-count="pengirimanAntarAreaCount"
+                    :mutasi-alat-count="mutasiAlatCount"
                     @logout="logout"
                     @navigate="closeSidebarOnMobile"
                 />
@@ -69,11 +72,16 @@
                     :active-area-id="activeAreaId"
                     :is-area-switcher="isAreaSwitcherRole"
                     :sidebar-open="isSidebarOpen"
+                    :mailbox-items="mailboxItems"
+                    :mailbox-count="mailboxCount"
                     @toggle-sidebar="toggleSidebar"
                     @change-area="handleAreaChange"
                 />
 
-                <main class="flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-8">
+                <main
+                    :key="areaContentKey"
+                    class="flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-8"
+                >
                     <slot />
                 </main>
             </div>
@@ -121,9 +129,15 @@ const responseInterceptorId = ref(null);
 const reviewPendingCount = ref(0);
 const kerusakanPendingCount = ref(0);
 const kehilanganPendingCount = ref(0);
+const pengirimanIntraAreaCount = ref(0);
+const pengirimanAntarAreaCount = ref(0);
+const mutasiAlatCount = ref(0);
+const mailboxItems = ref([]);
+const mailboxCount = ref(0);
 const isApiReady = ref(false);
 const sidebarBadgePollingId = ref(null);
 const isRefreshingSidebarCounts = ref(false);
+let notificationRequestId = 0;
 
 const loadCachedUser = () => {
     if (typeof window === 'undefined') {
@@ -146,14 +160,6 @@ const displayRole = computed(() => authUser.value?.role?.name ?? 'Memuat...');
 const roleKey = computed(() => authUser.value?.role?.key ?? '');
 const isSuperAdmin = computed(() => (roleKey.value ?? '').toLowerCase() === 'super_admin');
 const isAreaSwitcherRole = computed(() => isSuperAdmin.value);
-const canSeeReviewBadge = computed(() =>
-    ['sp_tool', 'mgr_tool', 'super_admin'].includes((roleKey.value ?? '').toLowerCase())
-);
-const canSeeLaporanBadges = computed(() =>
-    ['sp_tool', 'pic_tools', 'pic_tool', 'mgr_tool', 'admin', 'super_admin'].includes(
-        (roleKey.value ?? '').toLowerCase()
-    )
-);
 const flashMessage = computed(() => {
     const message = page.props.flash?.error ?? page.props.flash?.success ?? '';
     return message && message !== dismissedFlash.value ? message : '';
@@ -180,6 +186,9 @@ const activeAreaName = computed(() => {
 
 const displayArea = computed(() =>
     isAreaSwitcherRole.value ? activeAreaName.value : authUser.value?.area?.name ?? 'Memuat...'
+);
+const areaContentKey = computed(() =>
+    isAreaSwitcherRole.value ? `area-${activeAreaId.value ?? 'none'}` : 'default-area'
 );
 const isGlobalLoading = computed(() => globalLoadingCount.value > 0);
 const loadingMessage = computed(() =>
@@ -232,12 +241,44 @@ const stopGlobalLoading = () => {
     globalLoadingCount.value = Math.max(0, globalLoadingCount.value - 1);
 };
 
+const shouldAttachAreaContext = (config) => {
+    if (!isAreaSwitcherRole.value || !activeAreaId.value || config?.__skipAreaContext) {
+        return false;
+    }
+
+    const url = String(config?.url ?? '');
+    if (!url.includes('/api/')) {
+        return false;
+    }
+
+    return ![
+        '/api/auth/',
+        '/api/user',
+        '/api/areas',
+        '/api/admin/areas',
+    ].some((path) => url.includes(path));
+};
+
+const attachAreaContext = (config) => {
+    if (!shouldAttachAreaContext(config)) {
+        return config;
+    }
+
+    config.params = {
+        ...(config.params ?? {}),
+        area_id: config.params?.area_id ?? activeAreaId.value,
+    };
+
+    return config;
+};
+
 const attachLoadingInterceptors = () => {
     if (requestInterceptorId.value !== null || responseInterceptorId.value !== null) {
         return;
     }
     requestInterceptorId.value = axios.interceptors.request.use(
         (config) => {
+            config = attachAreaContext(config);
             if (config?.__skipGlobalLoading) {
                 return config;
             }
@@ -323,13 +364,30 @@ const loadAreas = async () => {
     }
 };
 
-const refreshReviewPendingCount = async ({ silent = false } = {}) => {
-    if (!isApiReady.value) {
-        return;
-    }
+const applyNotificationPayload = (payload) => {
+    const sidebar = payload?.sidebar ?? {};
+    reviewPendingCount.value = Number(sidebar.review ?? 0);
+    kerusakanPendingCount.value = Number(sidebar.kerusakan ?? 0);
+    kehilanganPendingCount.value = Number(sidebar.kehilangan ?? 0);
+    pengirimanIntraAreaCount.value = Number(sidebar.pengiriman_intra_area ?? 0);
+    pengirimanAntarAreaCount.value = Number(sidebar.pengiriman_antar_area ?? 0);
+    mutasiAlatCount.value = Number(sidebar.mutasi_alat ?? 0);
+    mailboxItems.value = Array.isArray(payload?.mailbox?.items) ? payload.mailbox.items : [];
+    mailboxCount.value = Number(payload?.mailbox?.total ?? 0);
+};
 
-    if (!canSeeReviewBadge.value) {
-        reviewPendingCount.value = 0;
+const clearNotificationPayload = () => {
+    applyNotificationPayload({
+        sidebar: {},
+        mailbox: {
+            items: [],
+            total: 0,
+        },
+    });
+};
+
+const refreshNotifications = async ({ silent = false } = {}) => {
+    if (!isApiReady.value) {
         return;
     }
 
@@ -338,62 +396,35 @@ const refreshReviewPendingCount = async ({ silent = false } = {}) => {
         params.area_id = activeAreaId.value;
     }
 
-    try {
-        const response = await axios.get('/api/review-peminjaman/pending-count', {
-            params,
-            __skipGlobalLoading: silent,
-        });
-        reviewPendingCount.value = Number(response.data?.count ?? 0);
-    } catch (err) {
-        reviewPendingCount.value = 0;
-    }
-};
-
-const refreshLaporanPendingCounts = async ({ silent = false } = {}) => {
-    if (!isApiReady.value) {
-        return;
-    }
-
-    if (!canSeeLaporanBadges.value) {
-        kerusakanPendingCount.value = 0;
-        kehilanganPendingCount.value = 0;
-        return;
-    }
-
-    const params = {};
-    if (isAreaSwitcherRole.value && activeAreaId.value) {
-        params.area_id = activeAreaId.value;
-    }
-
-    try {
-        const response = await axios.get('/api/laporan-pending-counts', {
-            params,
-            __skipGlobalLoading: silent,
-        });
-        kerusakanPendingCount.value = Number(response.data?.kerusakan ?? 0);
-        kehilanganPendingCount.value = Number(response.data?.kehilangan ?? 0);
-    } catch (err) {
-        kerusakanPendingCount.value = 0;
-        kehilanganPendingCount.value = 0;
-    }
-};
-
-const refreshSidebarNotificationCounts = async ({ silent = false } = {}) => {
-    if (isRefreshingSidebarCounts.value) {
-        return;
-    }
-
+    const requestId = notificationRequestId + 1;
+    notificationRequestId = requestId;
     isRefreshingSidebarCounts.value = true;
-
     try {
-        await Promise.all([
-            refreshReviewPendingCount({ silent }),
-            refreshLaporanPendingCounts({ silent }),
-        ]);
+        const response = await axios.get('/api/notifications', {
+            params,
+            __skipGlobalLoading: silent,
+        });
+        if (requestId !== notificationRequestId) {
+            return;
+        }
+        applyNotificationPayload(response.data);
+    } catch (err) {
+        if (requestId !== notificationRequestId) {
+            return;
+        }
+        clearNotificationPayload();
     } finally {
-        isRefreshingSidebarCounts.value = false;
+        if (requestId === notificationRequestId) {
+            isRefreshingSidebarCounts.value = false;
+        }
     }
 };
+
+const refreshReviewPendingCount = refreshNotifications;
+const refreshLaporanPendingCounts = refreshNotifications;
+const refreshPengirimanNotificationCounts = refreshNotifications;
+const refreshMailboxActions = refreshNotifications;
+const refreshSidebarNotificationCounts = refreshNotifications;
 
 const pollSidebarNotificationCounts = async () => {
     if (typeof document !== 'undefined' && document.hidden) {
@@ -453,10 +484,12 @@ const loadUser = async () => {
         const response = await axios.get('/api/user');
         fetchedUser.value = response.data;
         cacheUser(response.data);
+        return true;
     } catch (err) {
         if (err?.response?.status === 401) {
             redirectToLogin();
         }
+        return false;
     }
 };
 
@@ -494,6 +527,8 @@ provide('isAreaSwitcherRole', isAreaSwitcherRole);
 provide('setAreaSwitching', setAreaSwitching);
 provide('refreshReviewPendingCount', refreshReviewPendingCount);
 provide('refreshLaporanPendingCounts', refreshLaporanPendingCounts);
+provide('refreshPengirimanNotificationCounts', refreshPengirimanNotificationCounts);
+provide('refreshMailboxActions', refreshMailboxActions);
 provide('refreshSidebarNotificationCounts', refreshSidebarNotificationCounts);
 
 watch(
@@ -560,7 +595,7 @@ watch(
     }
 );
 
-onMounted(() => {
+onMounted(async () => {
     attachLoadingInterceptors();
     const token = window.localStorage.getItem('auth_token');
     if (!token) {
@@ -573,10 +608,9 @@ onMounted(() => {
         fetchedUser.value = loadCachedUser();
     }
     if (!page.props.auth?.user) {
-        loadUser();
-    } else {
-        refreshSidebarNotificationCounts();
+        await loadUser();
     }
+    await refreshSidebarNotificationCounts({ silent: true });
 
     startSidebarBadgePolling();
     if (typeof document !== 'undefined') {
