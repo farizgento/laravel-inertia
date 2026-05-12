@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 
 class UserSeeder extends Seeder
 {
-    private const DEFAULT_PASSWORD = 'password';
+    private const DEFAULT_PASSWORD = 'Password26';
     private const KS_TUBUN_SLUG = 'kstubun';
 
     private const AREA_ROLE_KEYS = [

@@ -96,6 +96,30 @@ class UserManagementController extends Controller
         return Role::query()->where('key', $roleKey)->firstOrFail();
     }
 
+    private function passwordRules(string $presence): array
+    {
+        return [
+            $presence,
+            'confirmed',
+            Password::min(8),
+            function (string $attribute, mixed $value, $fail): void {
+                $password = (string) $value;
+
+                if ($password === '') {
+                    return;
+                }
+
+                if (! preg_match('/[A-Z]/', $password)) {
+                    $fail('Password harus memiliki minimal satu huruf kapital.');
+                }
+
+                if (! preg_match('/[0-9]/', $password)) {
+                    $fail('Password harus memiliki minimal satu angka.');
+                }
+            },
+        ];
+    }
+
     public function index(Request $request): array
     {
         $actor = $this->authorizeActor($request);
@@ -160,11 +184,11 @@ class UserManagementController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:users,username'],
+            'username' => ['required', 'string', 'max:255', 'unique:users,username'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'role_key' => ['required', 'string', Rule::in($allowedRoleKeys)],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
-            'password' => ['required', 'confirmed', Password::min(8)],
+            'password' => $this->passwordRules('required'),
         ]);
 
         $role = $this->findRole($validated['role_key']);
@@ -194,11 +218,11 @@ class UserManagementController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('users', 'username')->ignore($user->id)],
+            'username' => ['required', 'string', 'max:255', Rule::unique('users', 'username')->ignore($user->id)],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'role_key' => ['required', 'string', Rule::in($allowedRoleKeys)],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
-            'password' => ['nullable', 'confirmed', Password::min(8)],
+            'password' => $this->passwordRules('nullable'),
         ]);
 
         $role = $this->findRole($validated['role_key']);
