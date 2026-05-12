@@ -14,6 +14,26 @@ use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class AuthController extends Controller
 {
+    private function passwordRules(): array
+    {
+        return [
+            'required',
+            'confirmed',
+            PasswordRule::min(8),
+            function (string $attribute, mixed $value, $fail): void {
+                $password = (string) $value;
+
+                if (! preg_match('/[A-Z]/', $password)) {
+                    $fail('Password harus memiliki minimal satu huruf kapital.');
+                }
+
+                if (! preg_match('/[0-9]/', $password)) {
+                    $fail('Password harus memiliki minimal satu angka.');
+                }
+            },
+        ];
+    }
+
     public function register(Request $request)
     {
         $validated = $request->validate([
@@ -21,7 +41,7 @@ class AuthController extends Controller
             'username' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:users,username'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'area_id' => ['required', 'exists:areas,id'],
-            'password' => ['required', 'confirmed', PasswordRule::min(8)],
+            'password' => $this->passwordRules(),
         ]);
 
         $role = Role::firstOrCreate(
@@ -116,7 +136,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'token' => ['required', 'string'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', PasswordRule::min(8)],
+            'password' => $this->passwordRules(),
         ]);
 
         $status = PasswordBroker::reset(
