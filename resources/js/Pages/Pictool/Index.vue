@@ -254,19 +254,20 @@
                         </label>
                         <label class="space-y-2 text-sm font-medium text-slate-700">
                             <span>Klasifikasi Alat *</span>
-                            <select
+                            <input
                                 v-model="form.klasifikasi_alat"
+                                list="classification-options"
+                                type="text"
+                                placeholder="Pilih atau ketik klasifikasi"
                                 class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            >
-                                <option value="">Pilih klasifikasi alat</option>
+                            />
+                            <datalist id="classification-options">
                                 <option
                                     v-for="classification in classificationOptions"
                                     :key="classification"
                                     :value="classification"
-                                >
-                                    {{ classification }}
-                                </option>
-                            </select>
+                                />
+                            </datalist>
                         </label>
                         <label class="space-y-2 text-sm font-medium text-slate-700">
                             <span>Area *</span>
@@ -557,7 +558,18 @@ const form = reactive({
 });
 
 const page = usePage();
-const classificationOptions = ['General Tools', 'Lifting Tools', 'Measurement Tools'];
+const defaultClassificationOptions = ['General Tools', 'Lifting Tools', 'Measurement Tools'];
+const classificationOptions = computed(() => {
+    const options = [
+        ...defaultClassificationOptions,
+        ...tools.value.map((tool) => tool.klasifikasi_alat),
+        form.klasifikasi_alat,
+    ]
+        .map((classification) => String(classification ?? '').trim())
+        .filter((classification) => classification && classification !== '-');
+
+    return [...new Set(options)];
+});
 
 const loadCachedUser = () => {
     if (typeof window === 'undefined') {
@@ -887,16 +899,22 @@ const submitForm = async () => {
     if (!isSuperAdmin.value && !form.area_id && userAreaId.value) {
         form.area_id = normalizeAreaId(userAreaId.value);
     }
-    if (!form.nama || !form.jenis_alat || !form.klasifikasi_alat || !form.area_id || form.total_aset < 0) {
+    if (
+        !form.nama.trim() ||
+        !form.jenis_alat.trim() ||
+        !form.klasifikasi_alat.trim() ||
+        !form.area_id ||
+        form.total_aset < 0
+    ) {
         formError.value = 'Lengkapi semua field wajib.';
         return;
     }
     isSubmitting.value = true;
     try {
         const payload = {
-            nama: form.nama,
-            jenis_alat: form.jenis_alat,
-            klasifikasi_alat: form.klasifikasi_alat,
+            nama: form.nama.trim(),
+            jenis_alat: form.jenis_alat.trim(),
+            klasifikasi_alat: form.klasifikasi_alat.trim(),
             area_id: form.area_id,
             total_aset: form.total_aset,
         };

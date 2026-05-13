@@ -13,18 +13,11 @@ use App\Services\AlatImportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AlatController extends Controller
 {
-    private const CLASSIFICATION_OPTIONS = [
-        'General Tools',
-        'Lifting Tools',
-        'Measurement Tools',
-    ];
-
     private function isSuperAdmin(?Request $request): bool
     {
         $roleKey = strtolower((string) ($request?->user()?->role?->key ?? ''));
@@ -380,10 +373,16 @@ class AlatController extends Controller
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
             'jenis_alat' => ['required', 'string', 'max:255'],
-            'klasifikasi_alat' => ['required', 'string', Rule::in(self::CLASSIFICATION_OPTIONS)],
+            'klasifikasi_alat' => ['required', 'string', 'max:255'],
             'total_aset' => ['required', 'integer', 'min:0'],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
         ]);
+        $data['klasifikasi_alat'] = trim($data['klasifikasi_alat']);
+        if ($data['klasifikasi_alat'] === '') {
+            throw ValidationException::withMessages([
+                'klasifikasi_alat' => ['Klasifikasi alat wajib diisi.'],
+            ]);
+        }
         $data = $this->applyWritableArea($request, $data);
 
         $alat = Alat::create($data);
@@ -402,10 +401,16 @@ class AlatController extends Controller
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
             'jenis_alat' => ['required', 'string', 'max:255'],
-            'klasifikasi_alat' => ['required', 'string', Rule::in(self::CLASSIFICATION_OPTIONS)],
+            'klasifikasi_alat' => ['required', 'string', 'max:255'],
             'total_aset' => ['required', 'integer', 'min:0'],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
         ]);
+        $data['klasifikasi_alat'] = trim($data['klasifikasi_alat']);
+        if ($data['klasifikasi_alat'] === '') {
+            throw ValidationException::withMessages([
+                'klasifikasi_alat' => ['Klasifikasi alat wajib diisi.'],
+            ]);
+        }
         $data = $this->applyWritableArea($request, $data);
 
         $alat->update($data);
