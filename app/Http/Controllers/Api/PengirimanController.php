@@ -517,8 +517,14 @@ class PengirimanController extends Controller
             if (! $user->area_id || (int) $allowedAreaId !== (int) $user->area_id) {
                 return response()->json(['message' => 'Forbidden.'], 403);
             }
-        } elseif (! $isAdmin && (string) $peminjaman->user_id !== (string) $user->id) {
-            return response()->json(['message' => 'user id tidak sama.'], 403);
+        } elseif ($isUser) {
+            if ($peminjaman->is_inter_area) {
+                return response()->json(['message' => 'User hanya dapat menerima peminjaman intra area.'], 403);
+            }
+
+            if ((string) $peminjaman->user_id !== (string) $user->id) {
+                return response()->json(['message' => 'user id tidak sama.'], 403);
+            }
         }
 
         if ($peminjaman->status !== Peminjaman::STATUS_DIKIRIM) {

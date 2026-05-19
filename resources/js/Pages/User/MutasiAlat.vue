@@ -763,7 +763,8 @@ const isInterAreaRequester = (item) =>
 const canAcceptSuratJalan = (item) =>
     item?.status === 'Dikirim'
     && (
-        isAdminRole.value
+        (isUserRole.value && !item?.isInterArea)
+        || isAdminRole.value
         || (['pic_tools', 'pic_tool'].includes(roleKey.value) && isInterAreaRequester(item))
     );
 
