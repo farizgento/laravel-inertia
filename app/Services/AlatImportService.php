@@ -22,12 +22,6 @@ class AlatImportService
 
     private const XLSX_REL_NS = 'http://schemas.openxmlformats.org/package/2006/relationships';
 
-    private const CLASSIFICATION_OPTIONS = [
-        'General Tools',
-        'Lifting Tools',
-        'Measurement Tools',
-    ];
-
     public function downloadUrl(AlatImport $import): string
     {
         return url('/api/alats/imports/'.$import->id.'/download');
@@ -121,8 +115,8 @@ class AlatImportService
                 }
                 if ($klasifikasiAlat === '') {
                     $rowErrors[] = 'klasifikasi alat wajib diisi';
-                } elseif (! in_array($klasifikasiAlat, self::CLASSIFICATION_OPTIONS, true)) {
-                    $rowErrors[] = 'klasifikasi alat harus General Tools, Lifting Tools, atau Measurement Tools';
+                } elseif (mb_strlen($klasifikasiAlat) > 255) {
+                    $rowErrors[] = 'klasifikasi alat maksimal 255 karakter';
                 }
                 if ($totalAset === null) {
                     $rowErrors[] = 'total aset harus berupa angka bulat >= 0';

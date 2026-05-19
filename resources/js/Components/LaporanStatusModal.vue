@@ -84,7 +84,9 @@
 </template>
 
 <script setup>
-const statusOptions = [
+import { computed } from 'vue';
+
+const approvalOptions = [
     {
         value: 'Disetujui',
         label: 'Disetujui',
@@ -95,6 +97,9 @@ const statusOptions = [
         label: 'Ditolak',
         description: 'Laporan ditolak dan stok tidak berkurang.',
     },
+];
+
+const completionOptions = [
     {
         value: 'Selesai',
         label: 'Selesai',
@@ -102,7 +107,7 @@ const statusOptions = [
     },
 ];
 
-defineProps({
+const props = defineProps({
     open: {
         type: Boolean,
         default: false,
@@ -127,6 +132,14 @@ defineProps({
         type: Boolean,
         default: false,
     },
+});
+
+const statusOptions = computed(() => {
+    if (props.report?.status === 'Disetujui') {
+        return completionOptions;
+    }
+
+    return approvalOptions;
 });
 
 const emit = defineEmits(['close', 'submit', 'update:modelValue']);

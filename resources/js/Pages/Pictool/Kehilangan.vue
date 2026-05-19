@@ -144,11 +144,14 @@
                             <td class="px-4 py-4 text-right">
                                 <div class="inline-flex items-center gap-2">
                                     <button
-                                        class="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:border-amber-300"
+                                        v-if="canShowStatusAction(item)"
+                                        class="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-70"
+                                        :class="statusActionClass(item)"
                                         type="button"
-                                        @click="openStatusModal(item)"
+                                        :disabled="isStatusSubmitting && statusSubmittingId === item.id"
+                                        @click="handleStatusAction(item)"
                                     >
-                                        Persetujuan
+                                        {{ statusActionLabel(item) }}
                                     </button>
                                     <button
                                         class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700"
@@ -463,6 +466,7 @@ const previewUrl = ref('');
 const detailItem = ref(null);
 const selectedStatusItem = ref(null);
 const isStatusSubmitting = ref(false);
+const statusSubmittingId = ref(null);
 const statusError = ref('');
 const statusForm = reactive({
     status: '',
@@ -517,6 +521,24 @@ const statusBadge = (status) => {
         default:
             return 'bg-slate-100 text-slate-600';
     }
+};
+
+const canShowStatusAction = (item) => ['Dilaporkan', 'Disetujui'].includes(item?.status);
+
+const statusActionLabel = (item) => {
+    if (item?.status === 'Disetujui') {
+        return isStatusSubmitting.value && statusSubmittingId.value === item.id ? 'Memproses...' : 'Selesai';
+    }
+
+    return 'Persetujuan';
+};
+
+const statusActionClass = (item) => {
+    if (item?.status === 'Disetujui') {
+        return 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300';
+    }
+
+    return 'border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300';
 };
 
 const normalizeReport = (item) => ({
@@ -770,6 +792,15 @@ const openStatusModal = (item) => {
     statusError.value = '';
 };
 
+const handleStatusAction = (item) => {
+    if (item?.status === 'Disetujui') {
+        submitStatusFor(item, 'Selesai');
+        return;
+    }
+
+    openStatusModal(item);
+};
+
 const closeStatusModal = () => {
     selectedStatusItem.value = null;
     statusForm.status = '';
@@ -782,16 +813,27 @@ const submitStatus = async () => {
         return;
     }
 
+    await submitStatusFor(selectedStatusItem.value, statusForm.status, true);
+};
+
+const submitStatusFor = async (item, status, shouldCloseModal = false) => {
+    if (!item?.id || !status) {
+        return;
+    }
+
     isStatusSubmitting.value = true;
+    statusSubmittingId.value = item.id;
     statusError.value = '';
     try {
-        await axios.put(`/api/laporan-kehilangan/${selectedStatusItem.value.id}`, {
-            status: statusForm.status,
+        await axios.put(`/api/laporan-kehilangan/${item.id}`, {
+            status,
             ...(isAreaSwitcherRole.value && activeAreaId.value ? { area_id: activeAreaId.value } : {}),
         });
         await loadReports();
         await refreshSidebarNotificationCounts();
-        closeStatusModal();
+        if (shouldCloseModal) {
+            closeStatusModal();
+        }
         showAlert('success', 'Status laporan kehilangan berhasil diperbarui.');
     } catch (error) {
         statusError.value =
@@ -801,6 +843,7 @@ const submitStatus = async () => {
         showAlert('error', statusError.value);
     } finally {
         isStatusSubmitting.value = false;
+        statusSubmittingId.value = null;
     }
 };
 
