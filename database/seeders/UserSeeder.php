@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 class UserSeeder extends Seeder
 {
     private const DEFAULT_PASSWORD = 'Password26';
-    private const KS_TUBUN_SLUG = 'kstubun';
+    private const TRLA_SLUG = 'trla';
 
     private const AREA_ROLE_KEYS = [
         Role::KEY_USER,
@@ -23,9 +23,9 @@ class UserSeeder extends Seeder
 
     private const SINGLE_ROLE_USERS = [
         Role::KEY_SUPER_ADMIN => [
-            'name' => 'Super Admin KS TUBUN',
-            'username' => 'super_admin.kstubun',
-            'email' => 'super_admin.kstubun@example.com',
+            'name' => 'Super Admin TRLA',
+            'username' => 'super_admin.trla',
+            'email' => 'fariz.aminullah@plnindonesiapower.co.id',
         ],
     ];
 
@@ -55,8 +55,8 @@ class UserSeeder extends Seeder
             }
         }
 
-        $ksTubunArea = $areas->get(self::KS_TUBUN_SLUG);
-        if (! $ksTubunArea) {
+        $trlaArea = $areas->get(self::TRLA_SLUG);
+        if (! $trlaArea) {
             return;
         }
 
@@ -68,7 +68,7 @@ class UserSeeder extends Seeder
             }
 
             $this->seedSingleRoleUser(
-                area: $ksTubunArea,
+                area: $trlaArea,
                 role: $role,
                 name: $account['name'],
                 username: $account['username'],

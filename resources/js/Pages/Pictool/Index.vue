@@ -38,6 +38,20 @@
                 </button>
                 <template v-if="canManageTools">
                     <button
+                        v-if="isSuperAdmin"
+                        class="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        type="button"
+                        :disabled="!activeAreaId || isDeleting"
+                        @click="removeActiveAreaTools"
+                    >
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18" />
+                            <path d="M8 6V4h8v2" />
+                            <path d="m6 6 1 14h10l1-14" />
+                        </svg>
+                        Hapus Semuanya
+                    </button>
+                    <button
                         class="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
                         type="button"
                         @click="openImport"
@@ -448,7 +462,7 @@
                     <div>
                         <h3 class="text-lg font-semibold text-slate-900">Hapus Alat</h3>
                         <p class="mt-1 text-sm text-slate-500">
-                            Data alat yang dihapus tidak dapat dikembalikan.
+                            {{ deleteMode === 'area' ? 'Semua alat pada area aktif akan dihapus.' : 'Data alat yang dihapus tidak dapat dikembalikan.' }}
                         </p>
                     </div>
                     <button
@@ -466,7 +480,14 @@
 
                 <div class="mt-5 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3">
                     <p class="text-sm text-slate-700">
-                        Yakin ingin menghapus alat <span class="font-semibold text-slate-900">{{ deleteTarget?.nama }}</span>?
+                        <template v-if="deleteMode === 'area'">
+                            Yakin ingin menghapus semua alat pada
+                            <span class="font-semibold text-slate-900">{{ areaName }}</span>?
+                        </template>
+                        <template v-else>
+                            Yakin ingin menghapus alat
+                            <span class="font-semibold text-slate-900">{{ deleteTarget?.nama }}</span>?
+                        </template>
                     </p>
                 </div>
 
@@ -535,6 +556,7 @@ const alertType = ref('success');
 const alertTitle = ref('');
 const importInput = ref(null);
 const importFile = ref(null);
+const deleteMode = ref('single');
 const deleteTarget = ref(null);
 const currentImport = ref(null);
 let importStatusInterval = null;
@@ -590,10 +612,12 @@ const isSuperAdmin = computed(() => roleKey.value === 'super_admin');
 const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
 const canManageTools = computed(() => ['pic_tools', 'admin', 'super_admin'].includes(roleKey.value));
 const activeAreaId = inject('activeAreaId', ref(null));
+const activeAreaName = inject('activeAreaName', ref('Area aktif'));
 const setAreaSwitching = inject('setAreaSwitching', null);
 const userAreaId = computed(() => authUser.value?.area_id ?? authUser.value?.area?.id ?? '');
 const isAreaLocked = computed(() => !isSuperAdmin.value);
 const normalizeAreaId = (value) => (value === null || value === undefined || value === '' ? '' : Number(value));
+const areaName = computed(() => activeAreaName.value || 'area aktif');
 
 const isEdit = computed(() => form.id !== null);
 const importFileName = computed(() => importFile.value?.name ?? '');
@@ -1011,7 +1035,18 @@ const removeTool = (tool) => {
     if (!canManageTools.value) {
         return;
     }
+    deleteMode.value = 'single';
     deleteTarget.value = tool;
+    deleteOpen.value = true;
+};
+
+const removeActiveAreaTools = () => {
+    if (!isSuperAdmin.value || !activeAreaId.value) {
+        showAlert('error', 'Pilih area aktif terlebih dahulu.');
+        return;
+    }
+    deleteMode.value = 'area';
+    deleteTarget.value = null;
     deleteOpen.value = true;
 };
 
@@ -1020,20 +1055,34 @@ const closeDeleteModal = () => {
         return;
     }
     deleteOpen.value = false;
+    deleteMode.value = 'single';
     deleteTarget.value = null;
 };
 
 const confirmDelete = async () => {
-    if (!canManageTools.value || !deleteTarget.value) {
+    if (!canManageTools.value || (deleteMode.value !== 'area' && !deleteTarget.value)) {
         return;
     }
     isDeleting.value = true;
     let shouldCloseModal = false;
     try {
-        await axios.delete(`/api/alats/${deleteTarget.value.id}`);
+        if (deleteMode.value === 'area') {
+            await axios.delete('/api/alats/area', {
+                data: {
+                    area_id: activeAreaId.value,
+                },
+            });
+        } else {
+            await axios.delete(`/api/alats/${deleteTarget.value.id}`);
+        }
         await loadTools();
         shouldCloseModal = true;
-        showAlert('success', 'Alat berhasil dihapus.');
+        showAlert(
+            'success',
+            deleteMode.value === 'area'
+                ? 'Semua alat pada area aktif berhasil dihapus.'
+                : 'Alat berhasil dihapus.'
+        );
     } catch (error) {
         showAlert('error', error.response?.data?.message ?? 'Gagal menghapus data.');
     } finally {

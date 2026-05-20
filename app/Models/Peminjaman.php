@@ -20,7 +20,7 @@ class Peminjaman extends Model
 
     public const STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM = self::STATUS_PERLU_DIREVIEW;
 
-    public const STATUS_DIPESAN = 'Dipesan';
+    public const STATUS_DISETUJUI = 'Disetujui';
 
     public const STATUS_DITOLAK = 'Ditolak';
 
@@ -89,7 +89,12 @@ class Peminjaman extends Model
 
     public function suratJalan(): HasOne
     {
-        return $this->hasOne(SuratJalan::class, 'peminjaman_id');
+        return $this->hasOne(SuratJalan::class, 'peminjaman_id')->oldestOfMany();
+    }
+
+    public function suratJalans(): HasMany
+    {
+        return $this->hasMany(SuratJalan::class, 'peminjaman_id')->orderBy('id');
     }
 
     public function area(): BelongsTo
@@ -107,7 +112,7 @@ class Peminjaman extends Model
         return [
             self::STATUS_MENUNGGU_REVIEW,
             self::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM,
-            self::STATUS_DIPESAN,
+            self::STATUS_DISETUJUI,
             self::STATUS_DIKIRIM,
             self::STATUS_DITERIMA,
             self::STATUS_DIKEMBALIKAN_PARTIALS,
@@ -149,3 +154,4 @@ class Peminjaman extends Model
         return self::STATUS_DIKEMBALIKAN_SEMUANYA;
     }
 }
+

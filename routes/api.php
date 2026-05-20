@@ -95,6 +95,15 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware('role:'.implode(',', [
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+    ]))->group(function () {
+        Route::delete('/peminjaman/area', [PeminjamanController::class, 'destroyArea']);
+        Route::put('/peminjaman/{peminjaman}', [PeminjamanController::class, 'update']);
+        Route::delete('/peminjaman/{peminjaman}', [PeminjamanController::class, 'destroy']);
+    });
+
+    Route::middleware('role:'.implode(',', [
         Role::KEY_USER,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
@@ -158,6 +167,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/alats/import', [AlatController::class, 'import']);
         Route::get('/alats/imports/{import}', [AlatController::class, 'importStatus']);
         Route::get('/alats/imports/{import}/download', [AlatController::class, 'downloadImport']);
+        Route::delete('/alats/area', [AlatController::class, 'destroyArea']);
         Route::put('/alats/{alat}', [AlatController::class, 'update']);
         Route::delete('/alats/{alat}', [AlatController::class, 'destroy']);
     });
@@ -171,6 +181,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pengiriman', [PengirimanController::class, 'index']);
         Route::get('/pengembalian', [PengirimanController::class, 'pengembalianIndex']);
         Route::post('/pengiriman/{peminjaman}/kirim', [PengirimanController::class, 'kirim']);
+        Route::put('/pengiriman/{peminjaman}/periode', [PengirimanController::class, 'updatePeriode']);
         Route::post('/pengembalian/{peminjaman}/selesai', [PengirimanController::class, 'selesai']);
     });
 

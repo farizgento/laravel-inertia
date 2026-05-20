@@ -41,7 +41,7 @@ class MutasiAlatController extends Controller
                     $sub->where('approved_qty', '>', 0);
                 },
                 'items.alat.area',
-                'suratJalan',
+                'suratJalans',
                 'area',
                 'requesterArea',
                 'reviewer',
@@ -111,6 +111,10 @@ class MutasiAlatController extends Controller
                 ];
             })->values();
 
+            $suratJalans = $peminjaman->suratJalans->values();
+            $suratJalanPengiriman = $suratJalans->first();
+            $suratJalanPengembalian = $suratJalans->count() > 1 ? $suratJalans->last() : null;
+
             return [
                 'id' => $peminjaman->id,
                 'title' => $peminjaman->pekerjaan,
@@ -134,10 +138,15 @@ class MutasiAlatController extends Controller
                 'item_count' => $peminjaman->items->sum('approved_qty'),
                 'status' => $peminjaman->status,
                 'kategori' => $peminjaman->kategori ?? Peminjaman::KATEGORI_INTRA_AREA,
-                'pengirim_nama' => $peminjaman->suratJalan?->pengirim_nama,
-                'surat_jalan_path' => $peminjaman->suratJalan?->path,
-                'surat_jalan_url' => $peminjaman->suratJalan?->path
-                    ? url('/storage/' . ltrim($peminjaman->suratJalan->path, '/'))
+                'pengirim_nama' => $suratJalanPengiriman?->pengirim_nama,
+                'surat_jalan_path' => $suratJalanPengiriman?->path,
+                'surat_jalan_url' => $suratJalanPengiriman?->path
+                    ? url('/storage/' . ltrim($suratJalanPengiriman->path, '/'))
+                    : null,
+                'pengembali_nama' => $suratJalanPengembalian?->pengirim_nama,
+                'surat_jalan_pengembalian_path' => $suratJalanPengembalian?->path,
+                'surat_jalan_pengembalian_url' => $suratJalanPengembalian?->path
+                    ? url('/storage/' . ltrim($suratJalanPengembalian->path, '/'))
                     : null,
                 'tools' => $tools,
             ];

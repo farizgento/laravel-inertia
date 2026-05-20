@@ -276,7 +276,7 @@ class ReviewPeminjamanController extends Controller
                     'reviewed_at' => now(),
                     'reviewed_by' => $user->id,
                     'status' => $hasApproved
-                        ? Peminjaman::STATUS_DIPESAN
+                        ? Peminjaman::STATUS_DISETUJUI
                         : Peminjaman::STATUS_DITOLAK,
                 ]);
             }
@@ -288,3 +288,4 @@ class ReviewPeminjamanController extends Controller
         ]);
     }
 }
+

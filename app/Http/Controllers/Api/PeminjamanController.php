@@ -9,8 +9,10 @@ use App\Models\LaporanAlat;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanItem;
 use App\Models\Role;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Validation\ValidationException;
 
@@ -38,7 +40,7 @@ class PeminjamanController extends Controller
         $kategori = trim((string) $request->query('kategori', ''));
 
         $query = Peminjaman::query()
-            ->with(['items.alat.area', 'suratJalan', 'user', 'reviewer', 'requesterReviewer', 'area', 'requesterArea'])
+            ->with(['items.alat.area', 'suratJalans', 'user', 'reviewer', 'requesterReviewer', 'area', 'requesterArea'])
             ->orderByDesc('created_at');
 
         if ($isSuperAdmin || $isAdmin) {
@@ -147,6 +149,10 @@ class PeminjamanController extends Controller
             ->flatMap(fn (array $tool) => $tool['reports'] ?? [])
             ->values();
 
+        $suratJalans = $peminjaman->suratJalans->values();
+        $suratJalanPengiriman = $suratJalans->first();
+        $suratJalanPengembalian = $suratJalans->count() > 1 ? $suratJalans->last() : null;
+
         return [
             'id' => $peminjaman->id,
             'title' => $peminjaman->pekerjaan,
@@ -164,16 +170,23 @@ class PeminjamanController extends Controller
             'borrow_date' => $peminjaman->tanggal_pinjam
                 ? $peminjaman->tanggal_pinjam->format('d M Y')
                 : null,
+            'borrow_date_value' => $peminjaman->tanggal_pinjam?->toDateString(),
             'return_date' => $peminjaman->tanggal_kembali
                 ? $peminjaman->tanggal_kembali->format('d M Y')
                 : null,
+            'return_date_value' => $peminjaman->tanggal_kembali?->toDateString(),
             'item_count' => $peminjaman->items->sum('qty'),
             'status' => $peminjaman->status,
             'kategori' => $peminjaman->kategori ?? Peminjaman::KATEGORI_INTRA_AREA,
-            'pengirim_nama' => $peminjaman->suratJalan?->pengirim_nama,
-            'surat_jalan_path' => $peminjaman->suratJalan?->path,
-            'surat_jalan_url' => $peminjaman->suratJalan?->path
-                ? url('/storage/' . ltrim($peminjaman->suratJalan->path, '/'))
+            'pengirim_nama' => $suratJalanPengiriman?->pengirim_nama,
+            'surat_jalan_path' => $suratJalanPengiriman?->path,
+            'surat_jalan_url' => $suratJalanPengiriman?->path
+                ? url('/storage/' . ltrim($suratJalanPengiriman->path, '/'))
+                : null,
+            'pengembali_nama' => $suratJalanPengembalian?->pengirim_nama,
+            'surat_jalan_pengembalian_path' => $suratJalanPengembalian?->path,
+            'surat_jalan_pengembalian_url' => $suratJalanPengembalian?->path
+                ? url('/storage/' . ltrim($suratJalanPengembalian->path, '/'))
                 : null,
             'tools' => $tools,
             'reports' => $reports,
@@ -456,6 +469,97 @@ class PeminjamanController extends Controller
         ], 201);
     }
 
+    public function update(Request $request, Peminjaman $peminjaman)
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $user->loadMissing('role');
+        $roleKey = strtolower((string) ($user->role?->key ?? ''));
+        if (! in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true)) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $validated = $request->validate([
+            'pekerjaan' => ['required', 'string', 'max:1000'],
+            'tanggal_pinjam' => ['required', 'date'],
+            'tanggal_kembali' => ['required', 'date', 'after_or_equal:tanggal_pinjam'],
+            'status' => ['required', 'in:' . implode(',', [
+                Peminjaman::STATUS_PERLU_DISETUJUI,
+                Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM,
+                Peminjaman::STATUS_DISETUJUI,
+                Peminjaman::STATUS_DIKIRIM,
+                Peminjaman::STATUS_DITERIMA,
+                Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS,
+                Peminjaman::STATUS_DIKEMBALIKAN_SEMUANYA,
+                Peminjaman::STATUS_SELESAI,
+                Peminjaman::STATUS_DITOLAK,
+            ])],
+        ]);
+
+        $peminjaman->update([
+            'pekerjaan' => $validated['pekerjaan'],
+            'tanggal_pinjam' => $validated['tanggal_pinjam'],
+            'tanggal_kembali' => $validated['tanggal_kembali'],
+            'status' => $validated['status'],
+        ]);
+
+        $peminjaman->load(['items.alat.area', 'suratJalans', 'user', 'reviewer', 'requesterReviewer', 'area', 'requesterArea']);
+
+        return response()->json($this->transformPeminjaman($peminjaman));
+    }
+
+    public function destroy(Request $request, Peminjaman $peminjaman)
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $user->loadMissing('role');
+        $roleKey = strtolower((string) ($user->role?->key ?? ''));
+        if (! in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true)) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $this->deletePeminjamans(collect([$peminjaman]));
+
+        return response()->json(['message' => 'Peminjaman berhasil dihapus.']);
+    }
+
+    public function destroyArea(Request $request)
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $user->loadMissing('role');
+        $roleKey = strtolower((string) ($user->role?->key ?? ''));
+        if ($roleKey !== Role::KEY_SUPER_ADMIN) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        $validated = $request->validate([
+            'area_id' => ['required', 'integer', 'exists:areas,id'],
+        ]);
+
+        $peminjamans = Peminjaman::query()
+            ->with(['suratJalans'])
+            ->where('area_id', $validated['area_id'])
+            ->get();
+
+        $deleted = $peminjamans->count();
+        $this->deletePeminjamans($peminjamans);
+
+        return response()->json([
+            'message' => 'Semua peminjaman pada area aktif berhasil dihapus.',
+            'deleted' => $deleted,
+        ]);
+    }
+
     public function storeInterArea(Request $request)
     {
         $validated = $request->validate([
@@ -577,7 +681,7 @@ class PeminjamanController extends Controller
                 DB::raw(
                     "SUM(CASE
                         WHEN pem.status IN ('" . Peminjaman::STATUS_MENUNGGU_REVIEW . "', '" . Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM . "') THEN items.qty
-                        WHEN pem.status IN ('" . Peminjaman::STATUS_DIPESAN . "', '" . Peminjaman::STATUS_DIKIRIM . "') THEN COALESCE(items.approved_qty, 0)
+                        WHEN pem.status IN ('" . Peminjaman::STATUS_DISETUJUI . "', '" . Peminjaman::STATUS_DIKIRIM . "') THEN COALESCE(items.approved_qty, 0)
                         WHEN pem.status IN ('" . Peminjaman::STATUS_DITERIMA . "', '" . Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS . "') THEN GREATEST(COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0), 0)
                         ELSE 0
                     END) as total"
@@ -605,7 +709,7 @@ class PeminjamanController extends Controller
                 DB::raw(
                     "SUM(CASE
                         WHEN pem.status IN ('" . Peminjaman::STATUS_MENUNGGU_REVIEW . "', '" . Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM . "') THEN items.qty
-                        WHEN pem.status IN ('" . Peminjaman::STATUS_DIPESAN . "', '" . Peminjaman::STATUS_DIKIRIM . "') THEN COALESCE(items.approved_qty, 0)
+                        WHEN pem.status IN ('" . Peminjaman::STATUS_DISETUJUI . "', '" . Peminjaman::STATUS_DIKIRIM . "') THEN COALESCE(items.approved_qty, 0)
                         WHEN pem.status IN ('" . Peminjaman::STATUS_DITERIMA . "', '" . Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS . "') THEN GREATEST(COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0), 0)
                         ELSE 0
                     END) as total"
@@ -632,4 +736,64 @@ class PeminjamanController extends Controller
             ->map(fn ($value) => (int) $value)
             ->all();
     }
+
+    private function deletePeminjamans($peminjamans): void
+    {
+        if ($peminjamans->isEmpty()) {
+            return;
+        }
+
+        DB::transaction(function () use ($peminjamans) {
+            $ids = $peminjamans->pluck('id')->map(fn ($id) => (int) $id)->all();
+            $logPeminjamans = Peminjaman::query()
+                ->with(['items', 'suratJalans'])
+                ->whereIn('id', $ids)
+                ->get();
+
+            DB::table('surat_jalan')
+                ->whereIn('peminjaman_id', $ids)
+                ->pluck('path')
+                ->filter()
+                ->each(function ($path) {
+                    Storage::disk('public')->delete($path);
+                }
+            );
+
+            DB::table('peminjaman_items')->whereIn('peminjaman_id', $ids)->delete();
+            DB::table('surat_jalan')->whereIn('peminjaman_id', $ids)->delete();
+            AreaAlatStock::query()->whereIn('source_peminjaman_id', $ids)->delete();
+            LaporanAlat::query()
+                ->whereIn('source_peminjaman_id', $ids)
+                ->update(['source_peminjaman_id' => null]);
+
+            foreach ($logPeminjamans as $peminjaman) {
+                ActivityLogger::log('delete', $peminjaman, [
+                    'old_values' => $this->peminjamanLogSnapshot($peminjaman),
+                    'properties' => [
+                        'items_count' => $peminjaman->items->count(),
+                        'surat_jalan_count' => $peminjaman->suratJalans->count(),
+                    ],
+                    'description' => "Menghapus data peminjaman #{$peminjaman->id} {$peminjaman->pekerjaan}.",
+                ]);
+            }
+
+            Peminjaman::query()->whereIn('id', $ids)->delete();
+        });
+    }
+
+    private function peminjamanLogSnapshot(Peminjaman $peminjaman): array
+    {
+        return [
+            'id' => $peminjaman->id,
+            'pekerjaan' => $peminjaman->pekerjaan,
+            'status' => $peminjaman->status,
+            'kategori' => $peminjaman->kategori,
+            'user_id' => $peminjaman->user_id,
+            'area_id' => $peminjaman->area_id,
+            'requester_area_id' => $peminjaman->requester_area_id,
+            'tanggal_pinjam' => $peminjaman->tanggal_pinjam?->toDateString(),
+            'tanggal_kembali' => $peminjaman->tanggal_kembali?->toDateString(),
+        ];
+    }
 }
+

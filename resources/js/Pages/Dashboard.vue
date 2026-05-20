@@ -357,7 +357,7 @@ const statusCards = computed(() => [
     {
         title: 'Sedang Berjalan',
         value: formatNumber(summary.value.sedang_berjalan),
-        description: 'Termasuk dipesan, dikirim, dan diterima.',
+        description: 'Termasuk disetujui, dikirim, dan diterima.',
         wrapperClass: 'border-blue-200 bg-blue-50/70',
         titleClass: 'text-blue-900',
         captionClass: 'text-blue-700/80',
@@ -473,3 +473,4 @@ watch(
     }
 );
 </script>
+
