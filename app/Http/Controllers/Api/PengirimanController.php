@@ -209,6 +209,9 @@ class PengirimanController extends Controller
         $reports = $tools
             ->flatMap(fn (array $tool) => $tool['reports'] ?? [])
             ->values();
+        $suratJalans = $peminjaman->suratJalans->values();
+        $suratJalanPengiriman = $suratJalans->first();
+        $suratJalanPengembalian = $suratJalans->count() > 1 ? $suratJalans->last() : null;
 
         return [
             'id' => $peminjaman->id,
@@ -227,16 +230,23 @@ class PengirimanController extends Controller
             'borrow_date' => $peminjaman->tanggal_pinjam
                 ? $peminjaman->tanggal_pinjam->format('d M Y')
                 : null,
+            'borrow_date_value' => $peminjaman->tanggal_pinjam?->toDateString(),
             'return_date' => $peminjaman->tanggal_kembali
                 ? $peminjaman->tanggal_kembali->format('d M Y')
                 : null,
+            'return_date_value' => $peminjaman->tanggal_kembali?->toDateString(),
             'item_count' => $peminjaman->items->sum('approved_qty'),
             'status' => $peminjaman->status,
             'kategori' => $peminjaman->kategori ?? Peminjaman::KATEGORI_INTRA_AREA,
-            'pengirim_nama' => $peminjaman->suratJalan?->pengirim_nama,
-            'surat_jalan_path' => $peminjaman->suratJalan?->path,
-            'surat_jalan_url' => $peminjaman->suratJalan?->path
-                ? url('/storage/' . ltrim($peminjaman->suratJalan->path, '/'))
+            'pengirim_nama' => $suratJalanPengiriman?->pengirim_nama,
+            'surat_jalan_path' => $suratJalanPengiriman?->path,
+            'surat_jalan_url' => $suratJalanPengiriman?->path
+                ? url('/storage/' . ltrim($suratJalanPengiriman->path, '/'))
+                : null,
+            'pengembali_nama' => $suratJalanPengembalian?->pengirim_nama,
+            'surat_jalan_pengembalian_path' => $suratJalanPengembalian?->path,
+            'surat_jalan_pengembalian_url' => $suratJalanPengembalian?->path
+                ? url('/storage/' . ltrim($suratJalanPengembalian->path, '/'))
                 : null,
             'tools' => $tools,
             'reports' => $reports,
@@ -267,14 +277,14 @@ class PengirimanController extends Controller
                     $sub->where('approved_qty', '>', 0);
                 },
                 'items.alat.area',
-                'suratJalan',
+                'suratJalans',
                 'area',
                 'requesterArea',
                 'reviewer',
                 'requesterReviewer',
                 'user',
             ])
-            ->whereIn('status', [Peminjaman::STATUS_DIPESAN, Peminjaman::STATUS_DIKIRIM])
+            ->whereIn('status', [Peminjaman::STATUS_DISETUJUI, Peminjaman::STATUS_DIKIRIM])
             ->whereHas('items', function ($sub) {
                 $sub->where('approved_qty', '>', 0);
             })
@@ -318,13 +328,10 @@ class PengirimanController extends Controller
         $search = trim((string) $request->query('search', ''));
         $kategori = trim((string) ($request->query('kategori', $request->query('category', ''))));
         $statuses = [
+            Peminjaman::STATUS_DITERIMA,
             Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS,
             Peminjaman::STATUS_DIKEMBALIKAN_SEMUANYA,
         ];
-
-        if ($kategori === Peminjaman::KATEGORI_ANTAR_AREA) {
-            array_unshift($statuses, Peminjaman::STATUS_DITERIMA);
-        }
 
         $query = Peminjaman::query()
             ->with([
@@ -332,7 +339,7 @@ class PengirimanController extends Controller
                     $sub->where('approved_qty', '>', 0);
                 },
                 'items.alat.area',
-                'suratJalan',
+                'suratJalans',
                 'area',
                 'requesterArea',
                 'reviewer',
@@ -385,7 +392,7 @@ class PengirimanController extends Controller
 
         $countForCategory = function (string $kategori) use ($request): int {
             $shippingQuery = $this->baseShippingCountQuery([
-                Peminjaman::STATUS_DIPESAN,
+                Peminjaman::STATUS_DISETUJUI,
                 Peminjaman::STATUS_DIKIRIM,
             ]);
             $this->applyKategoriValueFilter($shippingQuery, $kategori);
@@ -395,12 +402,10 @@ class PengirimanController extends Controller
             }
 
             $returnStatuses = [
+                Peminjaman::STATUS_DITERIMA,
                 Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS,
                 Peminjaman::STATUS_DIKEMBALIKAN_SEMUANYA,
             ];
-            if ($kategori === Peminjaman::KATEGORI_ANTAR_AREA) {
-                array_unshift($returnStatuses, Peminjaman::STATUS_DITERIMA);
-            }
 
             $returnQuery = $this->baseShippingCountQuery($returnStatuses);
             $this->applyKategoriValueFilter($returnQuery, $kategori);
@@ -443,8 +448,8 @@ class PengirimanController extends Controller
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        if ($peminjaman->status !== Peminjaman::STATUS_DIPESAN) {
-            return response()->json(['message' => 'Peminjaman tidak dalam status Dipesan.'], 422);
+        if ($peminjaman->status !== Peminjaman::STATUS_DISETUJUI) {
+            return response()->json(['message' => 'Peminjaman tidak dalam status Disetujui.'], 422);
         }
 
         $validated = $request->validate([
@@ -460,26 +465,11 @@ class PengirimanController extends Controller
         }
 
         DB::transaction(function () use ($validated, $file, $peminjaman) {
-            $disk = Storage::disk('public');
-            $dir = "surat-jalan/{$peminjaman->id}";
-            $extension = $file->getClientOriginalExtension() ?: 'pdf';
-            $filename = Str::uuid()->toString() . '.' . $extension;
-            $path = $file->storeAs($dir, $filename, 'public');
-
-            $existing = $peminjaman->suratJalan;
-            if ($existing && $existing->path) {
-                $disk->delete($existing->path);
-            }
-
-            SuratJalan::updateOrCreate(
-                ['peminjaman_id' => $peminjaman->id],
-                [
-                    'pengirim_nama' => $validated['pengirim_nama'],
-                    'path' => $path,
-                    'original_name' => $file->getClientOriginalName(),
-                    'mime' => $file->getClientMimeType(),
-                    'size' => $file->getSize(),
-                ]
+            $this->storeSuratJalan(
+                $peminjaman,
+                $file,
+                $validated['pengirim_nama'],
+                'pengiriman'
             );
 
             $peminjaman->update([
@@ -594,6 +584,8 @@ class PengirimanController extends Controller
         }
 
         $validated = $request->validate([
+            'pengirim_nama' => ['required', 'string', 'max:255'],
+            'surat_jalan' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_id' => ['required', 'integer'],
             'items.*.returned_qty' => ['required', 'integer', 'min:1'],
@@ -607,6 +599,13 @@ class PengirimanController extends Controller
             'laporan.*.jumlah' => ['nullable', 'integer', 'min:1'],
             'laporan.*.foto' => ['nullable', 'image', 'max:5120'],
         ]);
+
+        $file = $validated['surat_jalan'];
+        if (! $file instanceof UploadedFile) {
+            throw ValidationException::withMessages([
+                'surat_jalan' => ['Surat jalan tidak valid.'],
+            ]);
+        }
 
         $peminjaman->loadMissing('items');
         $itemModels = $peminjaman->items->keyBy('id');
@@ -676,7 +675,14 @@ class PengirimanController extends Controller
             }
         }
 
-        DB::transaction(function () use ($peminjaman, $user, $submittedItems, $itemModels, $laporans) {
+        DB::transaction(function () use ($peminjaman, $user, $submittedItems, $itemModels, $laporans, $validated, $file) {
+            $this->storeSuratJalan(
+                $peminjaman,
+                $file,
+                $validated['pengirim_nama'],
+                'pengembalian'
+            );
+
             foreach ($submittedItems as $itemId => $payload) {
                 $item = $itemModels[$itemId];
                 $returnedQty = (int) ($payload['returned_qty'] ?? 0);
@@ -719,6 +725,50 @@ class PengirimanController extends Controller
         ]);
     }
 
+    public function updatePeriode(Request $request, Peminjaman $peminjaman)
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $user->loadMissing('role');
+        $roleKey = strtolower((string) ($user->role?->key ?? ''));
+        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
+
+        if (! $isPicTools && ! $isAdmin) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ($peminjaman->is_inter_area || ($peminjaman->kategori ?? Peminjaman::KATEGORI_INTRA_AREA) !== Peminjaman::KATEGORI_INTRA_AREA) {
+            return response()->json(['message' => 'Periode hanya dapat diubah untuk peminjaman intra area.'], 422);
+        }
+
+        if ($isPicTools && (! $user->area_id || (int) $peminjaman->area_id !== (int) $user->area_id)) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ($peminjaman->status !== Peminjaman::STATUS_DITERIMA) {
+            return response()->json(['message' => 'Periode hanya dapat diubah saat status Diterima.'], 422);
+        }
+
+        $validated = $request->validate([
+            'tanggal_kembali' => ['required', 'date', 'after_or_equal:' . $peminjaman->tanggal_pinjam?->toDateString()],
+        ]);
+
+        $peminjaman->update([
+            'tanggal_kembali' => $validated['tanggal_kembali'],
+        ]);
+
+        return response()->json([
+            'id' => $peminjaman->id,
+            'status' => $peminjaman->status,
+            'tanggal_pinjam' => $peminjaman->tanggal_pinjam?->toDateString(),
+            'tanggal_kembali' => $peminjaman->tanggal_kembali?->toDateString(),
+        ]);
+    }
+
     public function selesai(Request $request, Peminjaman $peminjaman)
     {
         $user = $request->user();
@@ -750,6 +800,23 @@ class PengirimanController extends Controller
         return response()->json([
             'id' => $peminjaman->id,
             'status' => $peminjaman->status,
+        ]);
+    }
+
+    private function storeSuratJalan(Peminjaman $peminjaman, UploadedFile $file, string $pengirimNama, string $folder): void
+    {
+        $dir = "surat-jalan/{$peminjaman->id}/{$folder}";
+        $extension = $file->getClientOriginalExtension() ?: 'pdf';
+        $filename = Str::uuid()->toString() . '.' . $extension;
+        $path = $file->storeAs($dir, $filename, 'public');
+
+        SuratJalan::query()->create([
+            'peminjaman_id' => $peminjaman->id,
+            'pengirim_nama' => $pengirimNama,
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime' => $file->getClientMimeType(),
+            'size' => $file->getSize(),
         ]);
     }
 
@@ -860,3 +927,4 @@ class PengirimanController extends Controller
         }
     }
 }
+

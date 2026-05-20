@@ -113,7 +113,7 @@ class AlatController extends Controller
                 DB::raw(
                     "SUM(CASE
                         WHEN pem.status IN ('" . Peminjaman::STATUS_PERLU_DISETUJUI . "', '" . Peminjaman::STATUS_PERLU_DIREVIEW . "') THEN items.qty
-                        WHEN pem.status IN ('" . Peminjaman::STATUS_DIPESAN . "', '" . Peminjaman::STATUS_DIKIRIM . "') THEN COALESCE(items.approved_qty, 0)
+                        WHEN pem.status IN ('" . Peminjaman::STATUS_DISETUJUI . "', '" . Peminjaman::STATUS_DIKIRIM . "') THEN COALESCE(items.approved_qty, 0)
                         WHEN pem.status IN ('" . Peminjaman::STATUS_DITERIMA . "', '" . Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS . "') THEN GREATEST(COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0), 0)
                         ELSE 0
                     END) as total"
@@ -141,7 +141,7 @@ class AlatController extends Controller
                 DB::raw(
                     "SUM(CASE
                         WHEN pem.status IN ('" . Peminjaman::STATUS_PERLU_DISETUJUI . "', '" . Peminjaman::STATUS_PERLU_DIREVIEW . "') THEN items.qty
-                        WHEN pem.status IN ('" . Peminjaman::STATUS_DIPESAN . "', '" . Peminjaman::STATUS_DIKIRIM . "') THEN COALESCE(items.approved_qty, 0)
+                        WHEN pem.status IN ('" . Peminjaman::STATUS_DISETUJUI . "', '" . Peminjaman::STATUS_DIKIRIM . "') THEN COALESCE(items.approved_qty, 0)
                         WHEN pem.status IN ('" . Peminjaman::STATUS_DITERIMA . "', '" . Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS . "') THEN GREATEST(COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0), 0)
                         ELSE 0
                     END) as total"
@@ -480,4 +480,44 @@ class AlatController extends Controller
 
         return response()->json(['message' => 'Alat berhasil dihapus.']);
     }
+
+    public function destroyArea(Request $request)
+    {
+        abort_unless($this->isSuperAdmin($request), 403, 'Hanya super admin yang dapat menghapus semua alat area aktif.');
+
+        $data = $request->validate([
+            'area_id' => ['required', 'integer', 'exists:areas,id'],
+        ]);
+
+        $alats = Alat::query()
+            ->where('area_id', $data['area_id'])
+            ->orderBy('id')
+            ->get();
+
+        $deleted = $alats->count();
+        if ($deleted === 0) {
+            return response()->json([
+                'message' => 'Tidak ada alat pada area aktif untuk dihapus.',
+                'deleted' => 0,
+            ]);
+        }
+
+        DB::transaction(function () use ($alats) {
+            $alatIds = $alats->pluck('id')->all();
+
+            AreaAlatStock::query()
+                ->whereIn('alat_id', $alatIds)
+                ->delete();
+
+            foreach ($alats as $alat) {
+                $alat->delete();
+            }
+        });
+
+        return response()->json([
+            'message' => 'Semua alat pada area aktif berhasil dihapus.',
+            'deleted' => $deleted,
+        ]);
+    }
 }
+

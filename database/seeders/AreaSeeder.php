@@ -23,6 +23,7 @@ class AreaSeeder extends Seeder
             ['name' => 'Area 3.2', 'slug' => 'III.2', 'kode' => 'Area3.2'],
             ['name' => 'Area 3.3', 'slug' => 'III.3', 'kode' => 'Area3.3'],
             ['name' => 'KS TUBUN', 'slug' => 'kstubun', 'kode' => 'KSTUBUN'],
+            ['name' => 'TOOLS & RLA', 'slug' => 'TRLA', 'kode' => 'TRLA'],
         ];
 
         foreach ($areas as $area) {

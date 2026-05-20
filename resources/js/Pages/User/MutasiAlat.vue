@@ -188,7 +188,7 @@
                             Lihat Detail
                         </button>
                         <button
-                            v-if="item.suratJalanUrl"
+                            v-if="hasSuratJalan(item)"
                             class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
                             type="button"
                             @click="openSuratJalan(item)"
@@ -244,6 +244,7 @@
         :path="suratJalanItem?.suratJalanPath"
         :title="suratJalanItem?.title"
         :pengirim-name="suratJalanItem?.pengirimNama"
+        :documents="suratJalanDocuments(suratJalanItem)"
         :peminjaman-id="suratJalanItem?.id"
         :peminjaman-status="suratJalanItem?.status"
         :accept-enabled="false"
@@ -299,6 +300,34 @@
                     <p class="mt-3 text-xs text-slate-500">
                         Anda bisa mengembalikan sebagian alat dulu. Status akan berubah otomatis ke parsial atau selesai sesuai jumlah yang dikembalikan.
                     </p>
+                    <div class="mt-4 grid gap-4 md:grid-cols-2">
+                        <label class="space-y-2 text-sm font-medium text-slate-700">
+                            <span>Nama Pengirim</span>
+                            <input
+                                v-model="returnSenderName"
+                                type="text"
+                                placeholder="Masukkan nama pengirim"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                            />
+                        </label>
+                        <div class="space-y-2 text-sm font-medium text-slate-700">
+                            <span>Surat Jalan</span>
+                            <input
+                                type="file"
+                                accept=".pdf,image/*"
+                                class="block w-full text-sm text-slate-600 file:mr-4 file:rounded-xl file:border-0 file:bg-amber-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-amber-700"
+                                @change="handleReturnSuratJalanChange"
+                            />
+                            <div v-if="returnSuratJalanFile" class="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+                                <span class="truncate text-slate-600">
+                                    {{ returnSuratJalanFile.name }} - {{ formatSize(returnSuratJalanFile.size) }}
+                                </span>
+                                <button class="text-rose-600 hover:text-rose-700" type="button" @click="removeReturnSuratJalan">
+                                    Hapus
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <div class="mt-4 space-y-3">
                         <div
                             v-for="row in returnRows"
@@ -558,6 +587,8 @@ const isReturning = ref(false);
 const isAccepting = ref(null);
 const returnReportError = ref('');
 const returnRows = ref([]);
+const returnSenderName = ref('');
+const returnSuratJalanFile = ref(null);
 const returnReportFileInputs = ref({});
 let returnReportSequence = 0;
 const getReturnReportLabel = (kategori) => {
@@ -717,6 +748,9 @@ const normalizeHistory = (item) => {
         pengirimNama: item?.pengirim_nama ?? '',
         suratJalanUrl: item?.surat_jalan_url ?? '',
         suratJalanPath: item?.surat_jalan_path ?? '',
+        pengembaliNama: item?.pengembali_nama ?? '',
+        returnSuratJalanUrl: item?.surat_jalan_pengembalian_url ?? '',
+        returnSuratJalanPath: item?.surat_jalan_pengembalian_path ?? '',
         tools,
     };
 };
@@ -755,6 +789,33 @@ const openDetail = (item) => {
 const openSuratJalan = (item) => {
     suratJalanItem.value = item;
 };
+
+const suratJalanDocuments = (item) => {
+    if (!item) {
+        return [];
+    }
+
+    return [
+        item.suratJalanUrl || item.suratJalanPath
+            ? {
+                  label: 'Surat Jalan Masuk',
+                  url: item.suratJalanUrl,
+                  path: item.suratJalanPath,
+                  pengirimName: item.pengirimNama,
+              }
+            : null,
+        item.returnSuratJalanUrl || item.returnSuratJalanPath
+            ? {
+                  label: 'Surat Jalan Keluar',
+                  url: item.returnSuratJalanUrl,
+                  path: item.returnSuratJalanPath,
+                  pengirimName: item.pengembaliNama,
+              }
+            : null,
+    ].filter(Boolean);
+};
+
+const hasSuratJalan = (item) => suratJalanDocuments(item).length > 0;
 
 const isInterAreaRequester = (item) =>
     Boolean(item?.isInterArea)
@@ -798,6 +859,8 @@ const acceptPeminjaman = async (item) => {
 const openReturn = (item) => {
     returnItem.value = item;
     resetReturnReport();
+    returnSenderName.value = '';
+    returnSuratJalanFile.value = null;
     returnRows.value = (Array.isArray(item?.tools) ? item.tools : [])
         .filter((tool) => Number(tool?.remainingQty ?? 0) > 0)
         .map((tool) => ({
@@ -815,7 +878,35 @@ const openReturn = (item) => {
 const closeReturn = () => {
     returnItem.value = null;
     returnRows.value = [];
+    returnSenderName.value = '';
+    returnSuratJalanFile.value = null;
     resetReturnReport();
+};
+
+const handleReturnSuratJalanChange = (event) => {
+    const [file] = Array.from(event.target?.files ?? []);
+    if (file) {
+        returnSuratJalanFile.value = file;
+        returnReportError.value = '';
+    }
+    event.target.value = '';
+};
+
+const removeReturnSuratJalan = () => {
+    returnSuratJalanFile.value = null;
+};
+
+const formatSize = (size) => {
+    if (!Number.isFinite(size)) {
+        return '-';
+    }
+    if (size < 1024) {
+        return `${size} B`;
+    }
+    if (size < 1024 * 1024) {
+        return `${(size / 1024).toFixed(1)} KB`;
+    }
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 };
 
 const resetReturnReport = () => {
@@ -887,6 +978,16 @@ const handleReturnReportFileChange = (key, event) => {
 };
 
 const validateReturnReport = () => {
+    if (!returnSenderName.value.trim()) {
+        returnReportError.value = 'Nama pengirim wajib diisi.';
+        return false;
+    }
+
+    if (!returnSuratJalanFile.value) {
+        returnReportError.value = 'Surat jalan wajib diunggah.';
+        return false;
+    }
+
     const submittedRows = returnRows.value.filter((row) => Number(row.returnQty) > 0);
     if (!submittedRows.length) {
         returnReportError.value = 'Isi minimal satu jumlah pengembalian alat.';
@@ -950,6 +1051,8 @@ const confirmReturn = async () => {
     let successMessage = 'Pengembalian berhasil dikonfirmasi.';
     try {
         const payload = new FormData();
+        payload.append('pengirim_nama', returnSenderName.value.trim());
+        payload.append('surat_jalan', returnSuratJalanFile.value);
         returnRows.value
             .filter((row) => Number(row.returnQty) > 0)
             .forEach((row, index) => {
@@ -988,6 +1091,8 @@ const confirmReturn = async () => {
         if (error?.response?.status === 422) {
             const errors = error.response?.data?.errors ?? {};
             returnReportError.value =
+                errors.pengirim_nama?.[0] ??
+                errors.surat_jalan?.[0] ??
                 errors['laporan.0.kategori']?.[0] ??
                 errors['laporan.0.alat_id']?.[0] ??
                 errors['laporan.0.jumlah']?.[0] ??

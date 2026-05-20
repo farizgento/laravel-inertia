@@ -204,7 +204,7 @@ class NotificationController extends Controller
     {
         if ($kategori === Peminjaman::KATEGORI_ANTAR_AREA) {
             $sourceCount = $this->countSourceAction($areaId, $kategori, [
-                Peminjaman::STATUS_DIPESAN,
+                Peminjaman::STATUS_DISETUJUI,
                 Peminjaman::STATUS_DIKEMBALIKAN_SEMUANYA,
             ]);
 
@@ -220,7 +220,7 @@ class NotificationController extends Controller
         }
 
         $shipping = $this->countSourceAction($areaId, $kategori, [
-            Peminjaman::STATUS_DIPESAN,
+            Peminjaman::STATUS_DISETUJUI,
             Peminjaman::STATUS_DIKIRIM,
         ]);
 
@@ -410,19 +410,19 @@ class NotificationController extends Controller
         $items = [
             [
                 'key' => 'pengiriman-intra-siap',
-                'title' => 'Peminjaman - Intra Area - Siap Dikirim',
+                'title' => 'Peminjaman - Intra Area - Disetujui',
                 'description' => 'Perlu diproses pengiriman',
-                'count' => $this->countSourceAction($areaId, Peminjaman::KATEGORI_INTRA_AREA, [Peminjaman::STATUS_DIPESAN]),
-                'href' => '/pengiriman-alat?tab=siap-dikirim',
-                'sort_at' => $this->latestSourceAction($areaId, Peminjaman::KATEGORI_INTRA_AREA, [Peminjaman::STATUS_DIPESAN]),
+                'count' => $this->countSourceAction($areaId, Peminjaman::KATEGORI_INTRA_AREA, [Peminjaman::STATUS_DISETUJUI]),
+                'href' => '/pengiriman-alat?tab=disetujui',
+                'sort_at' => $this->latestSourceAction($areaId, Peminjaman::KATEGORI_INTRA_AREA, [Peminjaman::STATUS_DISETUJUI]),
             ],
             [
                 'key' => 'pengiriman-antar-siap',
-                'title' => 'Peminjaman - Antar Area - Siap Dikirim',
+                'title' => 'Peminjaman - Antar Area - Disetujui',
                 'description' => 'Perlu diproses pengiriman',
-                'count' => $this->countSourceAction($areaId, Peminjaman::KATEGORI_ANTAR_AREA, [Peminjaman::STATUS_DIPESAN]),
-                'href' => '/pengiriman-antar-area?tab=siap-dikirim',
-                'sort_at' => $this->latestSourceAction($areaId, Peminjaman::KATEGORI_ANTAR_AREA, [Peminjaman::STATUS_DIPESAN]),
+                'count' => $this->countSourceAction($areaId, Peminjaman::KATEGORI_ANTAR_AREA, [Peminjaman::STATUS_DISETUJUI]),
+                'href' => '/pengiriman-antar-area?tab=disetujui',
+                'sort_at' => $this->latestSourceAction($areaId, Peminjaman::KATEGORI_ANTAR_AREA, [Peminjaman::STATUS_DISETUJUI]),
             ],
             [
                 'key' => 'penyelesaian-antar-kembali',
@@ -603,3 +603,4 @@ class NotificationController extends Controller
         )->max('updated_at');
     }
 }
+

@@ -44,7 +44,7 @@
                     @click="activeTab = tab.key"
                 >
                     <span class="text-slate-400">
-                        <svg v-if="tab.key === 'siap-dikirim'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg v-if="tab.key === 'disetujui'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 7h11v10H3z" />
                             <path d="M14 10h4l3 3v4h-7z" />
                             <circle cx="7.5" cy="19" r="1.5" />
@@ -186,7 +186,7 @@
                             Lihat Detail
                         </button>
                         <button
-                            v-if="(item.status === 'Dikirim' || isReturnStatus(item.status)) && item.suratJalanUrl"
+                            v-if="hasSuratJalan(item)"
                             class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
                             type="button"
                             @click="openSuratJalan(item)"
@@ -217,7 +217,7 @@
                             {{ acceptingId === item.id ? 'Memproses...' : 'Terima' }}
                         </button>
                         <button
-                            v-if="item.status === 'Dipesan'"
+                            v-if="item.status === 'Disetujui'"
                             class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-700 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
                             type="button"
                             @click="openShipping(item)"
@@ -241,6 +241,21 @@
                                 <path d="M20 6 9 17l-5-5" />
                             </svg>
                             {{ finishingId === item.id ? 'Memproses...' : 'Selesai' }}
+                        </button>
+                        <button
+                            v-if="canUpdatePeriod(item)"
+                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-300"
+                            type="button"
+                            @click="openPeriodModal(item)"
+                        >
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" />
+                                <path d="M16 2v4" />
+                                <path d="M8 2v4" />
+                                <path d="M3 10h18" />
+                                <path d="M12 14h4" />
+                            </svg>
+                            Ubah Periode
                         </button>
                         <button
                             v-if="canReturnItem(item)"
@@ -279,6 +294,7 @@
         :path="suratJalanItem?.suratJalanPath"
         :title="suratJalanItem?.title"
         :pengirim-name="suratJalanItem?.pengirimNama"
+        :documents="suratJalanDocuments(suratJalanItem)"
         :peminjaman-id="suratJalanItem?.id"
         :peminjaman-status="suratJalanItem?.status"
         @close="suratJalanItem = null"
@@ -422,6 +438,79 @@
         </div>
 
         <div
+            v-if="periodItem"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+            @click.self="closePeriodModal"
+        >
+            <div class="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+                <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-6 py-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Periode</p>
+                        <h3 class="mt-2 text-lg font-semibold text-slate-900">Ubah periode peminjaman</h3>
+                    </div>
+                    <button
+                        class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:text-slate-700"
+                        type="button"
+                        @click="closePeriodModal"
+                    >
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 6 6 18" />
+                            <path d="M6 6 18 18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="space-y-4 px-6 py-5 text-sm text-slate-600">
+                    <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                        <p class="text-sm font-semibold text-slate-900">
+                            {{ periodItem?.title || '-' }} (ID: {{ periodItem?.id || '-' }})
+                        </p>
+                        <p class="mt-1 text-xs text-slate-500">
+                            Perubahan ini hanya mengubah tanggal periode peminjaman.
+                        </p>
+                    </div>
+                    <label class="block space-y-2 text-sm font-medium text-slate-700">
+                        <span>Tanggal pinjam</span>
+                        <input
+                            v-model="periodForm.tanggal_pinjam"
+                            type="date"
+                            disabled
+                            class="w-full cursor-not-allowed rounded-xl border border-slate-200 bg-slate-100 px-3 py-2.5 text-sm text-slate-500 shadow-sm outline-none"
+                        />
+                    </label>
+                    <label class="block space-y-2 text-sm font-medium text-slate-700">
+                        <span>Tanggal kembali</span>
+                        <input
+                            v-model="periodForm.tanggal_kembali"
+                            type="date"
+                            :min="periodForm.tanggal_pinjam || undefined"
+                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        />
+                    </label>
+                    <p v-if="periodError" class="text-sm font-semibold text-rose-500">{{ periodError }}</p>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 px-6 py-4">
+                    <button
+                        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300"
+                        type="button"
+                        @click="closePeriodModal"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                        type="button"
+                        :disabled="isUpdatingPeriod"
+                        @click="submitPeriod"
+                    >
+                        {{ isUpdatingPeriod ? 'Menyimpan...' : 'Simpan' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div
             v-if="returnItem"
             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
             @click.self="closeReturnModal"
@@ -452,6 +541,35 @@
                         <p class="mt-1 text-xs text-slate-500">
                             Isi jumlah alat yang dikembalikan. Bisa sebagian atau seluruh sisa alat.
                         </p>
+                    </div>
+
+                    <div class="mt-4 grid gap-4 md:grid-cols-2">
+                        <label class="space-y-2 text-sm font-medium text-slate-700">
+                            <span>Nama Pengirim</span>
+                            <input
+                                v-model="returnSenderName"
+                                type="text"
+                                placeholder="Masukkan nama pengirim"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+                            />
+                        </label>
+                        <div class="space-y-2 text-sm font-medium text-slate-700">
+                            <span>Surat Jalan</span>
+                            <input
+                                type="file"
+                                accept=".pdf,image/*"
+                                class="block w-full text-sm text-slate-600 file:mr-4 file:rounded-xl file:border-0 file:bg-amber-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-amber-700"
+                                @change="handleReturnSuratJalanChange"
+                            />
+                            <div v-if="returnSuratJalanFile" class="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
+                                <span class="truncate text-slate-600">
+                                    {{ returnSuratJalanFile.name }} - {{ formatSize(returnSuratJalanFile.size) }}
+                                </span>
+                                <button class="text-rose-600 hover:text-rose-700" type="button" @click="removeReturnSuratJalan">
+                                    Hapus
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mt-4 space-y-3">
@@ -567,15 +685,24 @@ const shippingItem = ref(null);
 const suratJalanItem = ref(null);
 const completeItem = ref(null);
 const acceptItem = ref(null);
+const periodItem = ref(null);
 const returnItem = ref(null);
 const finishingId = ref(null);
 const acceptingId = ref(null);
+const isUpdatingPeriod = ref(false);
 const isReturning = ref(false);
+const periodError = ref('');
+const periodForm = ref({
+    tanggal_pinjam: '',
+    tanggal_kembali: '',
+});
 const returnError = ref('');
 const returnRows = ref([]);
+const returnSenderName = ref('');
+const returnSuratJalanFile = ref(null);
 
 const tabConfig = [
-    { key: 'siap-dikirim', label: 'Siap Dikirim', status: 'Dipesan' },
+    { key: 'disetujui', label: 'Disetujui', status: 'Disetujui' },
     { key: 'dikirim', label: 'Dikirim', status: 'Dikirim' },
     { key: 'diterima', label: 'Diterima', status: 'Diterima' },
     { key: 'dikembalikan-parsial', label: 'Dikembalikan Parsial', status: 'Dikembalikan Partials' },
@@ -594,8 +721,8 @@ const activeTab = ref(initialTab());
 
 const statusLabel = (status) => {
     switch (status) {
-        case 'Dipesan':
-            return 'Siap Dikirim';
+        case 'Disetujui':
+            return 'Disetujui';
         case 'Dikirim':
             return 'Dikirim';
         case 'Diterima':
@@ -611,7 +738,7 @@ const statusLabel = (status) => {
 
 const statusBadge = (status) => {
     switch (status) {
-        case 'Dipesan':
+        case 'Disetujui':
             return 'bg-amber-100 text-amber-600';
         case 'Dikirim':
             return 'bg-emerald-100 text-emerald-600';
@@ -628,7 +755,7 @@ const statusBadge = (status) => {
 
 const statusCountMap = computed(() => {
     const base = {
-        Dipesan: 0,
+        Disetujui: 0,
         Dikirim: 0,
         Diterima: 0,
         'Dikembalikan Partials': 0,
@@ -650,13 +777,13 @@ const tabs = computed(() =>
 );
 
 const shippingTabs = computed(() =>
-    tabs.value.filter((tab) => ['siap-dikirim', 'dikirim'].includes(tab.key))
+    tabs.value.filter((tab) => ['disetujui', 'dikirim'].includes(tab.key))
 );
 
 const returnTabs = computed(() =>
     tabs.value.filter((tab) =>
         [
-            ...(isInterAreaPage.value ? ['diterima'] : []),
+            'diterima',
             'dikembalikan-parsial',
             'dikembalikan-semua',
         ].includes(tab.key)
@@ -665,7 +792,7 @@ const returnTabs = computed(() =>
 
 const activeStatus = computed(() => {
     const match = tabConfig.find((tab) => tab.key === activeTab.value);
-    return match?.status ?? 'Dipesan';
+    return match?.status ?? 'Disetujui';
 });
 
 const filteredItems = computed(() =>
@@ -724,12 +851,17 @@ const normalizeHistory = (item) => {
             requesterReviewerName: item?.requester_reviewed_by_name ?? '-',
             createdAt: item?.created_at ?? '-',
             borrowDate: item?.borrow_date ?? '-',
+            borrowDateValue: item?.borrow_date_value ?? '',
             returnDate: item?.return_date ?? '-',
+            returnDateValue: item?.return_date_value ?? '',
             itemCount: Number.isFinite(item?.item_count) ? item.item_count : 0,
-            status: item?.status ?? 'Dipesan',
+            status: item?.status ?? 'Disetujui',
             pengirimNama: item?.pengirim_nama ?? '',
             suratJalanUrl: item?.surat_jalan_url ?? '',
             suratJalanPath: item?.surat_jalan_path ?? '',
+            pengembaliNama: item?.pengembali_nama ?? '',
+            returnSuratJalanUrl: item?.surat_jalan_pengembalian_url ?? '',
+            returnSuratJalanPath: item?.surat_jalan_pengembalian_path ?? '',
             tools,
             reports: Array.isArray(item?.reports)
                 ? item.reports.map((report) => ({
@@ -793,6 +925,33 @@ const openSuratJalan = (item) => {
     suratJalanItem.value = item;
 };
 
+const suratJalanDocuments = (item) => {
+    if (!item) {
+        return [];
+    }
+
+    return [
+        item.suratJalanUrl || item.suratJalanPath
+            ? {
+                  label: 'Surat Jalan Masuk',
+                  url: item.suratJalanUrl,
+                  path: item.suratJalanPath,
+                  pengirimName: item.pengirimNama,
+              }
+            : null,
+        item.returnSuratJalanUrl || item.returnSuratJalanPath
+            ? {
+                  label: 'Surat Jalan Keluar',
+                  url: item.returnSuratJalanUrl,
+                  path: item.returnSuratJalanPath,
+                  pengirimName: item.pengembaliNama,
+              }
+            : null,
+    ].filter(Boolean);
+};
+
+const hasSuratJalan = (item) => suratJalanDocuments(item).length > 0;
+
 const canAcceptSuratJalan = (item) =>
     Boolean(item?.isInterArea)
     && item?.status === 'Dikirim'
@@ -811,6 +970,14 @@ const canCompleteItem = (item) =>
         || Number(item?.areaId) === Number(currentAreaId.value)
     );
 
+const canUpdatePeriod = (item) =>
+    !item?.isInterArea
+    && item?.status === 'Diterima'
+    && (
+        ['admin', 'super_admin'].includes(roleKey.value)
+        || Number(item?.areaId) === Number(currentAreaId.value)
+    );
+
 const openAcceptModal = (item) => {
     acceptItem.value = item;
 };
@@ -825,6 +992,8 @@ const closeAcceptModal = () => {
 const openReturnModal = (item) => {
     returnItem.value = item;
     returnError.value = '';
+    returnSenderName.value = '';
+    returnSuratJalanFile.value = null;
     returnRows.value = (Array.isArray(item?.tools) ? item.tools : [])
         .filter((tool) => Number(tool?.remainingQty ?? 0) > 0)
         .map((tool) => ({
@@ -845,9 +1014,47 @@ const closeReturnModal = () => {
     returnItem.value = null;
     returnRows.value = [];
     returnError.value = '';
+    returnSenderName.value = '';
+    returnSuratJalanFile.value = null;
+};
+
+const handleReturnSuratJalanChange = (event) => {
+    const [file] = Array.from(event.target?.files ?? []);
+    if (file) {
+        returnSuratJalanFile.value = file;
+        returnError.value = '';
+    }
+    event.target.value = '';
+};
+
+const removeReturnSuratJalan = () => {
+    returnSuratJalanFile.value = null;
+};
+
+const formatSize = (size) => {
+    if (!Number.isFinite(size)) {
+        return '-';
+    }
+    if (size < 1024) {
+        return `${size} B`;
+    }
+    if (size < 1024 * 1024) {
+        return `${(size / 1024).toFixed(1)} KB`;
+    }
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 };
 
 const validateReturnRows = () => {
+    if (!returnSenderName.value.trim()) {
+        returnError.value = 'Nama pengirim wajib diisi.';
+        return false;
+    }
+
+    if (!returnSuratJalanFile.value) {
+        returnError.value = 'Surat jalan wajib diunggah.';
+        return false;
+    }
+
     const submittedRows = returnRows.value.filter((row) => Number(row.returnQty) > 0);
     if (!submittedRows.length) {
         returnError.value = 'Isi minimal satu jumlah pengembalian alat.';
@@ -874,6 +1081,8 @@ const confirmReturn = async () => {
     isReturning.value = true;
     try {
         const formData = new FormData();
+        formData.append('pengirim_nama', returnSenderName.value.trim());
+        formData.append('surat_jalan', returnSuratJalanFile.value);
         returnRows.value
             .filter((row) => Number(row.returnQty) > 0)
             .forEach((row, index) => {
@@ -889,6 +1098,8 @@ const confirmReturn = async () => {
         returnItem.value = null;
         returnRows.value = [];
         returnError.value = '';
+        returnSenderName.value = '';
+        returnSuratJalanFile.value = null;
         showAlert(
             'success',
             nextStatus === 'Dikembalikan Semuanya'
@@ -896,7 +1107,12 @@ const confirmReturn = async () => {
                 : 'Pengembalian parsial berhasil disimpan.'
         );
     } catch (error) {
-        returnError.value = error?.response?.data?.message ?? 'Gagal mengembalikan peminjaman.';
+        const errors = error?.response?.data?.errors ?? {};
+        returnError.value =
+            errors.pengirim_nama?.[0] ??
+            errors.surat_jalan?.[0] ??
+            error?.response?.data?.message ??
+            'Gagal mengembalikan peminjaman.';
         showAlert('error', returnError.value);
     } finally {
         isReturning.value = false;
@@ -939,6 +1155,64 @@ const closeCompleteModal = () => {
         return;
     }
     completeItem.value = null;
+};
+
+const openPeriodModal = (item) => {
+    periodItem.value = item;
+    periodError.value = '';
+    periodForm.value = {
+        tanggal_pinjam: item?.borrowDateValue ?? '',
+        tanggal_kembali: item?.returnDateValue ?? '',
+    };
+};
+
+const closePeriodModal = () => {
+    if (isUpdatingPeriod.value) {
+        return;
+    }
+    periodItem.value = null;
+    periodError.value = '';
+    periodForm.value = {
+        tanggal_pinjam: '',
+        tanggal_kembali: '',
+    };
+};
+
+const submitPeriod = async () => {
+    if (!periodItem.value?.id || isUpdatingPeriod.value) {
+        return;
+    }
+
+    if (!periodForm.value.tanggal_kembali) {
+        periodError.value = 'Tanggal kembali wajib diisi.';
+        return;
+    }
+
+    if (periodForm.value.tanggal_kembali < periodForm.value.tanggal_pinjam) {
+        periodError.value = 'Tanggal kembali tidak boleh lebih awal dari tanggal pinjam.';
+        return;
+    }
+
+    isUpdatingPeriod.value = true;
+    try {
+        await axios.put(`/api/pengiriman/${periodItem.value.id}/periode`, {
+            tanggal_kembali: periodForm.value.tanggal_kembali,
+        });
+        await loadHistory();
+        isUpdatingPeriod.value = false;
+        closePeriodModal();
+        showAlert('success', 'Periode peminjaman berhasil diperbarui.');
+    } catch (error) {
+        const errors = error?.response?.data?.errors ?? {};
+        periodError.value =
+            errors.tanggal_pinjam?.[0] ??
+            errors.tanggal_kembali?.[0] ??
+            error?.response?.data?.message ??
+            'Gagal memperbarui periode peminjaman.';
+        showAlert('error', periodError.value);
+    } finally {
+        isUpdatingPeriod.value = false;
+    }
 };
 
 const markAsCompleted = async (item) => {
@@ -1017,3 +1291,4 @@ onMounted(() => {
     loadHistory();
 });
 </script>
+

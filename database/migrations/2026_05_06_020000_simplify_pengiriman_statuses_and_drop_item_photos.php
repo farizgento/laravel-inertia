@@ -14,7 +14,7 @@ return new class extends Migration
 
         DB::table('peminjamans')
             ->where('status', 'Disiapkan')
-            ->update(['status' => 'Dipesan']);
+            ->update(['status' => 'Disetujui']);
 
         Schema::dropIfExists('peminjaman_item_photos');
     }
@@ -41,3 +41,4 @@ return new class extends Migration
             ->update(['status' => 'Terkirim']);
     }
 };
+

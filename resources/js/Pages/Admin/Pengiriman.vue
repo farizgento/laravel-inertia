@@ -31,7 +31,7 @@
                     @click="activeTab = tab.key"
                 >
                     <span class="text-slate-400">
-                        <svg v-if="tab.key === 'siap-dikirim'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg v-if="tab.key === 'disetujui'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 7h11v10H3z" />
                             <path d="M14 10h4l3 3v4h-7z" />
                             <circle cx="7.5" cy="19" r="1.5" />
@@ -144,7 +144,7 @@
                             Surat Jalan
                         </button>
                         <button
-                            v-if="item.status === 'Dipesan'"
+                            v-if="item.status === 'Disetujui'"
                             class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-700 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
                             type="button"
                             @click="openShipping(item)"
@@ -228,7 +228,7 @@ const shippingItem = ref(null);
 const suratJalanItem = ref(null);
 
 const tabConfig = [
-    { key: 'siap-dikirim', label: 'Siap Dikirim', status: 'Dipesan' },
+    { key: 'disetujui', label: 'Disetujui', status: 'Disetujui' },
     { key: 'dikirim', label: 'Dikirim', status: 'Dikirim' },
 ];
 
@@ -236,8 +236,8 @@ const activeTab = ref(tabConfig[0].key);
 
 const statusLabel = (status) => {
     switch (status) {
-        case 'Dipesan':
-            return 'Siap Dikirim';
+        case 'Disetujui':
+            return 'Disetujui';
         case 'Dikirim':
             return 'Dikirim';
         default:
@@ -247,7 +247,7 @@ const statusLabel = (status) => {
 
 const statusBadge = (status) => {
     switch (status) {
-        case 'Dipesan':
+        case 'Disetujui':
             return 'bg-amber-100 text-amber-600';
         case 'Dikirim':
             return 'bg-emerald-100 text-emerald-600';
@@ -257,7 +257,7 @@ const statusBadge = (status) => {
 };
 
 const statusCountMap = computed(() => {
-    const base = { Dipesan: 0, Dikirim: 0 };
+    const base = { Disetujui: 0, Dikirim: 0 };
     items.value.forEach((item) => {
         if (base[item.status] !== undefined) {
             base[item.status] += 1;
@@ -275,7 +275,7 @@ const tabs = computed(() =>
 
 const activeStatus = computed(() => {
     const match = tabConfig.find((tab) => tab.key === activeTab.value);
-    return match?.status ?? 'Dipesan';
+    return match?.status ?? 'Disetujui';
 });
 
 const filteredItems = computed(() =>
@@ -309,7 +309,7 @@ const normalizeHistory = (item) => {
             borrowDate: item?.borrow_date ?? '-',
             returnDate: item?.return_date ?? '-',
             itemCount: Number.isFinite(item?.item_count) ? item.item_count : 0,
-            status: item?.status ?? 'Dipesan',
+            status: item?.status ?? 'Disetujui',
             pengirimNama: item?.pengirim_nama ?? '',
             suratJalanUrl: item?.surat_jalan_url ?? '',
             suratJalanPath: item?.surat_jalan_path ?? '',
@@ -400,3 +400,4 @@ onMounted(() => {
     loadHistory();
 });
 </script>
+

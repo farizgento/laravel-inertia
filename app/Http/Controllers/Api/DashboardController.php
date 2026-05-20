@@ -68,7 +68,7 @@ class DashboardController extends Controller
                 (int) ($statusCounts[Peminjaman::STATUS_PERLU_DIREVIEW] ?? 0) +
                 (int) ($statusCounts[Peminjaman::STATUS_PERLU_DISETUJUI] ?? 0),
             'sedang_berjalan' =>
-                (int) ($statusCounts[Peminjaman::STATUS_DIPESAN] ?? 0) +
+                (int) ($statusCounts[Peminjaman::STATUS_DISETUJUI] ?? 0) +
                 (int) ($statusCounts[Peminjaman::STATUS_DIKIRIM] ?? 0) +
                 (int) ($statusCounts[Peminjaman::STATUS_DITERIMA] ?? 0) +
                 (int) ($statusCounts[Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS] ?? 0),
@@ -166,3 +166,4 @@ class DashboardController extends Controller
         ];
     }
 }
+
