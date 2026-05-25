@@ -9,6 +9,7 @@ use App\Models\LaporanAlat;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanItem;
 use App\Models\Role;
+use App\Models\SuratJalan;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -152,6 +153,23 @@ class PeminjamanController extends Controller
         $suratJalans = $peminjaman->suratJalans->values();
         $suratJalanPengiriman = $suratJalans->first();
         $suratJalanPengembalian = $suratJalans->count() > 1 ? $suratJalans->last() : null;
+        $suratJalanItems = $suratJalans
+            ->map(function (SuratJalan $suratJalan, int $index) {
+                return [
+                    'id' => $suratJalan->id,
+                    'label' => $index === 0 ? 'Surat Jalan Masuk' : 'Surat Jalan Keluar ' . $index,
+                    'pengirim_nama' => $suratJalan->pengirim_nama,
+                    'path' => $suratJalan->path,
+                    'url' => $suratJalan->path
+                        ? url('/storage/' . ltrim($suratJalan->path, '/'))
+                        : null,
+                    'original_name' => $suratJalan->original_name,
+                    'created_at' => $suratJalan->created_at
+                        ? $suratJalan->created_at->format('d M Y H:i')
+                        : null,
+                ];
+            })
+            ->values();
 
         return [
             'id' => $peminjaman->id,
@@ -188,6 +206,7 @@ class PeminjamanController extends Controller
             'surat_jalan_pengembalian_url' => $suratJalanPengembalian?->path
                 ? url('/storage/' . ltrim($suratJalanPengembalian->path, '/'))
                 : null,
+            'surat_jalan_items' => $suratJalanItems,
             'tools' => $tools,
             'reports' => $reports,
         ];

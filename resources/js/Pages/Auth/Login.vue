@@ -28,7 +28,7 @@
                         </svg>
                     </div>
                     <h1 class="mt-4 text-2xl font-semibold text-slate-900">IP TOOLS Lite <i>BETA</i></h1>
-                    <p class="mt-1 text-sm text-slate-500">Sistem Peminjaman Alat PT. PLN Indonesia Power</p>
+                    <p class="mt-1 text-sm text-slate-500">Sistem Peminjaman General Tools Area UBH</p>
                 </div>
 
                 <div class="mt-8 rounded-2xl bg-white p-8 shadow-xl shadow-slate-200">

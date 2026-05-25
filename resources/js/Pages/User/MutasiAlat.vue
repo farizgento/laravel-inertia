@@ -751,6 +751,14 @@ const normalizeHistory = (item) => {
         pengembaliNama: item?.pengembali_nama ?? '',
         returnSuratJalanUrl: item?.surat_jalan_pengembalian_url ?? '',
         returnSuratJalanPath: item?.surat_jalan_pengembalian_path ?? '',
+        suratJalanItems: Array.isArray(item?.surat_jalan_items)
+            ? item.surat_jalan_items.map((document, index) => ({
+                  label: document?.label ?? `Surat Jalan ${index + 1}`,
+                  url: document?.url ?? '',
+                  path: document?.path ?? '',
+                  pengirimName: document?.pengirim_nama ?? '',
+              }))
+            : [],
         tools,
     };
 };
@@ -793,6 +801,10 @@ const openSuratJalan = (item) => {
 const suratJalanDocuments = (item) => {
     if (!item) {
         return [];
+    }
+
+    if (Array.isArray(item.suratJalanItems) && item.suratJalanItems.length) {
+        return item.suratJalanItems.filter((document) => document.url || document.path);
     }
 
     return [
