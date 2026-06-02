@@ -453,7 +453,7 @@ const groupMenuItems = (items) => {
 const menuItems = computed(() => {
     const roleKey = props.roleKey?.toLowerCase() ?? 'user';
     const isSpTool = roleKey === 'sp_tool';
-    const isPicTools = roleKey === 'pic_tools' || roleKey === 'pic_tool';
+    const isPicTools = roleKey === 'pic_tool';
     const isMgrTool = roleKey === 'mgr_tool';
     const isSuperAdmin = roleKey === 'super_admin';
     const isAdmin = roleKey === 'admin';

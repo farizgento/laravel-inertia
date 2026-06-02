@@ -176,11 +176,11 @@ class NotificationController extends Controller
             $sidebar['review'] = $this->reviewCount($areaId);
         }
 
-        if (in_array($roleKey, [Role::KEY_SP_TOOL, Role::KEY_PIC_TOOLS, 'pic_tool', Role::KEY_MGR_TOOL, Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true)) {
+        if (in_array($roleKey, [Role::KEY_SP_TOOL, Role::KEY_PIC_TOOL, Role::KEY_MGR_TOOL, Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true)) {
             ['kerusakan' => $sidebar['kerusakan'], 'kehilangan' => $sidebar['kehilangan']] = $this->laporanCounts($roleKey, $areaId);
         }
 
-        if (in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool', Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true)) {
+        if (in_array($roleKey, [Role::KEY_PIC_TOOL, Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true)) {
             $sidebar['pengiriman_intra_area'] = $this->shippingSidebarCount($areaId, Peminjaman::KATEGORI_INTRA_AREA);
             $sidebar['pengiriman_antar_area'] = $this->shippingSidebarCount(
                 $areaId,
@@ -301,7 +301,7 @@ class NotificationController extends Controller
         }
 
         $query = LaporanAlat::query()->where('status', 'Dilaporkan');
-        $shouldFilterArea = in_array($roleKey, [Role::KEY_SP_TOOL, Role::KEY_PIC_TOOLS, 'pic_tool', Role::KEY_MGR_TOOL], true)
+        $shouldFilterArea = in_array($roleKey, [Role::KEY_SP_TOOL, Role::KEY_PIC_TOOL, Role::KEY_MGR_TOOL], true)
             || ! empty($areaId);
 
         if ($shouldFilterArea) {
@@ -332,7 +332,7 @@ class NotificationController extends Controller
                 ...$this->mutasiMailboxItems($areaId),
                 ...$this->laporanMailboxItems($roleKey, $areaId),
             ],
-            in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool', Role::KEY_ADMIN], true) => [
+            in_array($roleKey, [Role::KEY_PIC_TOOL, Role::KEY_ADMIN], true) => [
                 ...$this->picToolMailboxItems($areaId),
                 ...$this->laporanMailboxItems($roleKey, $areaId),
             ],
@@ -391,7 +391,7 @@ class NotificationController extends Controller
         $query = LaporanAlat::query()
             ->where('status', 'Dilaporkan')
             ->where('kategori', $kategori);
-        $shouldFilterArea = in_array($roleKey, [Role::KEY_SP_TOOL, Role::KEY_PIC_TOOLS, 'pic_tool', Role::KEY_MGR_TOOL], true)
+        $shouldFilterArea = in_array($roleKey, [Role::KEY_SP_TOOL, Role::KEY_PIC_TOOL, Role::KEY_MGR_TOOL], true)
             || ! empty($areaId);
 
         if ($shouldFilterArea) {

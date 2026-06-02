@@ -14,10 +14,10 @@ class AlatImportTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_pic_tools_can_import_tools_from_csv_using_area_slug(): void
+    public function test_pic_tool_can_import_tools_from_csv_using_area_slug(): void
     {
         $role = Role::create([
-            'key' => Role::KEY_PIC_TOOLS,
+            'key' => Role::KEY_PIC_TOOL,
             'name' => 'PIC Tools',
         ]);
 
@@ -64,7 +64,7 @@ class AlatImportTest extends TestCase
     public function test_non_super_admin_cannot_create_tool_in_another_area(): void
     {
         $role = Role::create([
-            'key' => Role::KEY_PIC_TOOLS,
+            'key' => Role::KEY_PIC_TOOL,
             'name' => 'PIC Tools',
         ]);
 

@@ -378,7 +378,26 @@
                     </div>
 
                     <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                        <p class="font-semibold text-slate-800">Format file</p>
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <p class="font-semibold text-slate-800">Format file</p>
+                            <button
+                                class="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                type="button"
+                                :disabled="isImporting || isDownloadingTemplate"
+                                @click="downloadImportTemplate"
+                            >
+                                <svg v-if="isDownloadingTemplate" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                                    <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
+                                </svg>
+                                <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 3v12" />
+                                    <path d="m7 10 5 5 5-5" />
+                                    <path d="M5 21h14" />
+                                </svg>
+                                {{ isDownloadingTemplate ? 'Mengunduh...' : 'Unduh Template' }}
+                            </button>
+                        </div>
                         <p class="mt-2">Kolom 1: nama alat</p>
                         <p>Kolom 2: jenis alat</p>
                         <p>Kolom 3: klasifikasi alat</p>
@@ -546,6 +565,7 @@ const isSubmitting = ref(false);
 const isImporting = ref(false);
 const isDeleting = ref(false);
 const isExporting = ref(false);
+const isDownloadingTemplate = ref(false);
 const formOpen = ref(false);
 const importOpen = ref(false);
 const deleteOpen = ref(false);
@@ -610,7 +630,7 @@ const authUser = computed(() => page.props.auth?.user ?? cachedUser.value);
 const roleKey = computed(() => (authUser.value?.role?.key ?? '').toLowerCase());
 const isSuperAdmin = computed(() => roleKey.value === 'super_admin');
 const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
-const canManageTools = computed(() => ['pic_tools', 'admin', 'super_admin'].includes(roleKey.value));
+const canManageTools = computed(() => ['pic_tool', 'admin', 'super_admin'].includes(roleKey.value));
 const activeAreaId = inject('activeAreaId', ref(null));
 const activeAreaName = inject('activeAreaName', ref('Area aktif'));
 const setAreaSwitching = inject('setAreaSwitching', null);
@@ -995,6 +1015,40 @@ const submitImport = async () => {
             ? validationErrors.join('\n')
             : error.response?.data?.message ?? 'Gagal mengimpor data.';
         showAlert('error', 'Import alat gagal.');
+    }
+};
+
+const downloadImportTemplate = async () => {
+    if (isDownloadingTemplate.value) {
+        return;
+    }
+
+    isDownloadingTemplate.value = true;
+
+    try {
+        const response = await axios.get('/api/alats/import-template', {
+            responseType: 'blob',
+            __skipGlobalLoading: true,
+        });
+
+        const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const disposition = response.headers?.['content-disposition'] ?? '';
+        const match = disposition.match(/filename="?([^"]+)"?/i);
+
+        link.href = url;
+        link.setAttribute('download', match?.[1] ?? 'template-import-alat.csv');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+
+        showAlert('success', 'Template import berhasil diunduh.');
+    } catch (error) {
+        showAlert('error', 'Gagal mengunduh template import.');
+    } finally {
+        isDownloadingTemplate.value = false;
     }
 };
 
