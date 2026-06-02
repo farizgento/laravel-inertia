@@ -368,7 +368,7 @@ defineOptions({
 const baseRoleOptions = [
     { value: 'user', label: 'User' },
     { value: 'sp_tool', label: 'SP Tool' },
-    { value: 'pic_tools', label: 'Pic Tool' },
+    { value: 'pic_tool', label: 'Pic Tool' },
     { value: 'mgr_tool', label: 'Mgr Tool' },
 ];
 
@@ -472,7 +472,7 @@ const roleBadgeClass = (roleKey) => {
     if (roleKey === 'mgr_tool') {
         return 'bg-violet-100 text-violet-700';
     }
-    if (roleKey === 'pic_tools') {
+    if (roleKey === 'pic_tool') {
         return 'bg-amber-100 text-amber-700';
     }
     if (roleKey === 'sp_tool') {

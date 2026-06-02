@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ImportAlatJob;
 use App\Models\Alat;
 use App\Models\AlatImport;
+use App\Models\Area;
 use App\Models\AreaAlatStock;
 use App\Models\Peminjaman;
 use App\Models\Role;
@@ -40,7 +41,7 @@ class AlatController extends Controller
     {
         $roleKey = strtolower((string) ($request->user()?->role?->key ?? ''));
 
-        return in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool', Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true)
+        return in_array($roleKey, [Role::KEY_PIC_TOOL, Role::KEY_SUPER_ADMIN], true)
             && $request->boolean('inter_area_source');
     }
 
@@ -447,6 +448,32 @@ class AlatController extends Controller
             'message' => 'Import sedang diproses.',
             'import' => $alatImportService->formatImport($import),
         ], 202);
+    }
+
+    public function downloadImportTemplate(Request $request): StreamedResponse
+    {
+        $authorizedAreaId = $this->getAuthorizedAreaId($request);
+        $areas = Area::query()
+            ->when($authorizedAreaId, fn ($query) => $query->whereKey($authorizedAreaId))
+            ->orderBy('name')
+            ->get(['name', 'slug']);
+
+        $filename = 'template-import-alat.csv';
+        $delimiter = ';';
+
+        return response()->streamDownload(function () use ($areas, $delimiter) {
+            $handle = fopen('php://output', 'wb');
+            fwrite($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, ['Nama Alat', 'Jenis Alat', 'Klasifikasi Alat', 'Total Aset', 'Area'], $delimiter);
+
+            $sampleArea = $areas->first()?->slug ?? 'UPHK';
+            fputcsv($handle, ['Chain Block 1 Ton', 'Lifting Equipment', 'Lifting Tools', 2, $sampleArea], $delimiter);
+            fputcsv($handle, ['Multimeter Digital', 'Electrical Tools', 'Measurement Tools', 5, $sampleArea], $delimiter);
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     public function importStatus(Request $request, AlatImport $import, AlatImportService $alatImportService)

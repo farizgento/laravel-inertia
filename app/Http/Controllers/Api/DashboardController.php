@@ -30,7 +30,7 @@ class DashboardController extends Controller
         $isAreaSwitcherRole = $roleKey === Role::KEY_SUPER_ADMIN;
         $showOperationalInsights = in_array($roleKey, [
             Role::KEY_SP_TOOL,
-            Role::KEY_PIC_TOOLS,
+            Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
             Role::KEY_SUPER_ADMIN,
         ], true);

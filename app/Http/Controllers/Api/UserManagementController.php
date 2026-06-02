@@ -16,7 +16,7 @@ class UserManagementController extends Controller
     private const DEFAULT_ALLOWED_ROLE_KEYS = [
         Role::KEY_USER,
         Role::KEY_SP_TOOL,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
         Role::KEY_MGR_TOOL,
     ];
 
@@ -52,6 +52,23 @@ class UserManagementController extends Controller
         }
 
         return self::DEFAULT_ALLOWED_ROLE_KEYS;
+    }
+
+    private function applyWritableArea(User $actor, array $validated): array
+    {
+        if (! $this->isAreaScopedAdmin($actor)) {
+            return $validated;
+        }
+
+        abort_unless($actor->area_id, 403, 'Admin belum memiliki area.');
+
+        if ((int) $validated['area_id'] !== (int) $actor->area_id) {
+            abort(403, 'Admin hanya dapat mengelola pengguna pada area sendiri.');
+        }
+
+        $validated['area_id'] = (int) $actor->area_id;
+
+        return $validated;
     }
 
     private function manageableUsersQuery(User $actor)
@@ -190,6 +207,7 @@ class UserManagementController extends Controller
             'area_id' => ['required', 'integer', 'exists:areas,id'],
             'password' => $this->passwordRules('required'),
         ]);
+        $validated = $this->applyWritableArea($actor, $validated);
 
         $role = $this->findRole($validated['role_key']);
 
@@ -224,6 +242,7 @@ class UserManagementController extends Controller
             'area_id' => ['required', 'integer', 'exists:areas,id'],
             'password' => $this->passwordRules('nullable'),
         ]);
+        $validated = $this->applyWritableArea($actor, $validated);
 
         $role = $this->findRole($validated['role_key']);
 

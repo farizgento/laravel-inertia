@@ -13,6 +13,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LaporanAlatController extends Controller
@@ -55,7 +56,7 @@ class LaporanAlatController extends Controller
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
         $isSpTool = $roleKey === Role::KEY_SP_TOOL;
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
         $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
 
@@ -102,6 +103,29 @@ class LaporanAlatController extends Controller
         return $this->exportByKategori($request, LaporanAlat::CATEGORY_KEHILANGAN);
     }
 
+    public function downloadTemplateLaporanAlat(): BinaryFileResponse
+    {
+        return $this->downloadTemplateFile([
+            [
+                'path' => storage_path('app/templates/template-surat-laporan-alat.docx'),
+                'filename' => 'template-surat-laporan-alat.docx',
+            ],
+            [
+                'path' => storage_path('app/templates/template-surat-kerusakan.docx'),
+                'filename' => 'template-surat-kerusakan.docx',
+            ],
+            [
+                'path' => storage_path('app/templates/template-surat-kehilangan.docx'),
+                'filename' => 'template-surat-kehilangan.docx',
+            ],
+        ]);
+    }
+
+    public function downloadTemplateKehilangan(): BinaryFileResponse
+    {
+        return $this->downloadTemplateByKategori(LaporanAlat::CATEGORY_KEHILANGAN);
+    }
+
     public function storeKehilangan(Request $request)
     {
         return $this->storeByKategori($request, LaporanAlat::CATEGORY_KEHILANGAN);
@@ -115,6 +139,11 @@ class LaporanAlatController extends Controller
     public function exportKerusakan(Request $request): StreamedResponse
     {
         return $this->exportByKategori($request, LaporanAlat::CATEGORY_KERUSAKAN);
+    }
+
+    public function downloadTemplateKerusakan(): BinaryFileResponse
+    {
+        return $this->downloadTemplateByKategori(LaporanAlat::CATEGORY_KERUSAKAN);
     }
 
     public function storeKerusakan(Request $request)
@@ -238,6 +267,45 @@ class LaporanAlatController extends Controller
         ]);
     }
 
+    private function downloadTemplateByKategori(string $kategori): BinaryFileResponse
+    {
+        $templates = [
+            LaporanAlat::CATEGORY_KERUSAKAN => [
+                'path' => storage_path('app/templates/template-surat-kerusakan.docx'),
+                'filename' => 'template-surat-kerusakan.docx',
+            ],
+            LaporanAlat::CATEGORY_KEHILANGAN => [
+                'path' => storage_path('app/templates/template-surat-kehilangan.docx'),
+                'filename' => 'template-surat-kehilangan.docx',
+            ],
+        ];
+
+        $template = $templates[$kategori] ?? null;
+        abort_unless($template, 404, 'Template surat tidak ditemukan.');
+
+        return $this->downloadTemplateFile([
+            $template,
+            [
+                'path' => storage_path('app/templates/template-surat-laporan-alat.docx'),
+                'filename' => 'template-surat-laporan-alat.docx',
+            ],
+        ]);
+    }
+
+    private function downloadTemplateFile(array $candidates): BinaryFileResponse
+    {
+        foreach ($candidates as $candidate) {
+            $path = (string) ($candidate['path'] ?? '');
+            if ($path !== '' && file_exists($path)) {
+                return response()->download($path, (string) $candidate['filename'], [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                ]);
+            }
+        }
+
+        abort(404, 'Template surat belum tersedia.');
+    }
+
     private function storeByKategori(Request $request, string $kategori)
     {
         $user = $request->user();
@@ -248,8 +316,9 @@ class LaporanAlatController extends Controller
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
         $isSpTool = $roleKey === Role::KEY_SP_TOOL;
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
+        $isSuperAdmin = $roleKey === Role::KEY_SUPER_ADMIN;
         $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
         $targetAreaId = $this->resolveActiveAreaId($request, $roleKey, $user->area_id);
 
@@ -257,7 +326,7 @@ class LaporanAlatController extends Controller
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        if (! $targetAreaId && ! $isAdmin) {
+        if (! $targetAreaId && ! $isSuperAdmin) {
             return response()->json(['message' => 'Area tidak ditemukan.'], 403);
         }
 
@@ -272,8 +341,8 @@ class LaporanAlatController extends Controller
             ->where('id', $validated['alat_id'])
             ->when($targetAreaId, function (Builder $query) use ($targetAreaId) {
                 $this->applyAccessibleToolFilter($query, $targetAreaId);
-            }, function (Builder $query) use ($isAdmin, $user) {
-                if (! $isAdmin) {
+            }, function (Builder $query) use ($isSuperAdmin, $user) {
+                if (! $isSuperAdmin) {
                     $this->applyAccessibleToolFilter($query, (int) $user->area_id);
                 }
             })
@@ -340,8 +409,9 @@ class LaporanAlatController extends Controller
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
         $isSpTool = $roleKey === Role::KEY_SP_TOOL;
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
+        $isSuperAdmin = $roleKey === Role::KEY_SUPER_ADMIN;
         $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
         $targetAreaId = $this->resolveActiveAreaId($request, $roleKey, $user->area_id);
 
@@ -360,7 +430,9 @@ class LaporanAlatController extends Controller
         }
 
         $laporanAreaId = (int) ($laporan->area_id ?? $alat->area_id);
-        if (($isSpTool || $isPicTools || $isMgrTool) && (! $targetAreaId || $laporanAreaId !== (int) $targetAreaId)) {
+        if (($isSpTool || $isPicTools || $isMgrTool || (! $isSuperAdmin && $roleKey === Role::KEY_ADMIN))
+            && (! $targetAreaId || $laporanAreaId !== (int) $targetAreaId)
+        ) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -443,7 +515,7 @@ class LaporanAlatController extends Controller
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
         $isSpTool = $roleKey === Role::KEY_SP_TOOL;
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
         $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
 

@@ -19,6 +19,26 @@ use Illuminate\Validation\ValidationException;
 
 class PeminjamanController extends Controller
 {
+    private function relatedToArea(Peminjaman $peminjaman, int $areaId): bool
+    {
+        return (int) $peminjaman->area_id === $areaId
+            || (int) $peminjaman->requester_area_id === $areaId;
+    }
+
+    private function ensureAdminCanAccessPeminjaman(Request $request, Peminjaman $peminjaman): void
+    {
+        $user = $request->user();
+        $roleKey = strtolower((string) ($user?->role?->key ?? ''));
+
+        if ($roleKey === Role::KEY_SUPER_ADMIN) {
+            return;
+        }
+
+        if ($roleKey === Role::KEY_ADMIN) {
+            abort_unless($user?->area_id && $this->relatedToArea($peminjaman, (int) $user->area_id), 403);
+        }
+    }
+
     private function buildIndexQuery(Request $request)
     {
         $user = $request->user();
@@ -29,7 +49,7 @@ class PeminjamanController extends Controller
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
         $isSpTool = $roleKey === Role::KEY_SP_TOOL;
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
         $isUser = $roleKey === Role::KEY_USER;
         $isAdmin = $roleKey === Role::KEY_ADMIN;
@@ -44,10 +64,19 @@ class PeminjamanController extends Controller
             ->with(['items.alat.area', 'suratJalans', 'user', 'reviewer', 'requesterReviewer', 'area', 'requesterArea'])
             ->orderByDesc('created_at');
 
-        if ($isSuperAdmin || $isAdmin) {
+        if ($isSuperAdmin) {
             if (! empty($areaIdParam)) {
                 $query->where('area_id', $areaIdParam);
             }
+        } elseif ($isAdmin) {
+            $areaId = $user->area_id;
+            if (! $areaId) {
+                return null;
+            }
+            $query->where(function ($sub) use ($areaId) {
+                $sub->where('area_id', $areaId)
+                    ->orWhere('requester_area_id', $areaId);
+            });
         } elseif ($isSpTool || $isPicTools || $isMgrTool) {
             $areaId = $user->area_id;
             if (! $areaId) {
@@ -500,6 +529,7 @@ class PeminjamanController extends Controller
         if (! in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true)) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
+        $this->ensureAdminCanAccessPeminjaman($request, $peminjaman);
 
         $validated = $request->validate([
             'pekerjaan' => ['required', 'string', 'max:1000'],
@@ -542,6 +572,7 @@ class PeminjamanController extends Controller
         if (! in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true)) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
+        $this->ensureAdminCanAccessPeminjaman($request, $peminjaman);
 
         $this->deletePeminjamans(collect([$peminjaman]));
 
@@ -599,14 +630,15 @@ class PeminjamanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
-        $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
+        $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
+        $isSuperAdmin = $roleKey === Role::KEY_SUPER_ADMIN;
+        $isAdmin = $roleKey === Role::KEY_ADMIN || $isSuperAdmin;
 
         if (! $isPicTools && ! $isAdmin) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        $requesterAreaId = $isAdmin
+        $requesterAreaId = $isSuperAdmin
             ? ($validated['requester_area_id'] ?? $user->area_id)
             : $user->area_id;
         $sourceAreaId = (int) $validated['source_area_id'];

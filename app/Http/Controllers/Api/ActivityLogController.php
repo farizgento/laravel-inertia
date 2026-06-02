@@ -28,7 +28,7 @@ class ActivityLogController extends Controller
         ];
 
         if ($includePicTools) {
-            $allowedRoles[] = Role::KEY_PIC_TOOLS;
+            $allowedRoles[] = Role::KEY_PIC_TOOL;
         }
 
         abort_unless(
@@ -236,7 +236,7 @@ class ActivityLogController extends Controller
 
         if (in_array($roleKey, [
             Role::KEY_SP_TOOL,
-            Role::KEY_PIC_TOOLS,
+            Role::KEY_PIC_TOOL,
             Role::KEY_ADMIN,
         ], true)) {
             $query->where('area_id', $actor->area_id);

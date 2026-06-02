@@ -245,7 +245,7 @@ const page = usePage();
 const roleKey = computed(() => page.props.auth?.user?.role?.key ?? '');
 const isPicTools = computed(() => {
     const key = roleKey.value?.toLowerCase?.() ?? '';
-    return key === 'pic_tools' || key === 'pic_tool';
+    return key === 'pic_tool';
 });
 const pengirimName = computed(
     () => props.item?.pengirimNama ?? props.item?.pengirim_nama ?? ''
