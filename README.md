@@ -7,6 +7,16 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Production Queue Worker
+
+Project ini memakai queue driver `database`, dan pada production saat ini queue worker membaca job melalui koneksi Oracle. Jika koneksi Oracle idle lalu diputus jaringan atau listener, `php artisan queue:work` bisa exit sendiri. Untuk mengurangi dampaknya:
+
+- Set `QUEUE_RETRY_AFTER` lebih besar dari timeout job terpanjang. Untuk job import alat, nilai aman awal adalah `1500`.
+- Jalankan worker lewat Supervisor atau systemd, jangan dari sesi SSH biasa.
+- Untuk queue berbasis Oracle, gunakan `--max-jobs=1` agar worker restart setelah menyelesaikan satu job dan tidak terlalu lama menahan koneksi lama.
+
+Contoh Supervisor disediakan di `deploy/supervisor/laravel-worker.conf.example`.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

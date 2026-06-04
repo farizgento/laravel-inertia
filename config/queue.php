@@ -36,9 +36,10 @@ return [
 
         'database' => [
             'driver' => 'database',
+            'connection' => env('DB_QUEUE_CONNECTION', env('DB_CONNECTION', 'oracle')),
             'table' => 'jobs',
-            'queue' => 'default',
-            'retry_after' => 90,
+            'queue' => env('DB_QUEUE', 'default'),
+            'retry_after' => env('QUEUE_RETRY_AFTER', 1500),
             'after_commit' => false,
         ],
 
@@ -46,7 +47,7 @@ return [
             'driver' => 'beanstalkd',
             'host' => 'localhost',
             'queue' => 'default',
-            'retry_after' => 90,
+            'retry_after' => env('QUEUE_RETRY_AFTER', 1500),
             'block_for' => 0,
             'after_commit' => false,
         ],
@@ -66,7 +67,7 @@ return [
             'driver' => 'redis',
             'connection' => 'default',
             'queue' => env('REDIS_QUEUE', 'default'),
-            'retry_after' => 90,
+            'retry_after' => env('QUEUE_RETRY_AFTER', 1500),
             'block_for' => null,
             'after_commit' => false,
         ],
@@ -85,7 +86,7 @@ return [
     */
 
     'batching' => [
-        'database' => env('DB_CONNECTION', 'mysql'),
+        'database' => env('DB_QUEUE_BATCH_CONNECTION', env('DB_CONNECTION', 'oracle')),
         'table' => 'job_batches',
     ],
 
@@ -102,7 +103,7 @@ return [
 
     'failed' => [
         'driver' => env('QUEUE_FAILED_DRIVER', 'database-uuids'),
-        'database' => env('DB_CONNECTION', 'mysql'),
+        'database' => env('DB_QUEUE_FAILED_CONNECTION', env('DB_CONNECTION', 'oracle')),
         'table' => 'failed_jobs',
     ],
 

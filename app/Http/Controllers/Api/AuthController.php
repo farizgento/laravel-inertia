@@ -8,9 +8,11 @@ use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password as PasswordBroker;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
+use Throwable;
 
 class AuthController extends Controller
 {
@@ -116,9 +118,20 @@ class AuthController extends Controller
             'email.exists' => 'Email tidak terdaftar.',
         ]);
 
-        $status = PasswordBroker::sendResetLink([
-            'email' => $validated['email'],
-        ]);
+        try {
+            $status = PasswordBroker::sendResetLink([
+                'email' => $validated['email'],
+            ]);
+        } catch (Throwable $exception) {
+            Log::error('Gagal mengirim email reset password.', [
+                'email' => $validated['email'],
+                'exception' => $exception,
+            ]);
+
+            return response()->json([
+                'message' => 'Link reset password belum dapat dikirim karena layanan email server sedang bermasalah. Silakan coba lagi beberapa saat atau hubungi administrator.',
+            ], 503);
+        }
 
         if ($status !== PasswordBroker::RESET_LINK_SENT) {
             return response()->json([
