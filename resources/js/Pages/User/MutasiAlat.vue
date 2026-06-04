@@ -370,17 +370,32 @@
                                         Tambahkan form laporan sesuai kebutuhan untuk kerusakan atau kehilangan.
                                     </p>
                                 </div>
-                                <button
-                                    class="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100"
-                                    type="button"
-                                    @click="addReturnReport"
-                                >
-                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 5v14" />
-                                        <path d="M5 12h14" />
-                                    </svg>
-                                    Tambah Laporan
-                                </button>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button
+                                        class="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100"
+                                        type="button"
+                                        @click="downloadReturnReportTemplate"
+                                    >
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+                                            <path d="M14 2v6h6" />
+                                            <path d="M12 18v-6" />
+                                            <path d="m9 15 3 3 3-3" />
+                                        </svg>
+                                        Template Surat
+                                    </button>
+                                    <button
+                                        class="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100"
+                                        type="button"
+                                        @click="addReturnReport"
+                                    >
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M12 5v14" />
+                                            <path d="M5 12h14" />
+                                        </svg>
+                                        Tambah Laporan
+                                    </button>
+                                </div>
                             </div>
 
                             <div v-if="!returnReports.length" class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500">
@@ -751,6 +766,14 @@ const normalizeHistory = (item) => {
         pengembaliNama: item?.pengembali_nama ?? '',
         returnSuratJalanUrl: item?.surat_jalan_pengembalian_url ?? '',
         returnSuratJalanPath: item?.surat_jalan_pengembalian_path ?? '',
+        suratJalanItems: Array.isArray(item?.surat_jalan_items)
+            ? item.surat_jalan_items.map((document, index) => ({
+                  label: document?.label ?? `Surat Jalan ${index + 1}`,
+                  url: document?.url ?? '',
+                  path: document?.path ?? '',
+                  pengirimName: document?.pengirim_nama ?? '',
+              }))
+            : [],
         tools,
     };
 };
@@ -795,6 +818,10 @@ const suratJalanDocuments = (item) => {
         return [];
     }
 
+    if (Array.isArray(item.suratJalanItems) && item.suratJalanItems.length) {
+        return item.suratJalanItems.filter((document) => document.url || document.path);
+    }
+
     return [
         item.suratJalanUrl || item.suratJalanPath
             ? {
@@ -826,7 +853,7 @@ const canAcceptSuratJalan = (item) =>
     && (
         (isUserRole.value && !item?.isInterArea)
         || isAdminRole.value
-        || (['pic_tools', 'pic_tool'].includes(roleKey.value) && isInterAreaRequester(item))
+        || (roleKey.value === 'pic_tool' && isInterAreaRequester(item))
     );
 
 const canReturnItem = (item) =>
@@ -834,7 +861,7 @@ const canReturnItem = (item) =>
     && (
         isUserRole.value
         || isAdminRole.value
-        || (['pic_tools', 'pic_tool'].includes(roleKey.value) && isInterAreaRequester(item))
+        || (roleKey.value === 'pic_tool' && isInterAreaRequester(item))
     );
 
 const acceptPeminjaman = async (item) => {
@@ -930,6 +957,31 @@ const addReturnReport = () => {
         ...createReturnReport(),
         order: returnReports.value.length + 1,
     });
+};
+
+const downloadReturnReportTemplate = () => {
+    axios.get('/api/laporan-alat/template', {
+        responseType: 'blob',
+    })
+        .then((response) => {
+            const blob = new Blob([response.data], {
+                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const disposition = response.headers['content-disposition'] ?? '';
+            const match = disposition.match(/filename=\"?([^\";]+)\"?/i);
+
+            link.href = url;
+            link.download = match?.[1] ?? 'template-surat-laporan-alat.docx';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(() => {
+            showAlert('error', 'Template surat laporan alat belum tersedia.');
+        });
 };
 
 const removeReturnReport = (key) => {

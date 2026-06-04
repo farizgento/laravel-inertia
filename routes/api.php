@@ -66,7 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:'.implode(',', [
         Role::KEY_SP_TOOL,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
         Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
@@ -85,7 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:'.implode(',', [
         Role::KEY_USER,
         Role::KEY_SP_TOOL,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
         Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
@@ -113,7 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:'.implode(',', [
         Role::KEY_USER,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
     ]))->group(function () {
@@ -122,7 +122,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware('role:'.implode(',', [
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
     ]))->group(function () {
@@ -143,7 +143,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:'.implode(',', [
             Role::KEY_USER,
             Role::KEY_SP_TOOL,
-            Role::KEY_PIC_TOOLS,
+            Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
@@ -152,19 +152,20 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:'.implode(',', [
             Role::KEY_USER,
             Role::KEY_SP_TOOL,
-            Role::KEY_PIC_TOOLS,
+            Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
         ]));
 
     Route::middleware('role:'.implode(',', [
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
     ]))->group(function () {
         Route::post('/alats', [AlatController::class, 'store']);
         Route::post('/alats/import', [AlatController::class, 'import']);
+        Route::get('/alats/import-template', [AlatController::class, 'downloadImportTemplate']);
         Route::get('/alats/imports/{import}', [AlatController::class, 'importStatus']);
         Route::get('/alats/imports/{import}/download', [AlatController::class, 'downloadImport']);
         Route::delete('/alats/area', [AlatController::class, 'destroyArea']);
@@ -175,7 +176,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:'.implode(',', [
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
     ]))->group(function () {
         Route::get('/pengiriman/notification-counts', [PengirimanController::class, 'notificationCounts']);
         Route::get('/pengiriman', [PengirimanController::class, 'index']);
@@ -189,7 +190,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:'.implode(',', [
             Role::KEY_USER,
             Role::KEY_SP_TOOL,
-            Role::KEY_PIC_TOOLS,
+            Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
@@ -198,7 +199,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/laporan-kerusakan', [LaporanAlatController::class, 'indexKerusakan'])
         ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
-            Role::KEY_PIC_TOOLS,
+            Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
@@ -206,7 +207,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/laporan-kerusakan/export', [LaporanAlatController::class, 'exportKerusakan'])
         ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
-            Role::KEY_PIC_TOOLS,
+            Role::KEY_PIC_TOOL,
+            Role::KEY_MGR_TOOL,
+            Role::KEY_ADMIN,
+            Role::KEY_SUPER_ADMIN,
+        ]));
+    Route::get('/laporan-alat/template', [LaporanAlatController::class, 'downloadTemplateLaporanAlat'])
+        ->middleware('role:'.implode(',', [
+            Role::KEY_USER,
+            Role::KEY_SP_TOOL,
+            Role::KEY_PIC_TOOL,
+            Role::KEY_MGR_TOOL,
+            Role::KEY_ADMIN,
+            Role::KEY_SUPER_ADMIN,
+        ]));
+    Route::get('/laporan-kerusakan/template', [LaporanAlatController::class, 'downloadTemplateKerusakan'])
+        ->middleware('role:'.implode(',', [
+            Role::KEY_USER,
+            Role::KEY_SP_TOOL,
+            Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
@@ -214,7 +233,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/laporan-pending-counts', [LaporanAlatController::class, 'pendingCounts'])
         ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
-            Role::KEY_PIC_TOOLS,
+            Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
@@ -222,7 +241,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/laporan-kerusakan', [LaporanAlatController::class, 'storeKerusakan'])
         ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
-            Role::KEY_PIC_TOOLS,
+            Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
@@ -230,7 +249,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/laporan-kerusakan/{laporan}', [LaporanAlatController::class, 'updateKerusakanStatus'])
         ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
-            Role::KEY_PIC_TOOLS,
+            Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
@@ -239,7 +258,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/laporan-kehilangan', [LaporanAlatController::class, 'indexKehilangan'])
         ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
-            Role::KEY_PIC_TOOLS,
+            Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
@@ -247,7 +266,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/laporan-kehilangan/export', [LaporanAlatController::class, 'exportKehilangan'])
         ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
-            Role::KEY_PIC_TOOLS,
+            Role::KEY_PIC_TOOL,
+            Role::KEY_MGR_TOOL,
+            Role::KEY_ADMIN,
+            Role::KEY_SUPER_ADMIN,
+        ]));
+    Route::get('/laporan-kehilangan/template', [LaporanAlatController::class, 'downloadTemplateKehilangan'])
+        ->middleware('role:'.implode(',', [
+            Role::KEY_USER,
+            Role::KEY_SP_TOOL,
+            Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
@@ -255,7 +283,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/laporan-kehilangan', [LaporanAlatController::class, 'storeKehilangan'])
         ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
-            Role::KEY_PIC_TOOLS,
+            Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
@@ -263,7 +291,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/laporan-kehilangan/{laporan}', [LaporanAlatController::class, 'updateKehilanganStatus'])
         ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
-            Role::KEY_PIC_TOOLS,
+            Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,

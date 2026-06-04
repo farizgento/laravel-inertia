@@ -38,7 +38,20 @@
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button
-                    class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300"
+                    class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-300 hover:text-blue-600"
+                    type="button"
+                    @click="downloadTemplateSurat"
+                >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+                        <path d="M14 2v6h6" />
+                        <path d="M12 18v-6" />
+                        <path d="m9 15 3 3 3-3" />
+                    </svg>
+                    Template Surat
+                </button>
+                <button
+                    class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-300 hover:text-blue-600"
                     type="button"
                     @click="exportCsv"
                 >
@@ -615,6 +628,31 @@ const exportCsv = () => {
         })
         .catch(() => {
             showAlert('error', 'Gagal mengunduh file CSV.');
+        });
+};
+
+const downloadTemplateSurat = () => {
+    axios.get('/api/laporan-kehilangan/template', {
+        responseType: 'blob',
+    })
+        .then((response) => {
+            const blob = new Blob([response.data], {
+                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const disposition = response.headers['content-disposition'] ?? '';
+            const match = disposition.match(/filename=\"?([^\";]+)\"?/i);
+
+            link.href = url;
+            link.download = match?.[1] ?? 'template-surat-kehilangan.docx';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(() => {
+            showAlert('error', 'Template surat kehilangan belum tersedia.');
         });
 };
 

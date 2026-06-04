@@ -45,7 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     })->middleware('role:' . implode(',', [
         Role::KEY_USER,
         Role::KEY_SP_TOOL,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
         Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
@@ -64,7 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
     })->middleware('role:' . implode(',', [
         Role::KEY_USER,
         Role::KEY_SP_TOOL,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
         Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
@@ -90,7 +90,7 @@ Route::middleware('auth:sanctum')->group(function () {
         return Inertia::render('Pictool/Index');
     })->middleware('role:' . implode(',', [
         Role::KEY_SP_TOOL,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
         Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
@@ -101,7 +101,7 @@ Route::middleware('auth:sanctum')->group(function () {
     })->middleware('role:' . implode(',', [
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
     ]))->name('persiapan-alat');
 
     Route::get('pengiriman-alat', function () {
@@ -114,7 +114,7 @@ Route::middleware('auth:sanctum')->group(function () {
     })->middleware('role:' . implode(',', [
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
     ]))->name('pengiriman-alat');
 
     Route::get('pengiriman-antar-area', function () {
@@ -127,7 +127,7 @@ Route::middleware('auth:sanctum')->group(function () {
     })->middleware('role:' . implode(',', [
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
     ]))->name('pengiriman-antar-area');
 
     Route::get('pengembalian-antar-area', function () {
@@ -135,7 +135,7 @@ Route::middleware('auth:sanctum')->group(function () {
     })->middleware('role:' . implode(',', [
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
     ]))->name('pengembalian-antar-area');
 
     Route::get('peminjaman-antar-area', function () {
@@ -143,7 +143,7 @@ Route::middleware('auth:sanctum')->group(function () {
     })->middleware('role:' . implode(',', [
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
     ]))->name('peminjaman-antar-area');
 
     Route::get('pengembalian-alat', function () {
@@ -151,14 +151,14 @@ Route::middleware('auth:sanctum')->group(function () {
     })->middleware('role:' . implode(',', [
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
     ]))->name('pengembalian-alat');
 
     Route::get('/laporan-kerusakan', function () {
         return Inertia::render('Pictool/Kerusakan');
     })->middleware('role:' . implode(',', [
         Role::KEY_SP_TOOL,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
         Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
@@ -168,7 +168,7 @@ Route::middleware('auth:sanctum')->group(function () {
         return Inertia::render('Pictool/Kehilangan');
     })->middleware('role:' . implode(',', [
         Role::KEY_SP_TOOL,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
         Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
@@ -194,7 +194,7 @@ Route::middleware('auth:sanctum')->group(function () {
         return Inertia::render('Admin/AlatLog');
     })->middleware('role:' . implode(',', [
         Role::KEY_SP_TOOL,
-        Role::KEY_PIC_TOOLS,
+        Role::KEY_PIC_TOOL,
         Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,

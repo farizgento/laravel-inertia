@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanItem;
 use App\Models\Role;
+use App\Models\SuratJalan;
 use Illuminate\Http\Request;
 
 class MutasiAlatController extends Controller
@@ -20,12 +21,13 @@ class MutasiAlatController extends Controller
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
         $isSpTool = $roleKey === Role::KEY_SP_TOOL;
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
         $isUser = $roleKey === Role::KEY_USER;
-        $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
+        $isSuperAdmin = $roleKey === Role::KEY_SUPER_ADMIN;
+        $isAdmin = $roleKey === Role::KEY_ADMIN;
 
-        if (! $isSpTool && ! $isPicTools && ! $isMgrTool && ! $isUser && ! $isAdmin) {
+        if (! $isSpTool && ! $isPicTools && ! $isMgrTool && ! $isUser && ! $isAdmin && ! $isSuperAdmin) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -71,10 +73,16 @@ class MutasiAlatController extends Controller
                 });
         }
 
-        if ($isAdmin) {
+        if ($isSuperAdmin) {
             if (! empty($areaIdParam)) {
                 $this->applyAreaScopeFilter($query, (int) $areaIdParam, $areaScope, $areaColumn);
             }
+        } elseif ($isAdmin) {
+            $areaId = $user->area_id;
+            if (! $areaId) {
+                return response()->json([]);
+            }
+            $this->applyAreaScopeFilter($query, (int) $areaId, $areaScope, $areaColumn);
         } elseif ($isSpTool || $isPicTools || $isMgrTool) {
             $areaId = $user->area_id;
             if (! $areaId) {
@@ -114,6 +122,23 @@ class MutasiAlatController extends Controller
             $suratJalans = $peminjaman->suratJalans->values();
             $suratJalanPengiriman = $suratJalans->first();
             $suratJalanPengembalian = $suratJalans->count() > 1 ? $suratJalans->last() : null;
+            $suratJalanItems = $suratJalans
+                ->map(function (SuratJalan $suratJalan, int $index) {
+                    return [
+                        'id' => $suratJalan->id,
+                        'label' => $index === 0 ? 'Surat Jalan Masuk' : 'Surat Jalan Keluar ' . $index,
+                        'pengirim_nama' => $suratJalan->pengirim_nama,
+                        'path' => $suratJalan->path,
+                        'url' => $suratJalan->path
+                            ? url('/storage/' . ltrim($suratJalan->path, '/'))
+                            : null,
+                        'original_name' => $suratJalan->original_name,
+                        'created_at' => $suratJalan->created_at
+                            ? $suratJalan->created_at->format('d M Y H:i')
+                            : null,
+                    ];
+                })
+                ->values();
 
             return [
                 'id' => $peminjaman->id,
@@ -148,6 +173,7 @@ class MutasiAlatController extends Controller
                 'surat_jalan_pengembalian_url' => $suratJalanPengembalian?->path
                     ? url('/storage/' . ltrim($suratJalanPengembalian->path, '/'))
                     : null,
+                'surat_jalan_items' => $suratJalanItems,
                 'tools' => $tools,
             ];
         })->values();

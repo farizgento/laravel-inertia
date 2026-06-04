@@ -12,7 +12,7 @@ class Role extends Model
 
     public const KEY_USER = 'user';
     public const KEY_SP_TOOL = 'sp_tool';
-    public const KEY_PIC_TOOLS = 'pic_tools';
+    public const KEY_PIC_TOOL = 'pic_tool';
     public const KEY_MGR_TOOL = 'mgr_tool';
     public const KEY_ADMIN = 'admin';
     public const KEY_SUPER_ADMIN = 'super_admin';
@@ -20,7 +20,7 @@ class Role extends Model
     public const KEYS = [
         self::KEY_USER,
         self::KEY_SP_TOOL,
-        self::KEY_PIC_TOOLS,
+        self::KEY_PIC_TOOL,
         self::KEY_MGR_TOOL,
         self::KEY_ADMIN,
         self::KEY_SUPER_ADMIN,

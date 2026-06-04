@@ -22,6 +22,38 @@ use Intervention\Image\ImageManager;
 
 class PengirimanController extends Controller
 {
+    private function isSuperAdmin(Request $request): bool
+    {
+        return strtolower((string) ($request->user()?->role?->key ?? '')) === Role::KEY_SUPER_ADMIN;
+    }
+
+    private function isAdmin(Request $request): bool
+    {
+        return strtolower((string) ($request->user()?->role?->key ?? '')) === Role::KEY_ADMIN;
+    }
+
+    private function peminjamanRelatedToUserArea(Request $request, Peminjaman $peminjaman): bool
+    {
+        $areaId = $request->user()?->area_id;
+
+        return $areaId
+            && (
+                (int) $peminjaman->area_id === (int) $areaId
+                || (int) $peminjaman->requester_area_id === (int) $areaId
+            );
+    }
+
+    private function ensureAdminCanAccessPeminjaman(Request $request, Peminjaman $peminjaman): void
+    {
+        if ($this->isSuperAdmin($request)) {
+            return;
+        }
+
+        if ($this->isAdmin($request)) {
+            abort_unless($this->peminjamanRelatedToUserArea($request, $peminjaman), 403);
+        }
+    }
+
     private function applyRoleAreaFilter(
         $query,
         Request $request,
@@ -32,10 +64,11 @@ class PengirimanController extends Controller
         $user = $request->user();
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
+        $isSuperAdmin = $roleKey === Role::KEY_SUPER_ADMIN;
+        $isAdmin = $roleKey === Role::KEY_ADMIN;
         $areaIdParam = $request->query('area_id');
 
-        if ($isAdmin) {
+        if ($isSuperAdmin) {
             if (! empty($areaIdParam)) {
                 if ($includeIncomingInterArea) {
                     $query->where(function ($sub) use ($areaIdParam) {
@@ -60,6 +93,43 @@ class PengirimanController extends Controller
                     $query->where('area_id', $areaIdParam);
                 }
             }
+
+            return null;
+        }
+
+        if ($isAdmin) {
+            if (! $user->area_id) {
+                return response()->json([]);
+            }
+
+            if ($includeIncomingInterArea) {
+                $query->where(function ($sub) use ($user) {
+                    $sub->where('area_id', $user->area_id)
+                        ->orWhere(function ($incoming) use ($user) {
+                            $incoming
+                                ->where('is_inter_area', true)
+                                ->where('requester_area_id', $user->area_id)
+                                ->where('status', Peminjaman::STATUS_DIKIRIM);
+                        });
+                });
+
+                return null;
+            }
+
+            if ($includeRequesterInterArea) {
+                $query->where(function ($sub) use ($user) {
+                    $sub->where('area_id', $user->area_id)
+                        ->orWhere(function ($requester) use ($user) {
+                            $requester
+                                ->where('is_inter_area', true)
+                                ->where('requester_area_id', $user->area_id);
+                        });
+                });
+
+                return null;
+            }
+
+            $query->where('area_id', $user->area_id);
 
             return null;
         }
@@ -212,6 +282,23 @@ class PengirimanController extends Controller
         $suratJalans = $peminjaman->suratJalans->values();
         $suratJalanPengiriman = $suratJalans->first();
         $suratJalanPengembalian = $suratJalans->count() > 1 ? $suratJalans->last() : null;
+        $suratJalanItems = $suratJalans
+            ->map(function (SuratJalan $suratJalan, int $index) {
+                return [
+                    'id' => $suratJalan->id,
+                    'label' => $index === 0 ? 'Surat Jalan Masuk' : 'Surat Jalan Keluar ' . $index,
+                    'pengirim_nama' => $suratJalan->pengirim_nama,
+                    'path' => $suratJalan->path,
+                    'url' => $suratJalan->path
+                        ? url('/storage/' . ltrim($suratJalan->path, '/'))
+                        : null,
+                    'original_name' => $suratJalan->original_name,
+                    'created_at' => $suratJalan->created_at
+                        ? $suratJalan->created_at->format('d M Y H:i')
+                        : null,
+                ];
+            })
+            ->values();
 
         return [
             'id' => $peminjaman->id,
@@ -248,6 +335,7 @@ class PengirimanController extends Controller
             'surat_jalan_pengembalian_url' => $suratJalanPengembalian?->path
                 ? url('/storage/' . ltrim($suratJalanPengembalian->path, '/'))
                 : null,
+            'surat_jalan_items' => $suratJalanItems,
             'tools' => $tools,
             'reports' => $reports,
         ];
@@ -262,7 +350,7 @@ class PengirimanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
 
         if (! $isPicTools && ! $isAdmin) {
@@ -318,7 +406,7 @@ class PengirimanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
 
         if (! $isPicTools && ! $isAdmin) {
@@ -383,7 +471,7 @@ class PengirimanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
 
         if (! $isPicTools && ! $isAdmin) {
@@ -437,7 +525,7 @@ class PengirimanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
 
         if (! $isPicTools && ! $isAdmin) {
@@ -447,6 +535,7 @@ class PengirimanController extends Controller
         if ($isPicTools && (! $user->area_id || $peminjaman->area_id !== $user->area_id)) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
+        $this->ensureAdminCanAccessPeminjaman($request, $peminjaman);
 
         if ($peminjaman->status !== Peminjaman::STATUS_DISETUJUI) {
             return response()->json(['message' => 'Peminjaman tidak dalam status Disetujui.'], 422);
@@ -492,7 +581,7 @@ class PengirimanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isUser = $roleKey === 'user';
         $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
 
@@ -515,6 +604,8 @@ class PengirimanController extends Controller
             if ((string) $peminjaman->user_id !== (string) $user->id) {
                 return response()->json(['message' => 'user id tidak sama.'], 403);
             }
+        } else {
+            $this->ensureAdminCanAccessPeminjaman($request, $peminjaman);
         }
 
         if ($peminjaman->status !== Peminjaman::STATUS_DIKIRIM) {
@@ -564,7 +655,7 @@ class PengirimanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
         $isInterAreaPicRequester = $peminjaman->is_inter_area
             && $isPicTools
@@ -578,6 +669,7 @@ class PengirimanController extends Controller
         if ($roleKey === 'user' && (string) $peminjaman->user_id !== (string) $user->id) {
             return response()->json(['message' => 'user id tidak sama.'], 403);
         }
+        $this->ensureAdminCanAccessPeminjaman($request, $peminjaman);
 
         if (! in_array($peminjaman->status, Peminjaman::returnableStatuses(), true)) {
             return response()->json(['message' => 'Peminjaman tidak dapat dikembalikan pada status saat ini.'], 422);
@@ -734,7 +826,7 @@ class PengirimanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
 
         if (! $isPicTools && ! $isAdmin) {
@@ -748,6 +840,7 @@ class PengirimanController extends Controller
         if ($isPicTools && (! $user->area_id || (int) $peminjaman->area_id !== (int) $user->area_id)) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
+        $this->ensureAdminCanAccessPeminjaman($request, $peminjaman);
 
         if ($peminjaman->status !== Peminjaman::STATUS_DITERIMA) {
             return response()->json(['message' => 'Periode hanya dapat diubah saat status Diterima.'], 422);
@@ -778,7 +871,7 @@ class PengirimanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        $isPicTools = in_array($roleKey, [Role::KEY_PIC_TOOLS, 'pic_tool'], true);
+        $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
 
         if (! $isPicTools && ! $isAdmin) {
@@ -788,6 +881,7 @@ class PengirimanController extends Controller
         if ($isPicTools && (! $user->area_id || (int) $peminjaman->area_id !== (int) $user->area_id)) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
+        $this->ensureAdminCanAccessPeminjaman($request, $peminjaman);
 
         if ($peminjaman->status !== Peminjaman::STATUS_DIKEMBALIKAN_SEMUANYA) {
             return response()->json(['message' => 'Peminjaman belum siap diselesaikan.'], 422);

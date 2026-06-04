@@ -35,16 +35,31 @@
                     <p class="mt-1 text-sm text-slate-500">Area aktif: {{ areaName }}</p>
                 </div>
             </div>
-            <button
-                class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
-                type="button"
-                @click="openCreate"
-            >
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 5v14M5 12h14" />
-                </svg>
-                Tambah Laporan
-            </button>
+            <div class="flex flex-wrap items-center gap-2">
+                <button
+                    class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-300 hover:text-blue-600"
+                    type="button"
+                    @click="downloadTemplateSurat"
+                >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+                        <path d="M14 2v6h6" />
+                        <path d="M12 18v-6" />
+                        <path d="m9 15 3 3 3-3" />
+                    </svg>
+                    Template Surat
+                </button>
+                <button
+                    class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
+                    type="button"
+                    @click="openCreate"
+                >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Tambah Laporan
+                </button>
+            </div>
         </div>
 
         <div class="mt-5 grid gap-3 lg:grid-cols-[1.2fr,0.8fr,0.6fr]">
@@ -524,6 +539,31 @@ const buildParams = () => {
         params.area_id = currentAreaId.value;
     }
     return params;
+};
+
+const downloadTemplateSurat = () => {
+    axios.get('/api/laporan-kerusakan/template', {
+        responseType: 'blob',
+    })
+        .then((response) => {
+            const blob = new Blob([response.data], {
+                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const disposition = response.headers['content-disposition'] ?? '';
+            const match = disposition.match(/filename=\"?([^\";]+)\"?/i);
+
+            link.href = url;
+            link.download = match?.[1] ?? 'template-surat-kerusakan.docx';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(() => {
+            showAlert('error', 'Template surat kerusakan belum tersedia.');
+        });
 };
 
 const loadReports = async () => {

@@ -147,7 +147,7 @@ const processing = ref(false);
 const roleRoutes = {
     user: '/dashboard',
     sp_tool: '/dashboard',
-    pic_tools: '/dashboard',
+    pic_tool: '/dashboard',
     mgr_tool: '/dashboard',
     admin: '/dashboard',
     super_admin: '/dashboard',
