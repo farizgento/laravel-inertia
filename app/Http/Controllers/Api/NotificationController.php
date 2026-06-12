@@ -58,7 +58,7 @@ class NotificationController extends Controller
 
     private function resolveAreaId(Request $request, string $roleKey, $fallbackAreaId): ?int
     {
-        if ($roleKey === Role::KEY_SUPER_ADMIN && $request->filled('area_id')) {
+        if (in_array($roleKey, [Role::KEY_GUEST, Role::KEY_SUPER_ADMIN], true) && $request->filled('area_id')) {
             return (int) $request->query('area_id');
         }
 
@@ -176,7 +176,7 @@ class NotificationController extends Controller
             $sidebar['review'] = $this->reviewCount($areaId);
         }
 
-        if (in_array($roleKey, [Role::KEY_SP_TOOL, Role::KEY_PIC_TOOL, Role::KEY_MGR_TOOL, Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true)) {
+        if (in_array($roleKey, [Role::KEY_GUEST, Role::KEY_SP_TOOL, Role::KEY_PIC_TOOL, Role::KEY_MGR_TOOL, Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true)) {
             ['kerusakan' => $sidebar['kerusakan'], 'kehilangan' => $sidebar['kehilangan']] = $this->laporanCounts($roleKey, $areaId);
         }
 
@@ -189,7 +189,7 @@ class NotificationController extends Controller
             );
         }
 
-        if (in_array($roleKey, [Role::KEY_MGR_TOOL, Role::KEY_SUPER_ADMIN], true)) {
+        if (in_array($roleKey, [Role::KEY_GUEST, Role::KEY_MGR_TOOL, Role::KEY_SUPER_ADMIN], true)) {
             $sidebar['mutasi_alat'] = $this->mutasiActionCount($areaId, [
                 Peminjaman::STATUS_DIKIRIM,
                 Peminjaman::STATUS_DITERIMA,
@@ -301,7 +301,7 @@ class NotificationController extends Controller
         }
 
         $query = LaporanAlat::query()->where('status', 'Dilaporkan');
-        $shouldFilterArea = in_array($roleKey, [Role::KEY_SP_TOOL, Role::KEY_PIC_TOOL, Role::KEY_MGR_TOOL], true)
+        $shouldFilterArea = in_array($roleKey, [Role::KEY_GUEST, Role::KEY_SP_TOOL, Role::KEY_PIC_TOOL, Role::KEY_MGR_TOOL], true)
             || ! empty($areaId);
 
         if ($shouldFilterArea) {

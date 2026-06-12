@@ -57,7 +57,10 @@
                                 <span class="min-w-0 flex-1 text-left text-sm font-semibold leading-5 text-slate-700">
                                     {{ item.label }}
                                 </span>
-                                <span class="ml-2 shrink-0 text-slate-400 transition" :class="isGroupOpen(item) ? 'rotate-90' : ''">
+                                <span
+                                    class="ml-2 flex h-5 w-5 shrink-0 items-center justify-center text-slate-400 transition"
+                                    :class="isGroupOpen(item) ? 'rotate-90' : ''"
+                                >
                                     <svg
                                         class="h-4 w-4"
                                         viewBox="0 0 24 24"
@@ -278,7 +281,7 @@
                             >
                                 {{ formatBadgeCount(badgeCountForItem(item)) }}
                             </span>
-                            <span :class="shouldShowReviewBadge(item) ? 'ml-2 shrink-0 text-slate-400' : 'ml-2 shrink-0 text-slate-400'">
+                            <span class="ml-2 flex h-5 w-5 shrink-0 items-center justify-center text-slate-400">
                                 <svg
                                     class="h-4 w-4"
                                     viewBox="0 0 24 24"
@@ -400,10 +403,8 @@ const transaksiMenuKeys = new Set([
     'peminjaman',
     'pengiriman',
     'pengiriman-antar-area',
-    'laporan-kerusakan',
-    'laporan-kehilangan',
 ]);
-const laporanMenuKeys = new Set(['riwayat', 'alat-log', 'activity-log']);
+const laporanMenuKeys = new Set(['riwayat', 'laporan-kerusakan', 'laporan-kehilangan', 'alat-log', 'activity-log']);
 
 const groupMenuItems = (items) => {
     const masterDataItems = items.filter((item) => masterDataMenuKeys.has(item.key));
@@ -457,6 +458,7 @@ const menuItems = computed(() => {
     const isMgrTool = roleKey === 'mgr_tool';
     const isSuperAdmin = roleKey === 'super_admin';
     const isAdmin = roleKey === 'admin';
+    const isGuest = roleKey === 'guest';
 
     const items = [
         ...(isSuperAdmin
@@ -711,6 +713,51 @@ const menuItems = computed(() => {
                         icon: 'activity-log',
                     },
                 ]
+              : isGuest
+                ? [
+                      {
+                          key: 'dashboard',
+                          label: 'Dashboard',
+                          href: '/dashboard',
+                          icon: 'dashboard',
+                      },
+                      {
+                          key: 'master-alat',
+                          label: 'Alat',
+                          href: '/master-alat',
+                          icon: 'master-alat',
+                      },
+                      {
+                          key: 'riwayat',
+                          label: 'Riwayat Peminjaman',
+                          href: '/riwayat-peminjaman',
+                          icon: 'riwayat',
+                      },
+                      {
+                          key: 'laporan-kerusakan',
+                          label: 'Daftar Kerusakan',
+                          href: '/laporan-kerusakan',
+                          icon: 'kerusakan',
+                      },
+                      {
+                          key: 'laporan-kehilangan',
+                          label: 'Daftar Kehilangan',
+                          href: '/laporan-kehilangan',
+                          icon: 'kehilangan',
+                      },
+                      {
+                          key: 'alat-log',
+                          label: 'Log Alat',
+                          href: '/log-alat',
+                          icon: 'activity-log',
+                      },
+                      {
+                          key: 'activity-log',
+                          label: 'Log Activity',
+                          href: '/log-activity',
+                          icon: 'activity-log',
+                      },
+                  ]
               : [
                     {
                         key: 'dashboard',
@@ -888,7 +935,7 @@ const formatBadgeCount = (count) => {
 
 const navClass = (item) => {
     const base =
-        'flex min-h-[56px] items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition';
+        'flex min-h-[56px] w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition';
     return `${base} ${
         isItemActive(item) ? 'bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/70' : 'text-slate-600 hover:bg-slate-100'
     }`;
@@ -896,7 +943,7 @@ const navClass = (item) => {
 
 const childNavClass = (item) => {
     const base =
-        'flex min-h-[48px] items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition';
+        'flex min-h-[48px] w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition';
     return `${base} ${
         isItemActive(item) ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
     }`;

@@ -129,7 +129,7 @@
                                 {{ formatNumber(insights.kerusakan_tahunan) }}
                             </p>
                             <p class="mt-2 text-sm leading-6 text-amber-800/80">
-                                Total laporan kerusakan di {{ currentAreaName }} pada tahun berjalan.
+                                Total alat rusak di {{ currentAreaName }} pada tahun berjalan.
                             </p>
                         </article>
 
@@ -139,7 +139,7 @@
                                 {{ formatNumber(insights.kehilangan_tahunan) }}
                             </p>
                             <p class="mt-2 text-sm leading-6 text-rose-800/80">
-                                Total laporan kehilangan di {{ currentAreaName }} pada tahun berjalan.
+                                Total alat hilang di {{ currentAreaName }} pada tahun berjalan.
                             </p>
                         </article>
                     </div>

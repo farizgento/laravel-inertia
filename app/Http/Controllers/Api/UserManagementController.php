@@ -14,6 +14,7 @@ use Illuminate\Validation\Rules\Password;
 class UserManagementController extends Controller
 {
     private const DEFAULT_ALLOWED_ROLE_KEYS = [
+        Role::KEY_GUEST,
         Role::KEY_USER,
         Role::KEY_SP_TOOL,
         Role::KEY_PIC_TOOL,
@@ -110,7 +111,21 @@ class UserManagementController extends Controller
 
     private function findRole(string $roleKey): Role
     {
-        return Role::query()->where('key', $roleKey)->firstOrFail();
+        return Role::firstOrCreate(
+            ['key' => $roleKey],
+            [
+                'name' => match ($roleKey) {
+                    Role::KEY_GUEST => 'Guest',
+                    Role::KEY_USER => 'User',
+                    Role::KEY_SP_TOOL => 'SP Tool',
+                    Role::KEY_PIC_TOOL => 'PIC Tool',
+                    Role::KEY_MGR_TOOL => 'Mgr Tool',
+                    Role::KEY_ADMIN => 'Admin',
+                    Role::KEY_SUPER_ADMIN => 'Super Admin',
+                    default => $roleKey,
+                },
+            ]
+        );
     }
 
     private function passwordRules(string $presence): array

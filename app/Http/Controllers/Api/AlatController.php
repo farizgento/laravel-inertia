@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ImportAlatJob;
 use App\Models\Alat;
 use App\Models\AlatImport;
-use App\Models\Area;
 use App\Models\AreaAlatStock;
 use App\Models\Peminjaman;
 use App\Models\Role;
@@ -15,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AlatController extends Controller
@@ -26,9 +26,32 @@ class AlatController extends Controller
         return $roleKey === Role::KEY_SUPER_ADMIN;
     }
 
+    private function isAreaSwitcherReader(?Request $request): bool
+    {
+        $roleKey = strtolower((string) ($request?->user()?->role?->key ?? ''));
+
+        return in_array($roleKey, [Role::KEY_GUEST, Role::KEY_SUPER_ADMIN], true);
+    }
+
+    private function isGuest(?Request $request): bool
+    {
+        $roleKey = strtolower((string) ($request?->user()?->role?->key ?? ''));
+
+        return $roleKey === Role::KEY_GUEST;
+    }
+
+    private function isUserAreaBrowser(Request $request): bool
+    {
+        $roleKey = strtolower((string) ($request->user()?->role?->key ?? ''));
+
+        return $roleKey === Role::KEY_USER
+            && $request->boolean('browse_area')
+            && $request->filled('area_id');
+    }
+
     private function getAuthorizedAreaId(Request $request): ?int
     {
-        if ($this->isSuperAdmin($request)) {
+        if ($this->isAreaSwitcherReader($request)) {
             return null;
         }
 
@@ -160,7 +183,15 @@ class AlatController extends Controller
         $areaId = $request->query('area_id');
         $authorizedAreaId = $this->getAuthorizedAreaId($request);
 
-        if ($request->user() && $authorizedAreaId !== null && ! $this->canBrowseInterAreaSource($request)) {
+        if ($request->user() && $this->isGuest($request) && empty($areaId)) {
+            $areaId = $request->user()?->area_id;
+        }
+
+        if ($request->user()
+            && $authorizedAreaId !== null
+            && ! $this->canBrowseInterAreaSource($request)
+            && ! $this->isUserAreaBrowser($request)
+        ) {
             $areaId = $authorizedAreaId;
         }
 
@@ -214,7 +245,14 @@ class AlatController extends Controller
 
         $query = $this->buildIndexQuery($request);
         $areaId = $request->query('area_id');
-        if ($request->user() && $authorizedAreaId !== null && ! $this->canBrowseInterAreaSource($request)) {
+        if ($request->user() && $this->isGuest($request) && empty($areaId)) {
+            $areaId = $request->user()?->area_id;
+        }
+        if ($request->user()
+            && $authorizedAreaId !== null
+            && ! $this->canBrowseInterAreaSource($request)
+            && ! $this->isUserAreaBrowser($request)
+        ) {
             $areaId = $authorizedAreaId;
         }
 
@@ -450,29 +488,13 @@ class AlatController extends Controller
         ], 202);
     }
 
-    public function downloadImportTemplate(Request $request): StreamedResponse
+    public function downloadImportTemplate(): BinaryFileResponse
     {
-        $authorizedAreaId = $this->getAuthorizedAreaId($request);
-        $areas = Area::query()
-            ->when($authorizedAreaId, fn ($query) => $query->whereKey($authorizedAreaId))
-            ->orderBy('name')
-            ->get(['name', 'slug']);
+        $path = storage_path('templates/TEMPLATE-IMPORT-ALAT.xlsx');
+        abort_unless(file_exists($path), 404, 'Template import alat belum tersedia.');
 
-        $filename = 'template-import-alat.csv';
-        $delimiter = ';';
-
-        return response()->streamDownload(function () use ($areas, $delimiter) {
-            $handle = fopen('php://output', 'wb');
-            fwrite($handle, "\xEF\xBB\xBF");
-            fputcsv($handle, ['Nama Alat', 'Jenis Alat', 'Klasifikasi Alat', 'Total Aset', 'Area'], $delimiter);
-
-            $sampleArea = $areas->first()?->slug ?? 'UPHK';
-            fputcsv($handle, ['Chain Block 1 Ton', 'Lifting Equipment', 'Lifting Tools', 2, $sampleArea], $delimiter);
-            fputcsv($handle, ['Multimeter Digital', 'Electrical Tools', 'Measurement Tools', 5, $sampleArea], $delimiter);
-
-            fclose($handle);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
+        return response()->download($path, basename($path), [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
     }
 

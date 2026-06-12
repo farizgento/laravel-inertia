@@ -37,6 +37,7 @@
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button
+                    v-if="canManageReports"
                     class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-300 hover:text-blue-600"
                     type="button"
                     @click="downloadTemplateSurat"
@@ -62,6 +63,7 @@
                     Export CSV
                 </button>
                 <button
+                    v-if="canManageReports"
                     class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
                     type="button"
                     @click="openCreate"
@@ -438,11 +440,20 @@ const loadCachedUser = () => {
 };
 
 const cachedUser = ref(loadCachedUser());
+const authUser = computed(() => page.props.auth?.user ?? cachedUser.value);
+const roleKey = computed(() => (authUser.value?.role?.key ?? '').toLowerCase());
+const userAreaId = computed(() => authUser.value?.area_id ?? authUser.value?.area?.id ?? null);
+const canManageReports = computed(() =>
+    ['sp_tool', 'pic_tool', 'mgr_tool', 'admin', 'super_admin'].includes(roleKey.value)
+);
 const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
 const activeAreaId = inject('activeAreaId', ref(null));
 const setAreaSwitching = inject('setAreaSwitching', null);
 const activeAreaName = inject('activeAreaName', ref('Area tidak diketahui'));
 const refreshSidebarNotificationCounts = inject('refreshSidebarNotificationCounts', async () => {});
+const currentAreaId = computed(() =>
+    isAreaSwitcherRole.value ? activeAreaId.value : userAreaId.value
+);
 const areaName = computed(() =>
     isAreaSwitcherRole.value
         ? activeAreaName.value
@@ -535,7 +546,7 @@ const statusBadge = (status) => {
     }
 };
 
-const canShowStatusAction = (item) => ['Dilaporkan', 'Disetujui'].includes(item?.status);
+const canShowStatusAction = (item) => canManageReports.value && ['Dilaporkan', 'Disetujui'].includes(item?.status);
 
 const statusActionLabel = (item) => {
     if (item?.status === 'Disetujui') {
@@ -582,8 +593,8 @@ const buildParams = () => {
     if (statusFilter.value && statusFilter.value !== 'Semua') {
         params.status = statusFilter.value;
     }
-    if (isAreaSwitcherRole.value && activeAreaId.value) {
-        params.area_id = activeAreaId.value;
+    if (currentAreaId.value) {
+        params.area_id = currentAreaId.value;
     }
     return params;
 };
@@ -600,8 +611,8 @@ const buildExportParams = () => {
     if (statusFilter.value && statusFilter.value !== 'Semua') {
         params.status = statusFilter.value;
     }
-    if (isAreaSwitcherRole.value && activeAreaId.value) {
-        params.area_id = activeAreaId.value;
+    if (currentAreaId.value) {
+        params.area_id = currentAreaId.value;
     }
     return params;
 };
@@ -688,8 +699,8 @@ const loadReports = async () => {
 const loadTools = async () => {
     try {
         const params = {};
-        if (isAreaSwitcherRole.value && activeAreaId.value) {
-            params.area_id = activeAreaId.value;
+        if (currentAreaId.value) {
+            params.area_id = currentAreaId.value;
         }
         const response = await axios.get('/api/alats', { params });
         const data = Array.isArray(response.data) ? response.data : [];
@@ -795,7 +806,7 @@ const submitForm = async () => {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
-            params: isAreaSwitcherRole.value && activeAreaId.value ? { area_id: activeAreaId.value } : {},
+            params: currentAreaId.value ? { area_id: currentAreaId.value } : {},
         });
 
         await loadReports();
@@ -864,7 +875,7 @@ const submitStatusFor = async (item, status, shouldCloseModal = false) => {
     try {
         await axios.put(`/api/laporan-kerusakan/${item.id}`, {
             status,
-            ...(isAreaSwitcherRole.value && activeAreaId.value ? { area_id: activeAreaId.value } : {}),
+            ...(currentAreaId.value ? { area_id: currentAreaId.value } : {}),
         });
         await loadReports();
         await refreshSidebarNotificationCounts();

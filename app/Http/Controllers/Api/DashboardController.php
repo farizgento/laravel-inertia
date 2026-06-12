@@ -27,8 +27,9 @@ class DashboardController extends Controller
 
         $user->loadMissing(['role', 'area']);
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
-        $isAreaSwitcherRole = $roleKey === Role::KEY_SUPER_ADMIN;
+        $isAreaSwitcherRole = in_array($roleKey, [Role::KEY_GUEST, Role::KEY_SUPER_ADMIN], true);
         $showOperationalInsights = in_array($roleKey, [
+            Role::KEY_GUEST,
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
@@ -124,7 +125,10 @@ class DashboardController extends Controller
             ])
             ->where('created_at', '>=', $currentYearStart->toDateTimeString())
             ->where('created_at', '<', $nextYearStart->toDateTimeString())
-            ->get(['kategori', 'created_at']);
+            ->selectRaw('kategori, EXTRACT(MONTH FROM created_at) as month_number, COALESCE(SUM(jumlah), 0) as total_jumlah')
+            ->groupBy('kategori')
+            ->groupByRaw('EXTRACT(MONTH FROM created_at)')
+            ->get();
 
         $monthly = collect(range(0, 11))
             ->map(function (int $offset) use ($currentYearStart) {
@@ -140,29 +144,37 @@ class DashboardController extends Controller
             ->keyBy('key');
 
         foreach ($rows as $row) {
-            $monthKey = optional($row->created_at)->format('Y-m');
-            if (! $monthKey || ! $monthly->has($monthKey)) {
+            $monthNumber = (int) ($row->month_number ?? 0);
+            if ($monthNumber < 1 || $monthNumber > 12) {
+                continue;
+            }
+
+            $monthKey = $currentYearStart->month($monthNumber)->format('Y-m');
+            if (! $monthly->has($monthKey)) {
                 continue;
             }
 
             $entry = $monthly->get($monthKey);
+            $totalJumlah = (int) ($row->total_jumlah ?? 0);
             if ($row->kategori === LaporanAlat::CATEGORY_KERUSAKAN) {
-                $entry['kerusakan'] += 1;
+                $entry['kerusakan'] += $totalJumlah;
             }
 
             if ($row->kategori === LaporanAlat::CATEGORY_KEHILANGAN) {
-                $entry['kehilangan'] += 1;
+                $entry['kehilangan'] += $totalJumlah;
             }
 
             $monthly->put($monthKey, $entry);
         }
 
+        $series = $monthly->values();
+
         return [
-            'kerusakan_tahunan' => (int) $rows->where('kategori', LaporanAlat::CATEGORY_KERUSAKAN)->count(),
-            'kehilangan_tahunan' => (int) $rows->where('kategori', LaporanAlat::CATEGORY_KEHILANGAN)->count(),
+            'kerusakan_tahunan' => (int) $series->sum('kerusakan'),
+            'kehilangan_tahunan' => (int) $series->sum('kehilangan'),
             'total_aset_semua_area' => (int) Alat::query()->sum('total_aset'),
             'total_jenis_alat_semua_area' => (int) Alat::query()->count(),
-            'series' => $monthly->values(),
+            'series' => $series,
         ];
     }
 }

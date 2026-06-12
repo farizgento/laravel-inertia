@@ -20,7 +20,7 @@ class LaporanAlatController extends Controller
 {
     private function resolveActiveAreaId(Request $request, string $roleKey, $fallbackAreaId): ?int
     {
-        if ($roleKey === Role::KEY_SUPER_ADMIN && $request->filled('area_id')) {
+        if (in_array($roleKey, [Role::KEY_GUEST, Role::KEY_SUPER_ADMIN], true) && $request->filled('area_id')) {
             return (int) $request->input('area_id');
         }
 
@@ -514,15 +514,17 @@ class LaporanAlatController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
+        $isGuest = $roleKey === Role::KEY_GUEST;
         $isSpTool = $roleKey === Role::KEY_SP_TOOL;
         $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
         $isAdmin = in_array($roleKey, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true);
 
-        abort_unless($isSpTool || $isPicTools || $isMgrTool || $isAdmin, 403, 'Forbidden.');
+        abort_unless($isGuest || $isSpTool || $isPicTools || $isMgrTool || $isAdmin, 403, 'Forbidden.');
 
         return [
             'role_key' => $roleKey,
+            'is_guest' => $isGuest,
             'is_sp_tool' => $isSpTool,
             'is_pic_tools' => $isPicTools,
             'is_mgr_tool' => $isMgrTool,
@@ -533,7 +535,7 @@ class LaporanAlatController extends Controller
 
     private function shouldReturnEmptyResult(array $context): bool
     {
-        return ($context['is_sp_tool'] || $context['is_pic_tools'] || $context['is_mgr_tool'])
+        return ($context['is_guest'] || $context['is_sp_tool'] || $context['is_pic_tools'] || $context['is_mgr_tool'])
             && empty($context['area_id']);
     }
 
@@ -549,7 +551,7 @@ class LaporanAlatController extends Controller
             ->with(['alat.area', 'area', 'user'])
             ->orderByDesc('created_at');
 
-        if ($context['is_sp_tool'] || $context['is_pic_tools'] || $context['is_mgr_tool']) {
+        if ($context['is_guest'] || $context['is_sp_tool'] || $context['is_pic_tools'] || $context['is_mgr_tool']) {
             $this->applyReportAreaFilter($query, $areaId);
         } elseif (! empty($areaId)) {
             $this->applyReportAreaFilter($query, $areaId);

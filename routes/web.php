@@ -43,6 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->middleware('role:' . implode(',', [
+        Role::KEY_GUEST,
         Role::KEY_USER,
         Role::KEY_SP_TOOL,
         Role::KEY_PIC_TOOL,
@@ -62,6 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/riwayat-peminjaman', function () {
         return Inertia::render('User/History');
     })->middleware('role:' . implode(',', [
+        Role::KEY_GUEST,
         Role::KEY_USER,
         Role::KEY_SP_TOOL,
         Role::KEY_PIC_TOOL,
@@ -73,6 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/mutasi-alat', function () {
         return Inertia::render('User/MutasiAlat');
     })->middleware('role:' . implode(',', [
+        Role::KEY_GUEST,
         Role::KEY_USER,
         Role::KEY_MGR_TOOL,
         Role::KEY_SUPER_ADMIN,
@@ -89,6 +92,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/master-alat', function () {
         return Inertia::render('Pictool/Index');
     })->middleware('role:' . implode(',', [
+        Role::KEY_GUEST,
         Role::KEY_SP_TOOL,
         Role::KEY_PIC_TOOL,
         Role::KEY_MGR_TOOL,
@@ -157,6 +161,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/laporan-kerusakan', function () {
         return Inertia::render('Pictool/Kerusakan');
     })->middleware('role:' . implode(',', [
+        Role::KEY_GUEST,
         Role::KEY_SP_TOOL,
         Role::KEY_PIC_TOOL,
         Role::KEY_MGR_TOOL,
@@ -167,6 +172,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/laporan-kehilangan', function () {
         return Inertia::render('Pictool/Kehilangan');
     })->middleware('role:' . implode(',', [
+        Role::KEY_GUEST,
         Role::KEY_SP_TOOL,
         Role::KEY_PIC_TOOL,
         Role::KEY_MGR_TOOL,
@@ -184,6 +190,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/log-activity', function () {
         return Inertia::render('Admin/ActivityLog');
     })->middleware('role:' . implode(',', [
+        Role::KEY_GUEST,
         Role::KEY_SP_TOOL,
         Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
@@ -193,6 +200,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/log-alat', function () {
         return Inertia::render('Admin/AlatLog');
     })->middleware('role:' . implode(',', [
+        Role::KEY_GUEST,
         Role::KEY_SP_TOOL,
         Role::KEY_PIC_TOOL,
         Role::KEY_MGR_TOOL,
