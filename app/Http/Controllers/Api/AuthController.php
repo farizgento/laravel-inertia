@@ -108,6 +108,38 @@ class AuthController extends Controller
             ->withCookie(cookie()->forget('auth_token'));
     }
 
+    public function changePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => $this->passwordRules(),
+        ]);
+
+        $user = $request->user();
+        abort_unless($user, 401);
+
+        if (! Hash::check($validated['current_password'], $user->password)) {
+            return response()->json([
+                'message' => 'Password saat ini tidak sesuai.',
+                'errors' => [
+                    'current_password' => ['Password saat ini tidak sesuai.'],
+                ],
+            ], 422);
+        }
+
+        $user->forceFill([
+            'password' => $validated['password'],
+        ])->save();
+
+        $user->tokens()
+            ->where('id', '!=', $user->currentAccessToken()?->id)
+            ->delete();
+
+        return response()->json([
+            'message' => 'Password akun berhasil diubah.',
+        ]);
+    }
+
     public function forgotPassword(Request $request)
     {
         $validated = $request->validate([

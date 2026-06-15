@@ -10,6 +10,7 @@ class Role extends Model
 {
     use HasFactory;
 
+    public const KEY_GUEST = 'guest';
     public const KEY_USER = 'user';
     public const KEY_SP_TOOL = 'sp_tool';
     public const KEY_PIC_TOOL = 'pic_tool';
@@ -18,6 +19,7 @@ class Role extends Model
     public const KEY_SUPER_ADMIN = 'super_admin';
 
     public const KEYS = [
+        self::KEY_GUEST,
         self::KEY_USER,
         self::KEY_SP_TOOL,
         self::KEY_PIC_TOOL,

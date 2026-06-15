@@ -74,6 +74,7 @@
                     :sidebar-open="isSidebarOpen"
                     :mailbox-items="mailboxItems"
                     :mailbox-count="mailboxCount"
+                    :show-mailbox="!isGuest"
                     @toggle-sidebar="toggleSidebar"
                     @change-area="handleAreaChange"
                 />
@@ -159,7 +160,8 @@ const displayName = computed(() => authUser.value?.name ?? 'Memuat...');
 const displayRole = computed(() => authUser.value?.role?.name ?? 'Memuat...');
 const roleKey = computed(() => authUser.value?.role?.key ?? '');
 const isSuperAdmin = computed(() => (roleKey.value ?? '').toLowerCase() === 'super_admin');
-const isAreaSwitcherRole = computed(() => isSuperAdmin.value);
+const isGuest = computed(() => (roleKey.value ?? '').toLowerCase() === 'guest');
+const isAreaSwitcherRole = computed(() => isSuperAdmin.value || isGuest.value);
 const flashMessage = computed(() => {
     const message = page.props.flash?.error ?? page.props.flash?.success ?? '';
     return message && message !== dismissedFlash.value ? message : '';

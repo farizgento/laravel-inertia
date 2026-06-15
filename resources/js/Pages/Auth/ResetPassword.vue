@@ -41,12 +41,31 @@
 
                         <div>
                             <label class="text-sm font-medium text-slate-700">Password Baru</label>
-                            <input
-                                v-model="form.password"
-                                type="password"
-                                placeholder="Masukkan password baru"
-                                class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            />
+                            <div class="relative mt-2">
+                                <input
+                                    v-model="form.password"
+                                    :type="showPassword ? 'text' : 'password'"
+                                    placeholder="Masukkan password baru"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 pr-10 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                />
+                                <button
+                                    class="absolute inset-y-0 right-3 flex items-center text-slate-400 transition hover:text-blue-600"
+                                    type="button"
+                                    :aria-label="showPassword ? 'Sembunyikan password' : 'Tampilkan password'"
+                                    @click="showPassword = !showPassword"
+                                >
+                                    <svg v-if="showPassword" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 3l18 18" />
+                                        <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+                                        <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.5 4 10 8a13.2 13.2 0 0 1-3.1 4.6" />
+                                        <path d="M6.6 6.6A13.2 13.2 0 0 0 2 12c1.5 4 5 8 10 8 1.4 0 2.7-.3 3.9-.9" />
+                                    </svg>
+                                    <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M2 12s3.5-8 10-8 10 8 10 8-3.5 8-10 8S2 12 2 12Z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                </button>
+                            </div>
                             <p v-if="errors.password" class="mt-1 text-xs text-red-500">
                                 {{ errors.password }}
                             </p>
@@ -54,12 +73,31 @@
 
                         <div>
                             <label class="text-sm font-medium text-slate-700">Konfirmasi Password</label>
-                            <input
-                                v-model="form.password_confirmation"
-                                type="password"
-                                placeholder="Ulangi password baru"
-                                class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            />
+                            <div class="relative mt-2">
+                                <input
+                                    v-model="form.password_confirmation"
+                                    :type="showPasswordConfirmation ? 'text' : 'password'"
+                                    placeholder="Ulangi password baru"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 pr-10 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                />
+                                <button
+                                    class="absolute inset-y-0 right-3 flex items-center text-slate-400 transition hover:text-blue-600"
+                                    type="button"
+                                    :aria-label="showPasswordConfirmation ? 'Sembunyikan konfirmasi password' : 'Tampilkan konfirmasi password'"
+                                    @click="showPasswordConfirmation = !showPasswordConfirmation"
+                                >
+                                    <svg v-if="showPasswordConfirmation" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 3l18 18" />
+                                        <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+                                        <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.5 4 10 8a13.2 13.2 0 0 1-3.1 4.6" />
+                                        <path d="M6.6 6.6A13.2 13.2 0 0 0 2 12c1.5 4 5 8 10 8 1.4 0 2.7-.3 3.9-.9" />
+                                    </svg>
+                                    <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M2 12s3.5-8 10-8 10 8 10 8-3.5 8-10 8S2 12 2 12Z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
                         <p v-if="message" class="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
@@ -104,6 +142,8 @@ const form = ref({
 const errors = ref({});
 const message = ref('');
 const processing = ref(false);
+const showPassword = ref(false);
+const showPasswordConfirmation = ref(false);
 
 const normalizeErrors = (payload) => {
     if (!payload) {

@@ -299,23 +299,61 @@
 
                     <label class="space-y-2 text-sm font-medium text-slate-700">
                         <span>{{ isEdit ? 'Password Baru' : 'Password' }} {{ isEdit ? '' : '*' }}</span>
-                        <input
-                            v-model="form.password"
-                            type="password"
-                            :placeholder="isEdit ? 'Kosongkan jika tidak diubah' : 'Minimal 8 karakter, 1 kapital, 1 angka'"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                        />
+                        <div class="relative">
+                            <input
+                                v-model="form.password"
+                                :type="showPassword ? 'text' : 'password'"
+                                :placeholder="isEdit ? 'Kosongkan jika tidak diubah' : 'Minimal 8 karakter, 1 kapital, 1 angka'"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 pr-10 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            />
+                            <button
+                                class="absolute inset-y-0 right-3 flex items-center text-slate-400 transition hover:text-blue-600"
+                                type="button"
+                                :aria-label="showPassword ? 'Sembunyikan password' : 'Tampilkan password'"
+                                @click="showPassword = !showPassword"
+                            >
+                                <svg v-if="showPassword" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 3l18 18" />
+                                    <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+                                    <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.5 4 10 8a13.2 13.2 0 0 1-3.1 4.6" />
+                                    <path d="M6.6 6.6A13.2 13.2 0 0 0 2 12c1.5 4 5 8 10 8 1.4 0 2.7-.3 3.9-.9" />
+                                </svg>
+                                <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M2 12s3.5-8 10-8 10 8 10 8-3.5 8-10 8S2 12 2 12Z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                            </button>
+                        </div>
                         <p v-if="errors.password" class="text-xs text-rose-500">{{ errors.password }}</p>
                     </label>
 
                     <label class="space-y-2 text-sm font-medium text-slate-700">
                         <span>Konfirmasi Password{{ isEdit ? ' Baru' : '' }}</span>
-                        <input
-                            v-model="form.password_confirmation"
-                            type="password"
-                            :placeholder="isEdit ? 'Ikuti password baru' : 'Ulangi password'"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                        />
+                        <div class="relative">
+                            <input
+                                v-model="form.password_confirmation"
+                                :type="showPasswordConfirmation ? 'text' : 'password'"
+                                :placeholder="isEdit ? 'Ikuti password baru' : 'Ulangi password'"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 pr-10 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            />
+                            <button
+                                class="absolute inset-y-0 right-3 flex items-center text-slate-400 transition hover:text-blue-600"
+                                type="button"
+                                :aria-label="showPasswordConfirmation ? 'Sembunyikan konfirmasi password' : 'Tampilkan konfirmasi password'"
+                                @click="showPasswordConfirmation = !showPasswordConfirmation"
+                            >
+                                <svg v-if="showPasswordConfirmation" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 3l18 18" />
+                                    <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+                                    <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.5 4 10 8a13.2 13.2 0 0 1-3.1 4.6" />
+                                    <path d="M6.6 6.6A13.2 13.2 0 0 0 2 12c1.5 4 5 8 10 8 1.4 0 2.7-.3 3.9-.9" />
+                                </svg>
+                                <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M2 12s3.5-8 10-8 10 8 10 8-3.5 8-10 8S2 12 2 12Z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                            </button>
+                        </div>
                     </label>
                 </div>
 
@@ -366,6 +404,7 @@ defineOptions({
 });
 
 const baseRoleOptions = [
+    { value: 'guest', label: 'Guest' },
     { value: 'user', label: 'User' },
     { value: 'sp_tool', label: 'SP Tool' },
     { value: 'pic_tool', label: 'Pic Tool' },
@@ -391,6 +430,8 @@ const selectedArea = ref('');
 const alertMessage = ref('');
 const alertType = ref('success');
 const alertTitle = ref('');
+const showPassword = ref(false);
+const showPasswordConfirmation = ref(false);
 let alertTimeout = null;
 let filterTimeout = null;
 
@@ -525,6 +566,8 @@ const resetForm = () => {
     form.area_id = '';
     form.password = '';
     form.password_confirmation = '';
+    showPassword.value = false;
+    showPasswordConfirmation.value = false;
     form.area_id = adminAreaId.value;
     errors.value = {};
     formError.value = '';
@@ -544,6 +587,8 @@ const openEdit = (user) => {
     form.area_id = isAreaLocked.value ? adminAreaId.value : user.area_id ? String(user.area_id) : '';
     form.password = '';
     form.password_confirmation = '';
+    showPassword.value = false;
+    showPasswordConfirmation.value = false;
     errors.value = {};
     formError.value = '';
     formOpen.value = true;

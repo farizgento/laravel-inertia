@@ -21,6 +21,7 @@ class ActivityLogController extends Controller
         $actor = $request->user();
         $actor?->loadMissing('role');
         $allowedRoles = [
+            Role::KEY_GUEST,
             Role::KEY_SP_TOOL,
             Role::KEY_MGR_TOOL,
             Role::KEY_ADMIN,
@@ -234,7 +235,9 @@ class ActivityLogController extends Controller
             ->whereNotIn('action', ['login', 'logout'])
             ->orderByDesc('created_at');
 
-        if (in_array($roleKey, [
+        if ($roleKey === Role::KEY_GUEST) {
+            $query->where('area_id', $areaId > 0 ? $areaId : $actor->area_id);
+        } elseif (in_array($roleKey, [
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOL,
             Role::KEY_ADMIN,

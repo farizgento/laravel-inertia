@@ -20,6 +20,7 @@
             </div>
             <div class="flex flex-wrap items-center gap-3">
                 <button
+                    v-if="canExportTools"
                     class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
                     type="button"
                     :disabled="isExporting"
@@ -631,6 +632,7 @@ const roleKey = computed(() => (authUser.value?.role?.key ?? '').toLowerCase());
 const isSuperAdmin = computed(() => roleKey.value === 'super_admin');
 const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
 const canManageTools = computed(() => ['pic_tool', 'admin', 'super_admin'].includes(roleKey.value));
+const canExportTools = computed(() => true);
 const activeAreaId = inject('activeAreaId', ref(null));
 const activeAreaName = inject('activeAreaName', ref('Area aktif'));
 const setAreaSwitching = inject('setAreaSwitching', null);
@@ -1031,14 +1033,16 @@ const downloadImportTemplate = async () => {
             __skipGlobalLoading: true,
         });
 
-        const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         const disposition = response.headers?.['content-disposition'] ?? '';
         const match = disposition.match(/filename="?([^"]+)"?/i);
 
         link.href = url;
-        link.setAttribute('download', match?.[1] ?? 'template-import-alat.csv');
+        link.setAttribute('download', match?.[1] ?? 'TEMPLATE-IMPORT-ALAT.xlsx');
         document.body.appendChild(link);
         link.click();
         link.remove();

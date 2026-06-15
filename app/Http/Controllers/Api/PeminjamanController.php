@@ -48,6 +48,7 @@ class PeminjamanController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
+        $isGuest = $roleKey === Role::KEY_GUEST;
         $isSpTool = $roleKey === Role::KEY_SP_TOOL;
         $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
@@ -64,7 +65,16 @@ class PeminjamanController extends Controller
             ->with(['items.alat.area', 'suratJalans', 'user', 'reviewer', 'requesterReviewer', 'area', 'requesterArea'])
             ->orderByDesc('created_at');
 
-        if ($isSuperAdmin) {
+        if ($isGuest) {
+            $areaId = ! empty($areaIdParam) ? (int) $areaIdParam : (int) $user->area_id;
+            if (! $areaId) {
+                return null;
+            }
+            $query->where(function ($sub) use ($areaId) {
+                $sub->where('area_id', $areaId)
+                    ->orWhere('requester_area_id', $areaId);
+            });
+        } elseif ($isSuperAdmin) {
             if (! empty($areaIdParam)) {
                 $query->where('area_id', $areaIdParam);
             }

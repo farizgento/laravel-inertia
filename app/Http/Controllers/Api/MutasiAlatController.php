@@ -20,6 +20,7 @@ class MutasiAlatController extends Controller
 
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
+        $isGuest = $roleKey === Role::KEY_GUEST;
         $isSpTool = $roleKey === Role::KEY_SP_TOOL;
         $isPicTools = $roleKey === Role::KEY_PIC_TOOL;
         $isMgrTool = $roleKey === Role::KEY_MGR_TOOL;
@@ -27,7 +28,7 @@ class MutasiAlatController extends Controller
         $isSuperAdmin = $roleKey === Role::KEY_SUPER_ADMIN;
         $isAdmin = $roleKey === Role::KEY_ADMIN;
 
-        if (! $isSpTool && ! $isPicTools && ! $isMgrTool && ! $isUser && ! $isAdmin && ! $isSuperAdmin) {
+        if (! $isGuest && ! $isSpTool && ! $isPicTools && ! $isMgrTool && ! $isUser && ! $isAdmin && ! $isSuperAdmin) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
@@ -73,7 +74,13 @@ class MutasiAlatController extends Controller
                 });
         }
 
-        if ($isSuperAdmin) {
+        if ($isGuest) {
+            $areaId = ! empty($areaIdParam) ? (int) $areaIdParam : (int) $user->area_id;
+            if (! $areaId) {
+                return response()->json([]);
+            }
+            $this->applyAreaScopeFilter($query, $areaId, $areaScope, $areaColumn);
+        } elseif ($isSuperAdmin) {
             if (! empty($areaIdParam)) {
                 $this->applyAreaScopeFilter($query, (int) $areaIdParam, $areaScope, $areaColumn);
             }
