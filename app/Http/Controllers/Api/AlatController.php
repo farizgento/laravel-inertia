@@ -490,8 +490,8 @@ class AlatController extends Controller
 
     public function downloadImportTemplate(): BinaryFileResponse
     {
-        $path = storage_path('templates/TEMPLATE-IMPORT-ALAT.xlsx');
-        abort_unless(file_exists($path), 404, 'Template import alat belum tersedia.');
+        $path = public_path('storage/templates/TEMPLATE-IMPORT-ALAT.xlsx');
+        abort_unless(file_exists($path), 404, 'Template import alat belum tersedia. Pastikan file berada di storage/app/public/templates dan jalankan php artisan storage:link.');
 
         return response()->download($path, basename($path), [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -569,4 +569,3 @@ class AlatController extends Controller
         ]);
     }
 }
-

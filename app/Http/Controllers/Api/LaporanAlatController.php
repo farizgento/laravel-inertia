@@ -107,15 +107,15 @@ class LaporanAlatController extends Controller
     {
         return $this->downloadTemplateFile([
             [
-                'path' => storage_path('app/templates/template-surat-laporan-alat.docx'),
+                'path' => public_path('storage/templates/template-surat-laporan-alat.docx'),
                 'filename' => 'template-surat-laporan-alat.docx',
             ],
             [
-                'path' => storage_path('app/templates/template-surat-kerusakan.docx'),
+                'path' => public_path('storage/templates/template-surat-kerusakan.docx'),
                 'filename' => 'template-surat-kerusakan.docx',
             ],
             [
-                'path' => storage_path('app/templates/template-surat-kehilangan.docx'),
+                'path' => public_path('storage/templates/template-surat-kehilangan.docx'),
                 'filename' => 'template-surat-kehilangan.docx',
             ],
         ]);
@@ -271,11 +271,11 @@ class LaporanAlatController extends Controller
     {
         $templates = [
             LaporanAlat::CATEGORY_KERUSAKAN => [
-                'path' => storage_path('app/templates/template-surat-kerusakan.docx'),
+                'path' => public_path('storage/templates/template-surat-kerusakan.docx'),
                 'filename' => 'template-surat-kerusakan.docx',
             ],
             LaporanAlat::CATEGORY_KEHILANGAN => [
-                'path' => storage_path('app/templates/template-surat-kehilangan.docx'),
+                'path' => public_path('storage/templates/template-surat-kehilangan.docx'),
                 'filename' => 'template-surat-kehilangan.docx',
             ],
         ];
@@ -286,7 +286,7 @@ class LaporanAlatController extends Controller
         return $this->downloadTemplateFile([
             $template,
             [
-                'path' => storage_path('app/templates/template-surat-laporan-alat.docx'),
+                'path' => public_path('storage/templates/template-surat-laporan-alat.docx'),
                 'filename' => 'template-surat-laporan-alat.docx',
             ],
         ]);
@@ -303,7 +303,7 @@ class LaporanAlatController extends Controller
             }
         }
 
-        abort(404, 'Template surat belum tersedia.');
+        abort(404, 'Template surat belum tersedia. Pastikan file berada di storage/app/public/templates dan jalankan php artisan storage:link.');
     }
 
     private function storeByKategori(Request $request, string $kategori)
