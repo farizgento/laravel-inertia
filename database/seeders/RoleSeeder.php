@@ -16,6 +16,7 @@ class RoleSeeder extends Seeder
         $this->renameLegacyPicToolRole();
 
         $roles = [
+            ['key' => Role::KEY_GUEST, 'name' => 'Guest'],
             ['key' => Role::KEY_USER, 'name' => 'User'],
             ['key' => Role::KEY_SP_TOOL, 'name' => 'SP Tool'],
             ['key' => Role::KEY_PIC_TOOL, 'name' => 'PIC Tool'],

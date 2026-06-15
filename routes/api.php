@@ -43,6 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', NotificationController::class);
 
     Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
 
     Route::middleware('role:'.implode(',', [
         Role::KEY_ADMIN,
@@ -55,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware('role:'.implode(',', [
+        Role::KEY_GUEST,
         Role::KEY_SP_TOOL,
         Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
@@ -65,6 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware('role:'.implode(',', [
+        Role::KEY_GUEST,
         Role::KEY_SP_TOOL,
         Role::KEY_PIC_TOOL,
         Role::KEY_MGR_TOOL,
@@ -83,6 +86,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware('role:'.implode(',', [
+        Role::KEY_GUEST,
         Role::KEY_USER,
         Role::KEY_SP_TOOL,
         Role::KEY_PIC_TOOL,
@@ -141,6 +145,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/alats', [AlatController::class, 'index'])
         ->middleware('role:'.implode(',', [
+            Role::KEY_GUEST,
             Role::KEY_USER,
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOL,
@@ -150,6 +155,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ]));
     Route::get('/alats/export', [AlatController::class, 'export'])
         ->middleware('role:'.implode(',', [
+            Role::KEY_GUEST,
             Role::KEY_USER,
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOL,
@@ -188,6 +194,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/riwayat-pengiriman', [MutasiAlatController::class, 'index'])
         ->middleware('role:'.implode(',', [
+            Role::KEY_GUEST,
             Role::KEY_USER,
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOL,
@@ -198,6 +205,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/laporan-kerusakan', [LaporanAlatController::class, 'indexKerusakan'])
         ->middleware('role:'.implode(',', [
+            Role::KEY_GUEST,
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
@@ -206,6 +214,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ]));
     Route::get('/laporan-kerusakan/export', [LaporanAlatController::class, 'exportKerusakan'])
         ->middleware('role:'.implode(',', [
+            Role::KEY_GUEST,
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
@@ -257,6 +266,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/laporan-kehilangan', [LaporanAlatController::class, 'indexKehilangan'])
         ->middleware('role:'.implode(',', [
+            Role::KEY_GUEST,
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
@@ -265,6 +275,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ]));
     Route::get('/laporan-kehilangan/export', [LaporanAlatController::class, 'exportKehilangan'])
         ->middleware('role:'.implode(',', [
+            Role::KEY_GUEST,
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,

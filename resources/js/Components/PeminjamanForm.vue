@@ -78,8 +78,23 @@
             </div>
         </div>
 
-        <div class="grid gap-3">
-            <label class="relative">
+        <div class="flex flex-col gap-3 md:flex-row md:items-center">
+            <label v-if="canBrowseCatalogAreas" class="relative md:w-80 md:shrink-0">
+                <span class="sr-only">Area katalog</span>
+                <select
+                    v-model="selectedAreaId"
+                    class="h-full min-h-[42px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                    <option
+                        v-for="area in areas"
+                        :key="area.id"
+                        :value="String(area.id)"
+                    >
+                        {{ area.name }}
+                    </option>
+                </select>
+            </label>
+            <label class="relative min-w-0 flex-1">
                 <span class="sr-only">Cari alat</span>
                 <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -94,6 +109,13 @@
                     class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
             </label>
+        </div>
+
+        <div
+            v-if="isViewingOtherArea"
+            class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700"
+        >
+            Anda sedang melihat katalog area lain. Data hanya dapat dilihat, peminjaman tetap hanya bisa dibuat dari area akun Anda.
         </div>
 
         <div class="flex flex-wrap items-center gap-2 text-sm text-slate-500">
@@ -187,7 +209,7 @@
                         <button
                             class="flex h-7 w-7 items-center justify-center rounded-full text-base font-semibold text-slate-500 transition hover:text-slate-700 disabled:cursor-not-allowed disabled:text-slate-300"
                             type="button"
-                            :disabled="isOutOfStock(tool)"
+                            :disabled="isReadOnlyCatalog || isOutOfStock(tool)"
                             @click="decreaseTool(tool)"
                         >
                             -
@@ -198,7 +220,7 @@
                         <button
                             class="flex h-7 w-7 items-center justify-center rounded-full text-base font-semibold text-slate-500 transition hover:text-slate-700 disabled:cursor-not-allowed disabled:text-slate-300"
                             type="button"
-                            :disabled="isOutOfStock(tool)"
+                            :disabled="isReadOnlyCatalog || isOutOfStock(tool)"
                             @click="increaseTool(tool)"
                         >
                             +
@@ -210,7 +232,7 @@
                             viewMode === 'list' ? 'px-3 py-1.5' : 'flex-1 px-4 py-2.5',
                         ]"
                         type="button"
-                        :disabled="isInCart(tool.id) || isOutOfStock(tool)"
+                        :disabled="isReadOnlyCatalog || isInCart(tool.id) || isOutOfStock(tool)"
                         @click="addToCart(tool)"
                     >
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -220,7 +242,7 @@
                             <circle cx="18" cy="20" r="1.5" />
                         </svg>
                         <span>
-                            {{ isOutOfStock(tool) ? 'Stok Habis' : isInCart(tool.id) ? 'Telah ditambahkan' : 'Tambah' }}
+                            {{ isReadOnlyCatalog ? 'Lihat Saja' : isOutOfStock(tool) ? 'Stok Habis' : isInCart(tool.id) ? 'Telah ditambahkan' : 'Tambah' }}
                         </span>
                     </button>
                 </div>
@@ -328,6 +350,8 @@ const loadCachedUser = () => {
 };
 
 const katalog = ref([]);
+const areas = ref([]);
+const selectedAreaId = ref('');
 const isLoading = ref(false);
 const loadError = ref('');
 const toolCache = reactive({});
@@ -340,6 +364,7 @@ const pagination = reactive({
 });
 
 const userId = computed(() => page.props.auth?.user?.id ?? cachedUserId.value);
+const userAreaId = computed(() => page.props.auth?.user?.area?.id ?? cachedUser.value?.area?.id ?? null);
 const roleKey = computed(() =>
     (page.props.auth?.user?.role?.key ?? cachedUser.value?.role?.key ?? 'user').toLowerCase(),
 );
@@ -351,7 +376,7 @@ const areaId = computed(
         if (isAreaSwitcherRole.value) {
             return activeAreaId.value ?? null;
         }
-        return page.props.auth?.user?.area?.id ?? cachedUser.value?.area?.id ?? null;
+        return selectedAreaId.value || userAreaId.value || null;
     },
 );
 const shouldRestrictArea = computed(
@@ -362,6 +387,10 @@ const areaName = computed(
         if (isAreaSwitcherRole.value) {
             return activeAreaName.value;
         }
+        const selected = areas.value.find((area) => String(area.id) === String(areaId.value));
+        if (selected) {
+            return selected.name;
+        }
         return (
             page.props.auth?.user?.area?.name ??
             cachedUser.value?.area?.name ??
@@ -369,6 +398,14 @@ const areaName = computed(
         );
     },
 );
+const isViewingOtherArea = computed(() =>
+    roleKey.value === 'user'
+    && selectedAreaId.value
+    && userAreaId.value
+    && String(selectedAreaId.value) !== String(userAreaId.value)
+);
+const canBrowseCatalogAreas = computed(() => roleKey.value === 'user');
+const isReadOnlyCatalog = computed(() => isViewingOtherArea.value);
 const storageKey = computed(() =>
     userId.value ? `${STORAGE_KEY_PREFIX}_${userId.value}` : `${STORAGE_KEY_PREFIX}_guest`,
 );
@@ -478,7 +515,19 @@ const buildFilterParams = () => {
     if (shouldRestrictArea.value && areaId.value) {
         params.area_id = areaId.value;
     }
+    if (roleKey.value === 'user' && selectedAreaId.value) {
+        params.browse_area = true;
+    }
     return params;
+};
+
+const loadAreas = async () => {
+    try {
+        const response = await axios.get('/api/areas');
+        areas.value = Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+        areas.value = [];
+    }
 };
 
 const loadKatalog = async (params = {}) => {
@@ -533,8 +582,10 @@ onMounted(() => {
     if (typeof window !== 'undefined') {
         cachedUserId.value = loadCachedUserId();
         cachedUser.value = loadCachedUser();
+        selectedAreaId.value = userAreaId.value ? String(userAreaId.value) : '';
         loadCartFromStorage();
     }
+    loadAreas();
     loadKatalog(buildFilterParams());
 });
 
@@ -558,6 +609,21 @@ watch(
             return;
         }
         pagination.currentPage = 1;
+        loadKatalog(buildFilterParams());
+    },
+);
+
+watch(
+    () => selectedAreaId.value,
+    (next, prev) => {
+        if (next === prev || isAreaSwitcherRole.value) {
+            return;
+        }
+        pagination.currentPage = 1;
+        Object.keys(cartDrafts).forEach((key) => {
+            delete cartDrafts[key];
+        });
+        cart.value = [];
         loadKatalog(buildFilterParams());
     },
 );
@@ -690,6 +756,9 @@ const decreaseTool = (tool) => {
 };
 
 const addToCart = (tool) => {
+    if (isReadOnlyCatalog.value) {
+        return;
+    }
     if (isInCart(tool.id)) {
         return;
     }
@@ -740,6 +809,10 @@ const form = ref({
 });
 
 const openCheckout = () => {
+    if (isReadOnlyCatalog.value) {
+        checkoutError.value = 'Peminjaman hanya dapat dibuat dari area akun Anda.';
+        return;
+    }
     if (!cartItems.value.length) {
         return;
     }
@@ -769,6 +842,10 @@ const resetCheckout = () => {
 };
 
 const submitCheckout = async () => {
+    if (isReadOnlyCatalog.value) {
+        checkoutError.value = 'Peminjaman hanya dapat dibuat dari area akun Anda.';
+        return;
+    }
     if (!form.value.tanggal_pinjam || !form.value.tanggal_kembali || !form.value.pekerjaan) {
         checkoutError.value = 'Lengkapi tanggal pinjam, tanggal kembali, dan pekerjaan.';
         return;
