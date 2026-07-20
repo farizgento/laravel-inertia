@@ -46,10 +46,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
 
     Route::middleware('role:'.implode(',', [
+        Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
     ]))->group(function () {
         Route::get('/users', [UserManagementController::class, 'index']);
+    });
+
+    Route::middleware('role:'.implode(',', [
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+    ]))->group(function () {
         Route::post('/users', [UserManagementController::class, 'store']);
         Route::put('/users/{user}', [UserManagementController::class, 'update']);
         Route::delete('/users/{user}', [UserManagementController::class, 'destroy']);

@@ -8,8 +8,8 @@
     />
 
     <div class="mb-6">
-        <h1 class="text-2xl font-semibold text-slate-900">Kelola Pengguna</h1>
-        <p class="mt-1 text-sm text-slate-500">Kelola akun operasional dengan filter role, pencarian, dan form modal.</p>
+        <h1 class="text-2xl font-semibold text-slate-900">{{ pageTitle }}</h1>
+        <p class="mt-1 text-sm text-slate-500">{{ pageSubtitle }}</p>
     </div>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
@@ -17,12 +17,15 @@
             <div>
                 <h2 class="text-lg font-semibold text-slate-900">Daftar Pengguna</h2>
                 <p class="mt-1 text-sm text-slate-500">
-                    {{ isSuperAdmin
+                    {{ isMgrTool
+                        ? 'Mgr Tool hanya dapat melihat data pengguna tanpa menambah, mengubah, atau menghapus.'
+                        : isSuperAdmin
                         ? 'Super Admin dapat mengelola user, SP Tool, Pic Tool, Mgr Tool, dan Admin.'
                         : 'Admin dapat mengelola user, SP Tool, Pic Tool, dan Mgr Tool pada area sendiri.' }}
                 </p>
             </div>
             <button
+                v-if="canManageUsers"
                 class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
                 type="button"
                 @click="openCreate"
@@ -58,7 +61,7 @@
                     class="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 >
                     <option value="">Semua Role</option>
-                    <option v-for="role in roleOptions" :key="role.value" :value="role.value">
+                    <option v-for="role in filterRoleOptions" :key="role.value" :value="role.value">
                         {{ role.label }}
                     </option>
                 </select>
@@ -69,7 +72,7 @@
                 </span>
             </label>
 
-            <label v-if="isSuperAdmin" class="relative">
+            <label v-if="canFilterByArea" class="relative">
                 <span class="sr-only">Filter area</span>
                 <select
                     v-model="selectedArea"
@@ -98,17 +101,17 @@
                             <th class="px-4 py-3">Email</th>
                             <th class="px-4 py-3">Role</th>
                             <th class="px-4 py-3">Area</th>
-                            <th class="px-4 py-3 text-right">Aksi</th>
+                            <th v-if="canManageUsers" class="px-4 py-3 text-right">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
                         <tr v-if="isLoading">
-                            <td colspan="6" class="px-4 py-6 text-center text-sm text-slate-500">
+                            <td :colspan="canManageUsers ? 6 : 5" class="px-4 py-6 text-center text-sm text-slate-500">
                                 Memuat data pengguna...
                             </td>
                         </tr>
                         <tr v-else-if="loadError">
-                            <td colspan="6" class="px-4 py-6 text-center text-sm text-rose-500">
+                            <td :colspan="canManageUsers ? 6 : 5" class="px-4 py-6 text-center text-sm text-rose-500">
                                 {{ loadError }}
                             </td>
                         </tr>
@@ -130,7 +133,7 @@
                                 </span>
                             </td>
                             <td class="px-4 py-4 text-slate-600">{{ user.area_name }}</td>
-                            <td class="px-4 py-4 text-right">
+                            <td v-if="canManageUsers" class="px-4 py-4 text-right">
                                 <div class="inline-flex items-center gap-2">
                                     <button
                                         class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-blue-200 hover:text-blue-600"
@@ -157,7 +160,7 @@
                             </td>
                         </tr>
                         <tr v-if="!isLoading && !loadError && !users.length">
-                            <td colspan="6" class="px-4 py-6 text-center text-sm text-slate-500">
+                            <td :colspan="canManageUsers ? 6 : 5" class="px-4 py-6 text-center text-sm text-slate-500">
                                 Tidak ada data pengguna.
                             </td>
                         </tr>
@@ -206,7 +209,7 @@
         </div>
     </section>
 
-    <teleport to="body">
+    <teleport v-if="canManageUsers" to="body">
         <div
             v-if="formOpen"
             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
@@ -275,7 +278,7 @@
                             class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         >
                             <option value="">Pilih role</option>
-                            <option v-for="role in roleOptions" :key="role.value" :value="role.value">
+                            <option v-for="role in formRoleOptions" :key="role.value" :value="role.value">
                                 {{ role.label }}
                             </option>
                         </select>
@@ -395,8 +398,8 @@ defineOptions({
         h(
             AppLayout,
             {
-                title: 'Kelola Pengguna',
-                subtitle: 'Kelola akun operasional per area',
+                title: 'Pengguna',
+                subtitle: 'Data akun operasional per area',
                 activeMenu: 'tambah-pengguna',
             },
             () => page
@@ -455,14 +458,29 @@ const form = reactive({
 
 const isEdit = computed(() => form.id !== null);
 const authUser = computed(() => page.props.auth?.user ?? null);
-const isSuperAdmin = computed(() => authUser.value?.role?.key === 'super_admin');
+const roleKey = computed(() => String(authUser.value?.role?.key ?? '').toLowerCase());
+const isSuperAdmin = computed(() => roleKey.value === 'super_admin');
+const isMgrTool = computed(() => roleKey.value === 'mgr_tool');
 const adminAreaId = computed(() => authUser.value?.area?.id ? String(authUser.value.area.id) : '');
-const isAdminRole = computed(() => authUser.value?.role?.key === 'admin');
+const isAdminRole = computed(() => roleKey.value === 'admin');
+const canManageUsers = computed(() => isSuperAdmin.value || isAdminRole.value);
+const canFilterByArea = computed(() => isSuperAdmin.value || isMgrTool.value);
 const activeAreaId = inject('activeAreaId', ref(null));
-const roleOptions = computed(() =>
+const formRoleOptions = computed(() =>
     isSuperAdmin.value
         ? [...baseRoleOptions, ...superAdminExtraRoleOptions]
         : baseRoleOptions
+);
+const filterRoleOptions = computed(() =>
+    (isSuperAdmin.value || isMgrTool.value)
+        ? [...baseRoleOptions, ...superAdminExtraRoleOptions]
+        : baseRoleOptions
+);
+const pageTitle = computed(() => (isMgrTool.value ? 'Data Pengguna' : 'Kelola Pengguna'));
+const pageSubtitle = computed(() =>
+    isMgrTool.value
+        ? 'Lihat data akun operasional tanpa akses CRUD.'
+        : 'Kelola akun operasional dengan filter role, pencarian, dan form modal.'
 );
 const availableAreas = computed(() => {
     if (!isAdminRole.value || !adminAreaId.value) {
@@ -499,7 +517,7 @@ const normalizeErrors = (payload) => {
 };
 
 const resolveRoleLabel = (roleKey) => {
-    const matchedRole = roleOptions.value.find((role) => role.value === roleKey)
+    const matchedRole = filterRoleOptions.value.find((role) => role.value === roleKey)
         ?? superAdminExtraRoleOptions.find((role) => role.value === roleKey)
         ?? baseRoleOptions.find((role) => role.value === roleKey);
 
@@ -574,11 +592,17 @@ const resetForm = () => {
 };
 
 const openCreate = () => {
+    if (!canManageUsers.value) {
+        return;
+    }
     resetForm();
     formOpen.value = true;
 };
 
 const openEdit = (user) => {
+    if (!canManageUsers.value) {
+        return;
+    }
     form.id = user.id;
     form.name = user.name ?? '';
     form.username = user.username ?? '';
@@ -628,7 +652,7 @@ const buildParams = () => {
         params.role = selectedRole.value;
     }
 
-    if (isSuperAdmin.value && selectedArea.value) {
+    if (canFilterByArea.value && selectedArea.value) {
         params.area_id = Number(selectedArea.value);
     }
 
@@ -667,6 +691,9 @@ const goToPage = (page) => {
 };
 
 const submitForm = async () => {
+    if (!canManageUsers.value) {
+        return;
+    }
     isSubmitting.value = true;
     errors.value = {};
     formError.value = '';
@@ -710,6 +737,9 @@ const submitForm = async () => {
 };
 
 const removeUser = async (user) => {
+    if (!canManageUsers.value) {
+        return;
+    }
     if (!confirm(`Hapus pengguna "${user.name}"?`)) {
         return;
     }

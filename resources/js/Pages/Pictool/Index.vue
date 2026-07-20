@@ -78,7 +78,7 @@
             </div>
         </div>
 
-        <div class="mt-5 grid gap-3">
+        <div class="mt-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_320px] md:items-end">
             <label class="relative">
                 <span class="sr-only">Cari alat</span>
                 <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400">
@@ -94,7 +94,22 @@
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
             </label>
+            <label v-if="canFilterByArea" class="flex flex-col justify-end gap-2 text-sm font-medium text-slate-700">
+                <span>Area</span>
+                <select
+                    v-model="selectedAreaId"
+                    class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                    <option value="">Semua area</option>
+                    <option v-for="area in areas" :key="area.id" :value="String(area.id)">
+                        {{ area.name }}
+                    </option>
+                </select>
+            </label>
         </div>
+        <p v-if="canFilterByArea" class="mt-3 text-sm text-slate-500">
+            Menampilkan data alat untuk <span class="font-semibold text-slate-700">{{ selectedAreaName }}</span>.
+        </p>
 
         <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200">
             <div class="overflow-x-auto">
@@ -629,10 +644,12 @@ const loadCachedUser = () => {
 const cachedUser = ref(loadCachedUser());
 const authUser = computed(() => page.props.auth?.user ?? cachedUser.value);
 const roleKey = computed(() => (authUser.value?.role?.key ?? '').toLowerCase());
+const isMgrTool = computed(() => roleKey.value === 'mgr_tool');
 const isSuperAdmin = computed(() => roleKey.value === 'super_admin');
 const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
 const canManageTools = computed(() => ['pic_tool', 'admin', 'super_admin'].includes(roleKey.value));
 const canExportTools = computed(() => true);
+const canFilterByArea = computed(() => isMgrTool.value);
 const activeAreaId = inject('activeAreaId', ref(null));
 const activeAreaName = inject('activeAreaName', ref('Area aktif'));
 const setAreaSwitching = inject('setAreaSwitching', null);
@@ -640,6 +657,16 @@ const userAreaId = computed(() => authUser.value?.area_id ?? authUser.value?.are
 const isAreaLocked = computed(() => !isSuperAdmin.value);
 const normalizeAreaId = (value) => (value === null || value === undefined || value === '' ? '' : Number(value));
 const areaName = computed(() => activeAreaName.value || 'area aktif');
+const selectedAreaId = ref('');
+const selectedAreaName = computed(() => {
+    if (!selectedAreaId.value) {
+        return 'semua area';
+    }
+
+    const selectedArea = areas.value.find((area) => String(area.id) === String(selectedAreaId.value));
+
+    return selectedArea?.name ?? 'semua area';
+});
 
 const isEdit = computed(() => form.id !== null);
 const importFileName = computed(() => importFile.value?.name ?? '');
@@ -871,6 +898,9 @@ const buildParams = () => {
     const keyword = search.value.trim();
     if (keyword) {
         params.search = keyword;
+    }
+    if (canFilterByArea.value && selectedAreaId.value) {
+        params.area_id = selectedAreaId.value;
     }
     if (isSuperAdmin.value && isAreaSwitcherRole.value && activeAreaId.value) {
         params.area_id = activeAreaId.value;
@@ -1163,6 +1193,17 @@ watch(
             loadTools();
         }, 300);
     },
+);
+
+watch(
+    selectedAreaId,
+    (next, prev) => {
+        if (!canFilterByArea.value || next === prev) {
+            return;
+        }
+        pagination.currentPage = 1;
+        loadTools();
+    }
 );
 
 watch(

@@ -33,6 +33,13 @@ class AlatController extends Controller
         return in_array($roleKey, [Role::KEY_GUEST, Role::KEY_SUPER_ADMIN], true);
     }
 
+    private function isMgrTool(?Request $request): bool
+    {
+        $roleKey = strtolower((string) ($request?->user()?->role?->key ?? ''));
+
+        return $roleKey === Role::KEY_MGR_TOOL;
+    }
+
     private function isGuest(?Request $request): bool
     {
         $roleKey = strtolower((string) ($request?->user()?->role?->key ?? ''));
@@ -66,6 +73,34 @@ class AlatController extends Controller
 
         return in_array($roleKey, [Role::KEY_PIC_TOOL, Role::KEY_SUPER_ADMIN], true)
             && $request->boolean('inter_area_source');
+    }
+
+    private function resolveReadableAreaId(Request $request): ?int
+    {
+        $requestedAreaId = $request->filled('area_id')
+            ? (int) $request->query('area_id')
+            : null;
+
+        if ($request->user() && $this->isGuest($request) && $requestedAreaId === null) {
+            $userAreaId = $request->user()?->area_id;
+
+            return $userAreaId ? (int) $userAreaId : null;
+        }
+
+        if ($request->user() && ($this->isAreaSwitcherReader($request) || $this->isMgrTool($request))) {
+            return $requestedAreaId;
+        }
+
+        $authorizedAreaId = $this->getAuthorizedAreaId($request);
+        if ($request->user()
+            && $authorizedAreaId !== null
+            && ! $this->canBrowseInterAreaSource($request)
+            && ! $this->isUserAreaBrowser($request)
+        ) {
+            return $authorizedAreaId;
+        }
+
+        return $requestedAreaId;
     }
 
     private function applyWritableArea(Request $request, array $data): array
@@ -180,20 +215,7 @@ class AlatController extends Controller
     {
         $search = trim((string) $request->query('search', ''));
         $classification = trim((string) ($request->query('klasifikasi_alat', $request->query('classification', ''))));
-        $areaId = $request->query('area_id');
-        $authorizedAreaId = $this->getAuthorizedAreaId($request);
-
-        if ($request->user() && $this->isGuest($request) && empty($areaId)) {
-            $areaId = $request->user()?->area_id;
-        }
-
-        if ($request->user()
-            && $authorizedAreaId !== null
-            && ! $this->canBrowseInterAreaSource($request)
-            && ! $this->isUserAreaBrowser($request)
-        ) {
-            $areaId = $authorizedAreaId;
-        }
+        $areaId = $this->resolveReadableAreaId($request);
 
         $query = Alat::query()->with('area');
 
@@ -244,17 +266,7 @@ class AlatController extends Controller
         }
 
         $query = $this->buildIndexQuery($request);
-        $areaId = $request->query('area_id');
-        if ($request->user() && $this->isGuest($request) && empty($areaId)) {
-            $areaId = $request->user()?->area_id;
-        }
-        if ($request->user()
-            && $authorizedAreaId !== null
-            && ! $this->canBrowseInterAreaSource($request)
-            && ! $this->isUserAreaBrowser($request)
-        ) {
-            $areaId = $authorizedAreaId;
-        }
+        $areaId = $this->resolveReadableAreaId($request);
 
         if (! empty($areaId) && ! $this->canBrowseInterAreaSource($request)) {
             return $this->indexForArea((int) $areaId, $query, $request, $shouldPaginate, $perPageNormalized);

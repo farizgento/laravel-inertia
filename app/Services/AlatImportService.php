@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ActivityLog;
 use App\Models\Alat;
 use App\Models\AlatImport;
 use App\Models\Area;
@@ -21,6 +22,8 @@ class AlatImportService
     private const XLSX_MAIN_NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
 
     private const XLSX_REL_NS = 'http://schemas.openxmlformats.org/package/2006/relationships';
+
+    private const IMPORT_WRITE_CHUNK = 200;
 
     public function downloadUrl(AlatImport $import): string
     {
@@ -71,131 +74,76 @@ class AlatImportService
 
         $user = $import->user()->with('role')->first();
         $authorizedAreaId = $this->getAuthorizedAreaId($user);
+        [$validatedRows, $errors] = $this->validateImportRows($rows, $areaMap, $authorizedAreaId);
 
+        if ($errors) {
+            throw ValidationException::withMessages([
+                'file' => $errors,
+            ]);
+        }
+
+        $alatMap = $this->loadExistingAlatMap($validatedRows);
         $created = 0;
         $updated = 0;
         $processed = 0;
-        $errors = [];
+        $activityPayloads = [];
 
-        DB::transaction(function () use (
-            $import,
-            $rows,
-            $areaMap,
-            $authorizedAreaId,
-            &$created,
-            &$updated,
-            &$processed,
-            &$errors
-        ) {
-            foreach ($rows as $row) {
-                $cells = $row['cells'];
-                $excelRow = $row['row_number'];
+        foreach (array_chunk($validatedRows, self::IMPORT_WRITE_CHUNK) as $chunk) {
+            DB::transaction(function () use ($chunk, $import, &$alatMap, &$created, &$updated, &$processed, &$activityPayloads) {
+                foreach ($chunk as $row) {
+                    $lookup = $row['lookup'];
+                    $lookupKey = $row['lookup_key'];
+                    $totalAset = $row['total_aset'];
+                    $alat = $alatMap[$lookupKey] ?? null;
 
-                if ($this->isHeadingRow($cells)) {
-                    continue;
-                }
+                    if ($alat instanceof Alat) {
+                        $updated += 1;
+                        $oldTotalAset = (int) $alat->total_aset;
 
-                $nama = $this->normalizeImportedText($cells[0] ?? null);
-                $jenisAlat = $this->normalizeImportedText($cells[1] ?? null);
-                $klasifikasiAlat = $this->normalizeImportedText($cells[2] ?? null);
-                $totalAset = $this->normalizeImportedNumber($cells[3] ?? null);
-                $areaSlug = mb_strtolower($this->normalizeImportedText($cells[4] ?? null));
+                        if ($oldTotalAset !== $totalAset) {
+                            Alat::withoutEvents(function () use ($alat, $totalAset) {
+                                $alat->forceFill([
+                                    'total_aset' => $totalAset,
+                                ]);
+                                $alat->save();
+                            });
 
-                if ($nama === '' && $jenisAlat === '' && $klasifikasiAlat === '' && $totalAset === null && $areaSlug === '') {
-                    continue;
-                }
+                            $activityPayloads[] = $this->buildImportedAlatActivityPayload('update', $alat, [
+                                'total_aset' => $oldTotalAset,
+                            ], [
+                                'total_aset' => $totalAset,
+                            ], $import);
+                        }
 
-                $rowErrors = [];
-
-                if ($nama === '') {
-                    $rowErrors[] = 'nama alat wajib diisi';
-                }
-                if ($jenisAlat === '') {
-                    $rowErrors[] = 'jenis alat wajib diisi';
-                }
-                if ($klasifikasiAlat === '') {
-                    $rowErrors[] = 'klasifikasi alat wajib diisi';
-                } elseif (mb_strlen($klasifikasiAlat) > 255) {
-                    $rowErrors[] = 'klasifikasi alat maksimal 255 karakter';
-                }
-                if ($totalAset === null) {
-                    $rowErrors[] = 'total aset harus berupa angka bulat >= 0';
-                }
-                if ($areaSlug === '') {
-                    $rowErrors[] = 'area wajib diisi dengan kode atau slug area';
-                } elseif (! array_key_exists($areaSlug, $areaMap)) {
-                    $rowErrors[] = 'kode atau slug area tidak ditemukan';
-                } elseif ($authorizedAreaId !== null && (int) $areaMap[$areaSlug] !== $authorizedAreaId) {
-                    $rowErrors[] = 'anda hanya dapat import alat ke area anda sendiri';
-                }
-
-                if ($rowErrors) {
-                    $errors[] = "Baris {$excelRow}: ".implode(', ', $rowErrors).'.';
-
-                    continue;
-                }
-
-                $lookup = [
-                    'nama' => $nama,
-                    'jenis_alat' => $jenisAlat,
-                    'klasifikasi_alat' => $klasifikasiAlat,
-                    'area_id' => $areaMap[$areaSlug],
-                ];
-                $alat = Alat::query()->where($lookup)->first();
-                $oldValues = $alat?->getAttributes() ?? [];
-
-                $alat = Alat::withoutEvents(function () use ($alat, $lookup, $totalAset) {
-                    if ($alat) {
-                        $alat->update([
+                        $alat->total_aset = $totalAset;
+                    } else {
+                        $alat = Alat::withoutEvents(fn () => Alat::create([
+                            ...$lookup,
                             'total_aset' => $totalAset,
-                        ]);
+                        ]));
 
-                        return $alat->refresh();
-                    }
-
-                    return Alat::create([
-                        ...$lookup,
-                        'total_aset' => $totalAset,
-                    ]);
-                });
-
-                if ($alat->wasRecentlyCreated) {
-                    $created += 1;
-                    $this->logImportedAlatActivity('create', $alat, [], [
-                        'nama' => $alat->nama,
-                        'jenis_alat' => $alat->jenis_alat,
-                        'klasifikasi_alat' => $alat->klasifikasi_alat,
-                        'total_aset' => (int) $alat->total_aset,
-                        'area_id' => (int) $alat->area_id,
-                    ], $import);
-                } else {
-                    $updated += 1;
-                    if ((int) ($oldValues['total_aset'] ?? 0) !== (int) $totalAset) {
-                        $this->logImportedAlatActivity('update', $alat, [
-                            'total_aset' => (int) ($oldValues['total_aset'] ?? 0),
-                        ], [
-                            'total_aset' => (int) $totalAset,
+                        $alatMap[$lookupKey] = $alat;
+                        $created += 1;
+                        $activityPayloads[] = $this->buildImportedAlatActivityPayload('create', $alat, [], [
+                            'nama' => $alat->nama,
+                            'jenis_alat' => $alat->jenis_alat,
+                            'klasifikasi_alat' => $alat->klasifikasi_alat,
+                            'total_aset' => (int) $alat->total_aset,
+                            'area_id' => (int) $alat->area_id,
                         ], $import);
                     }
+
+                    $processed += 1;
                 }
+            });
 
-                $processed += 1;
-
-                if ($processed % 25 === 0) {
-                    $import->forceFill([
-                        'processed_rows' => $processed,
-                        'created_count' => $created,
-                        'updated_count' => $updated,
-                    ])->save();
-                }
-            }
-
-            if ($errors) {
-                throw ValidationException::withMessages([
-                    'file' => $errors,
-                ]);
-            }
-        });
+            $this->flushImportedAlatActivities($activityPayloads);
+            $import->forceFill([
+                'processed_rows' => $processed,
+                'created_count' => $created,
+                'updated_count' => $updated,
+            ])->save();
+        }
 
         $import->update([
             'status' => AlatImport::STATUS_COMPLETED,
@@ -217,6 +165,160 @@ class AlatImportService
         ]);
 
         $this->logImportActivity($import->fresh(['user.role', 'user.area']));
+    }
+
+    private function validateImportRows(array $rows, array $areaMap, ?int $authorizedAreaId): array
+    {
+        $validatedRows = [];
+        $errors = [];
+
+        foreach ($rows as $row) {
+            $cells = $row['cells'];
+            $excelRow = $row['row_number'];
+
+            if ($this->isHeadingRow($cells)) {
+                continue;
+            }
+
+            $nama = $this->normalizeImportedText($cells[0] ?? null);
+            $jenisAlat = $this->normalizeImportedText($cells[1] ?? null);
+            $klasifikasiAlat = $this->normalizeImportedText($cells[2] ?? null);
+            $totalAset = $this->normalizeImportedNumber($cells[3] ?? null);
+            $areaSlug = mb_strtolower($this->normalizeImportedText($cells[4] ?? null));
+
+            if ($nama === '' && $jenisAlat === '' && $klasifikasiAlat === '' && $totalAset === null && $areaSlug === '') {
+                continue;
+            }
+
+            $rowErrors = [];
+
+            if ($nama === '') {
+                $rowErrors[] = 'nama alat wajib diisi';
+            }
+            if ($jenisAlat === '') {
+                $rowErrors[] = 'jenis alat wajib diisi';
+            }
+            if ($klasifikasiAlat === '') {
+                $rowErrors[] = 'klasifikasi alat wajib diisi';
+            } elseif (mb_strlen($klasifikasiAlat) > 255) {
+                $rowErrors[] = 'klasifikasi alat maksimal 255 karakter';
+            }
+            if ($totalAset === null) {
+                $rowErrors[] = 'total aset harus berupa angka bulat >= 0';
+            }
+            if ($areaSlug === '') {
+                $rowErrors[] = 'area wajib diisi dengan kode atau slug area';
+            } elseif (! array_key_exists($areaSlug, $areaMap)) {
+                $rowErrors[] = 'kode atau slug area tidak ditemukan';
+            } elseif ($authorizedAreaId !== null && (int) $areaMap[$areaSlug] !== $authorizedAreaId) {
+                $rowErrors[] = 'anda hanya dapat import alat ke area anda sendiri';
+            }
+
+            if ($rowErrors) {
+                $errors[] = "Baris {$excelRow}: ".implode(', ', $rowErrors).'.';
+
+                continue;
+            }
+
+            $lookup = [
+                'nama' => $nama,
+                'jenis_alat' => $jenisAlat,
+                'klasifikasi_alat' => $klasifikasiAlat,
+                'area_id' => (int) $areaMap[$areaSlug],
+            ];
+
+            $validatedRows[] = [
+                'lookup' => $lookup,
+                'lookup_key' => $this->makeAlatLookupKey($nama, $jenisAlat, $klasifikasiAlat, (int) $lookup['area_id']),
+                'total_aset' => (int) $totalAset,
+            ];
+        }
+
+        return [$validatedRows, $errors];
+    }
+
+    private function makeAlatLookupKey(string $nama, string $jenisAlat, string $klasifikasiAlat, int $areaId): string
+    {
+        return implode('|', [$areaId, $nama, $jenisAlat, $klasifikasiAlat]);
+    }
+
+    private function loadExistingAlatMap(array $validatedRows): array
+    {
+        $areaIds = collect($validatedRows)
+            ->pluck('lookup.area_id')
+            ->map(fn ($areaId) => (int) $areaId)
+            ->unique()
+            ->values()
+            ->all();
+        $names = collect($validatedRows)
+            ->pluck('lookup.nama')
+            ->filter(fn ($name) => trim((string) $name) !== '')
+            ->unique()
+            ->values()
+            ->all();
+
+        if (! $areaIds || ! $names) {
+            return [];
+        }
+
+        $alatMap = [];
+        Alat::query()
+            ->whereIn('area_id', $areaIds)
+            ->whereIn('nama', $names)
+            ->get(['id', 'nama', 'jenis_alat', 'klasifikasi_alat', 'total_aset', 'area_id'])
+            ->each(function (Alat $alat) use (&$alatMap) {
+                $alatMap[$this->makeAlatLookupKey(
+                    (string) $alat->nama,
+                    (string) $alat->jenis_alat,
+                    (string) $alat->klasifikasi_alat,
+                    (int) $alat->area_id,
+                )] = $alat;
+            });
+
+        return $alatMap;
+    }
+
+    private function buildImportedAlatActivityPayload(string $action, Alat $alat, array $oldValues, array $newValues, AlatImport $import): array
+    {
+        $actor = $import->user;
+        $actionLabel = $action === 'create' ? 'menambahkan' : 'memperbarui';
+        $timestamp = now();
+
+        return [
+            'user_id' => $actor?->id,
+            'area_id' => (int) $alat->area_id,
+            'subject_id' => $alat->id,
+            'actor_name' => $actor?->name ?? 'System',
+            'actor_role_key' => $actor?->role?->key,
+            'actor_area_id' => $actor?->area_id,
+            'action' => $action,
+            'subject_type' => 'Alat',
+            'subject_label' => $alat->nama,
+            'description' => trim(($actor?->name ?? 'System') . " {$actionLabel} Alat {$alat->nama} melalui import {$import->file_name}"),
+            'method' => 'QUEUE',
+            'route' => 'api/alats/import',
+            'url' => $this->downloadUrl($import),
+            'ip_address' => null,
+            'user_agent' => null,
+            'old_values' => $oldValues ? json_encode($oldValues) : null,
+            'new_values' => $newValues ? json_encode($newValues) : null,
+            'properties' => json_encode([
+                'import_id' => $import->id,
+                'file_name' => $import->file_name,
+            ]),
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ];
+    }
+
+    private function flushImportedAlatActivities(array &$activityPayloads): void
+    {
+        if (! $activityPayloads) {
+            return;
+        }
+
+        ActivityLog::query()->insert($activityPayloads);
+        $activityPayloads = [];
     }
 
     public function formatImport(AlatImport $import): array
@@ -730,3 +832,5 @@ class AlatImportService
         return $number >= 0 ? $number : null;
     }
 }
+
+
