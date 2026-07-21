@@ -499,15 +499,7 @@ defineOptions({
 
 const page = usePage();
 const loadCachedUser = () => {
-    if (typeof window === 'undefined') {
-        return null;
-    }
-    try {
-        const cached = window.localStorage.getItem('auth_user');
-        return cached ? JSON.parse(cached) : null;
-    } catch (err) {
-        return null;
-    }
+    return null;
 };
 
 const cachedUser = ref(loadCachedUser());
@@ -1068,4 +1060,3 @@ watch(
     },
 );
 </script>
-

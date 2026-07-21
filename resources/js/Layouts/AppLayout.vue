@@ -140,19 +140,7 @@ const sidebarBadgePollingId = ref(null);
 const isRefreshingSidebarCounts = ref(false);
 let notificationRequestId = 0;
 
-const loadCachedUser = () => {
-    if (typeof window === 'undefined') {
-        return null;
-    }
-    try {
-        const cached = window.localStorage.getItem('auth_user');
-        return cached ? JSON.parse(cached) : null;
-    } catch (err) {
-        return null;
-    }
-};
-
-const fetchedUser = ref(loadCachedUser());
+const fetchedUser = ref(null);
 const authUser = computed(() => page.props.auth?.user ?? fetchedUser.value);
 const dismissedFlash = ref('');
 
@@ -462,30 +450,13 @@ const handleVisibilityChange = () => {
 };
 
 const redirectToLogin = () => {
-    window.clearAuthToken();
     router.visit('/login');
-};
-
-const cacheUser = (user) => {
-    if (typeof window === 'undefined') {
-        return;
-    }
-    try {
-        if (user) {
-            window.localStorage.setItem('auth_user', JSON.stringify(user));
-        } else {
-            window.localStorage.removeItem('auth_user');
-        }
-    } catch (err) {
-        // Ignore cache failures.
-    }
 };
 
 const loadUser = async () => {
     try {
         const response = await axios.get('/api/user');
         fetchedUser.value = response.data;
-        cacheUser(response.data);
         return true;
     } catch (err) {
         if (err?.response?.status === 401) {
@@ -501,7 +472,6 @@ const logout = async () => {
     } catch (err) {
         // Ignore logout failures and continue to clear local state.
     } finally {
-        window.clearAuthToken();
         router.visit('/login');
     }
 };
@@ -599,16 +569,7 @@ watch(
 
 onMounted(async () => {
     attachLoadingInterceptors();
-    const token = window.localStorage.getItem('auth_token');
-    if (!token) {
-        redirectToLogin();
-        return;
-    }
-    axios.defaults.headers.common.Authorization = `Bearer ${token}`;
     isApiReady.value = true;
-    if (!page.props.auth?.user && !fetchedUser.value) {
-        fetchedUser.value = loadCachedUser();
-    }
     if (!page.props.auth?.user) {
         await loadUser();
     }

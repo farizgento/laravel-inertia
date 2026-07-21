@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Role;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -212,9 +211,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/area', function () {
         return Inertia::render('Admin/Area');
     })->middleware('role:' . Role::KEY_SUPER_ADMIN)->name('area.index');
-});
-
-
-Route::get('/test-oracle', function () {
-    return DB::connection('oracle')->select('select 1 from dual');
 });

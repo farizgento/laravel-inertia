@@ -191,17 +191,11 @@ const submit = async () => {
     processing.value = true;
 
     try {
+        await window.ensureCsrfCookie();
         const response = await axios.post('/api/auth/login', form.value);
-        const { token, user } = response.data;
+        const { user } = response.data;
 
-        const authHeader = `Bearer ${token}`;
-        window.setAuthToken(token, user);
-
-        router.visit(resolveRoleRoute(user?.role?.key), {
-            headers: {
-                Authorization: authHeader,
-            },
-        });
+        router.visit(resolveRoleRoute(user?.role?.key));
     } catch (err) {
         if (err.response?.status === 422) {
             errors.value = normalizeErrors(err.response.data.errors);

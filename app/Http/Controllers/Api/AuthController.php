@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password as PasswordBroker;
@@ -60,7 +61,9 @@ class AuthController extends Controller
             'role_id' => $role->id,
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $user->tokens()->delete();
+        Auth::guard('web')->login($user);
+        $request->session()->regenerate();
 
         ActivityLogger::log('register', $user, [
             'actor' => $user,
@@ -68,7 +71,6 @@ class AuthController extends Controller
         ]);
 
         return response()->json([
-            'token' => $token,
             'user' => $user->load(['area', 'role']),
         ], 201);
     }
@@ -89,10 +91,10 @@ class AuthController extends Controller
         }
 
         $user->tokens()->delete();
-        $token = $user->createToken('auth_token')->plainTextToken;
+        Auth::guard('web')->login($user);
+        $request->session()->regenerate();
 
         return response()->json([
-            'token' => $token,
             'user' => $user->load(['area', 'role']),
         ]);
     }
@@ -100,14 +102,14 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $user = $request->user();
+        $user?->tokens()->delete();
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        $user?->currentAccessToken()?->delete();
-
-        return response()
-            ->json([
-                'message' => 'Logout berhasil.',
-            ])
-            ->withCookie(cookie()->forget('auth_token'));
+        return response()->json([
+            'message' => 'Logout berhasil.',
+        ]);
     }
 
     public function changePassword(Request $request)
@@ -133,9 +135,7 @@ class AuthController extends Controller
             'password' => $validated['password'],
         ])->save();
 
-        $user->tokens()
-            ->where('id', '!=', $user->currentAccessToken()?->id)
-            ->delete();
+        $user->tokens()->delete();
 
         return response()->json([
             'message' => 'Password akun berhasil diubah.',

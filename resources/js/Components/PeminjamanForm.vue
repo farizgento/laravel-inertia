@@ -131,21 +131,133 @@
             <span v-if="loadError" class="text-rose-500">{{ loadError }}</span>
         </div>
 
-        <div :class="viewMode === 'grid' ? 'grid gap-5 md:grid-cols-2 xl:grid-cols-3' : 'space-y-2'">
+        <div v-if="viewMode === 'list'" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead class="bg-slate-50">
+                        <tr class="text-left text-xs font-semibold uppercase text-slate-500">
+                            <th class="w-12 px-4 py-3 text-center">Pilih</th>
+                            <th class="min-w-[260px] px-4 py-3">Alat</th>
+                            <th class="w-32 px-4 py-3">Stok</th>
+                            <th class="w-56 px-4 py-3">Jumlah Dipinjam</th>
+                            <th class="w-40 px-4 py-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 bg-white">
+                        <tr
+                            v-for="tool in filteredTools"
+                            :key="tool.id"
+                            :class="[
+                                'transition hover:bg-slate-50',
+                                isInCart(tool.id) ? 'bg-blue-50/60' : '',
+                                isOutOfStock(tool) ? 'text-slate-400' : 'text-slate-700',
+                            ]"
+                        >
+                            <td class="px-4 py-3 text-center align-middle">
+                                <input
+                                    class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                    type="checkbox"
+                                    :checked="isInCart(tool.id)"
+                                    :disabled="isReadOnlyCatalog || isOutOfStock(tool)"
+                                    :aria-label="`Pilih ${tool.nama}`"
+                                    @change="toggleCartSelection(tool, $event.target.checked)"
+                                />
+                            </td>
+                            <td class="px-4 py-3 align-middle">
+                                <div class="min-w-0">
+                                    <p class="text-xs font-semibold text-slate-400">{{ tool.kode }}</p>
+                                    <p class="mt-0.5 font-semibold capitalize text-slate-900">{{ tool.nama }}</p>
+                                    <p v-if="tool.lokasi" class="mt-1 text-xs text-slate-500">{{ tool.lokasi }}</p>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 align-middle">
+                                <span
+                                    :class="[
+                                        'inline-flex min-w-[64px] items-center justify-center rounded-lg px-2.5 py-1 text-xs font-semibold',
+                                        isOutOfStock(tool)
+                                            ? 'bg-rose-50 text-rose-600'
+                                            : 'bg-slate-100 text-slate-700',
+                                    ]"
+                                >
+                                    {{ tool.stok }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 align-middle">
+                                <div class="inline-flex h-10 items-center overflow-hidden rounded-lg border border-slate-200 bg-white">
+                                    <button
+                                        class="flex h-10 w-10 items-center justify-center text-base font-semibold text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300"
+                                        type="button"
+                                        :disabled="isReadOnlyCatalog || isOutOfStock(tool)"
+                                        @click="decreaseTool(tool)"
+                                    >
+                                        -
+                                    </button>
+                                    <input
+                                        class="h-10 w-16 border-x border-slate-200 text-center text-sm font-semibold text-slate-800 outline-none focus:bg-blue-50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                                        type="number"
+                                        min="1"
+                                        :max="tool.stok"
+                                        :value="displayQty(tool.id)"
+                                        :disabled="isReadOnlyCatalog || isOutOfStock(tool)"
+                                        @input="setToolQty(tool, $event.target.value)"
+                                    />
+                                    <button
+                                        class="flex h-10 w-10 items-center justify-center text-base font-semibold text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300"
+                                        type="button"
+                                        :disabled="isReadOnlyCatalog || isOutOfStock(tool)"
+                                        @click="increaseTool(tool)"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 align-middle">
+                                <span
+                                    v-if="isReadOnlyCatalog"
+                                    class="inline-flex rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700"
+                                >
+                                    Lihat Saja
+                                </span>
+                                <span
+                                    v-else-if="isOutOfStock(tool)"
+                                    class="inline-flex rounded-lg bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600"
+                                >
+                                    Stok Habis
+                                </span>
+                                <span
+                                    v-else-if="isInCart(tool.id)"
+                                    class="inline-flex rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700"
+                                >
+                                    Di Keranjang
+                                </span>
+                                <span
+                                    v-else
+                                    class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600"
+                                >
+                                    Belum Dipilih
+                                </span>
+                            </td>
+                        </tr>
+                        <tr v-if="!filteredTools.length && !isLoading">
+                            <td colspan="5" class="px-4 py-8 text-center text-sm text-slate-500">
+                                Data alat tidak ditemukan.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div v-else class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             <article
                 v-for="tool in filteredTools"
                 :key="tool.id"
                 :class="[
-                    viewMode === 'list'
-                        ? 'relative rounded-xl border bg-white px-4 py-3 shadow-sm transition'
-                        : 'relative rounded-2xl border bg-white p-5 shadow-sm transition',
+                    'relative rounded-2xl border bg-white p-5 shadow-sm transition',
                     isInCart(tool.id) ? 'border-blue-300 bg-blue-50/60 shadow-blue-100' : 'border-slate-200',
-                    viewMode === 'list'
-                        ? 'flex flex-col gap-4 md:flex-row md:items-center md:justify-between'
-                        : '',
                 ]"
             >
-                <div :class="viewMode === 'list' ? 'flex flex-1 flex-col gap-2' : 'flex flex-1 flex-col gap-3'">
+                <div class="flex flex-1 flex-col gap-3">
                     <div class="flex flex-wrap items-center gap-2">
                         <div>
                             <p class="text-xs font-semibold tracking-wide text-slate-400">
@@ -157,7 +269,7 @@
                             v-if="isInCart(tool.id)"
                             :class="[
                                 'rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white',
-                                viewMode === 'list' ? 'flex items-center' : 'absolute right-4 top-4',
+                                'absolute right-4 top-4',
                             ]"
                         >
                             Di Keranjang
@@ -174,16 +286,6 @@
                             Stok: {{ tool.stok }}
                         </span>
                         <span
-                            v-if="tool.lokasi && viewMode === 'list'"
-                            class="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700"
-                        >
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 22s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11Z" />
-                                <circle cx="12" cy="11" r="2.5" />
-                            </svg>
-                            {{ tool.lokasi }}
-                        </span>
-                        <span
                             v-if="isOutOfStock(tool)"
                             class="rounded-full bg-rose-100 px-2.5 py-1 font-semibold text-rose-600"
                         >
@@ -191,11 +293,11 @@
                         </span>
                     </div>
 
-                    <p v-if="tool.deskripsi && viewMode !== 'list'" class="text-sm text-slate-500">
+                    <p v-if="tool.deskripsi" class="text-sm text-slate-500">
                         {{ tool.deskripsi }}
                     </p>
 
-                    <div v-if="tool.lokasi && viewMode !== 'list'" class="flex items-center gap-2 text-xs text-slate-500">
+                    <div v-if="tool.lokasi" class="flex items-center gap-2 text-xs text-slate-500">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 22s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11Z" />
                             <circle cx="12" cy="11" r="2.5" />
@@ -204,7 +306,7 @@
                     </div>
                 </div>
 
-                <div :class="viewMode === 'list' ? 'flex items-center gap-3' : 'mt-5 flex items-center gap-3'">
+                <div class="mt-5 flex items-center gap-3">
                     <div class="flex items-center rounded-full bg-slate-100 px-2 py-1">
                         <button
                             class="flex h-7 w-7 items-center justify-center rounded-full text-base font-semibold text-slate-500 transition hover:text-slate-700 disabled:cursor-not-allowed disabled:text-slate-300"
@@ -229,7 +331,7 @@
                     <button
                         :class="[
                             'flex items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-200',
-                            viewMode === 'list' ? 'px-3 py-1.5' : 'flex-1 px-4 py-2.5',
+                            'flex-1 px-4 py-2.5',
                         ]"
                         type="button"
                         :disabled="isReadOnlyCatalog || isInCart(tool.id) || isOutOfStock(tool)"
@@ -326,27 +428,11 @@ const cachedUserId = ref(null);
 const cachedUser = ref(null);
 
 const loadCachedUserId = () => {
-    if (typeof window === 'undefined') {
-        return null;
-    }
-    try {
-        const cached = window.localStorage.getItem('auth_user');
-        return cached ? JSON.parse(cached)?.id ?? null : null;
-    } catch (error) {
-        return null;
-    }
+    return null;
 };
 
 const loadCachedUser = () => {
-    if (typeof window === 'undefined') {
-        return null;
-    }
-    try {
-        const cached = window.localStorage.getItem('auth_user');
-        return cached ? JSON.parse(cached) : null;
-    } catch (error) {
-        return null;
-    }
+    return null;
 };
 
 const katalog = ref([]);
@@ -700,7 +786,7 @@ const checkoutDateLimits = computed(() => {
 
 const totalItems = computed(() => cart.value.reduce((total, item) => total + item.qty, 0));
 const uniqueItems = computed(() => cart.value.length);
-const viewMode = ref('grid');
+const viewMode = ref('list');
 
 const findCartItem = (toolId) => cart.value.find((item) => item.id === toolId);
 const isInCart = (toolId) => !!findCartItem(toolId);
@@ -725,6 +811,39 @@ const setDraftQty = (toolId, qty) => {
 const displayQty = (toolId) => {
     const item = findCartItem(toolId);
     return item ? item.qty : getDraftQty(toolId);
+};
+
+const setToolQty = (tool, value) => {
+    if (!tool || tool.stok <= 0) {
+        return;
+    }
+
+    const parsed = Number(value);
+    const qty = Number.isFinite(parsed) ? Math.floor(parsed) : 1;
+    const normalizedQty = Math.max(1, Math.min(qty, tool.stok));
+    const item = findCartItem(tool.id);
+
+    if (item) {
+        item.qty = normalizedQty;
+        return;
+    }
+
+    setDraftQty(tool.id, normalizedQty);
+};
+
+const toggleCartSelection = (tool, checked) => {
+    if (isReadOnlyCatalog.value || !tool || tool.stok <= 0) {
+        return;
+    }
+
+    if (!checked) {
+        removeFromCart(tool.id);
+        return;
+    }
+
+    if (!isInCart(tool.id)) {
+        addToCart(tool);
+    }
 };
 
 const increaseTool = (tool) => {

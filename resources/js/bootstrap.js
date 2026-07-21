@@ -8,69 +8,35 @@ import axios from 'axios';
 window.axios = axios;
 
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
-const AUTH_TOKEN_COOKIE = 'auth_token';
+window.axios.defaults.withCredentials = true;
+window.axios.defaults.withXSRFToken = true;
 
-const getStoredToken = () => {
-    try {
-        return window.localStorage.getItem('auth_token');
-    } catch (err) {
-        return null;
-    }
-};
-
-const setTokenCookie = (token) => {
-    if (!token) {
-        return;
-    }
-
-    document.cookie = `${AUTH_TOKEN_COOKIE}=${encodeURIComponent(token)}; path=/; SameSite=Lax`;
-};
-
-const clearTokenCookie = () => {
-    document.cookie = `${AUTH_TOKEN_COOKIE}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
-};
-
-window.setAuthToken = (token, user = null) => {
-    window.localStorage.setItem('auth_token', token);
-    if (user) {
-        window.localStorage.setItem('auth_user', JSON.stringify(user));
-    }
-    setTokenCookie(token);
-    window.axios.defaults.headers.common.Authorization = `Bearer ${token}`;
-};
-
-window.clearAuthToken = () => {
-    try {
-        window.localStorage.removeItem('auth_token');
-        window.localStorage.removeItem('auth_user');
-    } catch (err) {
-        // Ignore storage failures.
-    }
-
-    clearTokenCookie();
-    delete window.axios.defaults.headers.common.Authorization;
-};
-
-const storedToken = getStoredToken();
-if (storedToken) {
-    setTokenCookie(storedToken);
-    window.axios.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
-}
-
-window.axios.interceptors.request.use((config) => {
-    const token = getStoredToken();
-    if (token && !config.headers?.Authorization) {
-        config.headers = config.headers ?? {};
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
+window.ensureCsrfCookie = () => window.axios.get('/sanctum/csrf-cookie', {
+    __skipCsrfRetry: true,
 });
+
+window.clearAuthSession = () => {};
 
 window.axios.interceptors.response.use(
     (response) => response,
-    (error) => {
-        if (error?.response?.status === 401) {
-            window.clearAuthToken();
+    async (error) => {
+        const config = error?.config;
+        const url = String(config?.url ?? '');
+
+        if (error?.response?.status === 419 && config && !config.__skipCsrfRetry) {
+            config.__skipCsrfRetry = true;
+            await window.ensureCsrfCookie();
+            return window.axios(config);
+        }
+
+        const isAuthFlowRequest = [
+            '/api/auth/login',
+            '/api/auth/register',
+            '/api/auth/forgot-password',
+            '/api/auth/reset-password',
+        ].some((path) => url.includes(path));
+
+        if (error?.response?.status === 401 && !isAuthFlowRequest) {
             if (window.location?.pathname !== '/login') {
                 window.location.href = '/login';
             }

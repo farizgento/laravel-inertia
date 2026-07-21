@@ -266,15 +266,7 @@ const form = reactive({
 });
 
 const loadCachedUser = () => {
-    if (typeof window === 'undefined') {
-        return null;
-    }
-    try {
-        const cached = window.localStorage.getItem('auth_user');
-        return cached ? JSON.parse(cached) : null;
-    } catch (error) {
-        return null;
-    }
+    return null;
 };
 
 const authUser = computed(() => page.props.auth?.user ?? cachedUser.value);

@@ -105,6 +105,7 @@ const submit = async () => {
     processing.value = true;
 
     try {
+        await window.ensureCsrfCookie();
         const response = await axios.post('/api/auth/forgot-password', form.value);
         message.value = response.data?.message ?? 'Link reset password sudah dikirim.';
     } catch (err) {

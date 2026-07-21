@@ -311,10 +311,9 @@ const submit = async () => {
     processing.value = true;
 
     try {
+        await window.ensureCsrfCookie();
         const response = await axios.post('/api/auth/register', form.value);
-        const { token, user } = response.data;
-
-        window.setAuthToken(token, user);
+        const { user } = response.data;
 
         router.visit(resolveRoleRoute(user?.role?.key));
     } catch (err) {

@@ -163,6 +163,7 @@ const submit = async () => {
     processing.value = true;
 
     try {
+        await window.ensureCsrfCookie();
         const response = await axios.post('/api/auth/reset-password', form.value);
         message.value = response.data?.message ?? 'Password berhasil direset.';
         setTimeout(() => router.visit('/login'), 1200);

@@ -552,15 +552,7 @@ const pageSubtitle = computed(() => page.props.mutasiPageSubtitle ?? 'Daftar pen
 const mutasiCategory = computed(() => page.props.mutasiCategory ?? '');
 const mutasiAreaScope = computed(() => page.props.mutasiAreaScope ?? '');
 const loadCachedUser = () => {
-    if (typeof window === 'undefined') {
-        return null;
-    }
-    try {
-        const cached = window.localStorage.getItem('auth_user');
-        return cached ? JSON.parse(cached) : null;
-    } catch (err) {
-        return null;
-    }
+    return null;
 };
 
 const cachedUser = ref(loadCachedUser());
