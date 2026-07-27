@@ -9,8 +9,6 @@ use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
 {
-    private const DEFAULT_PASSWORD = 'Password26';
-    private const SUPER_ADMIN_PASSWORD = 'TRLA26!';
     private const TRLA_SLUG = 'trla';
 
     private const DUMMY_AREA_ROLE_KEYS = [
@@ -19,8 +17,8 @@ class UserSeeder extends Seeder
     ];
 
     private const SUPER_ADMIN_ACCOUNT = [
-        'name' => 'Super Admin TRLA',
-        'username' => 'super_admin.trla',
+        'name' => 'Fariz Aminullah',
+        'username' => 'fariz.aminullah',
         'email' => 'fariz.aminullah@plnindonesiapower.co.id',
     ];
 
@@ -61,7 +59,7 @@ class UserSeeder extends Seeder
             Role::KEY_SP_TOOL => ['name' => 'PANDE GEDE WAHYUDI', 'username' => 'pande.wahyudi', 'email' => 'pande.wahyudi@plnindonesiapower.co.id'],
         ],
         'III.2' => [
-            Role::KEY_PIC_TOOL => ['name' => 'AAN PRATAMA (IPS)', 'username' => 'aan.pratama', 'email' => 'aan.pratama@plnindonesiapower.co.id'],
+            Role::KEY_PIC_TOOL => ['name' => 'AAN PRATAMA', 'username' => 'aan.pratama', 'email' => 'aan.pratama@plnindonesiapower.co.id'],
             Role::KEY_MGR_TOOL => ['name' => 'HANDONO', 'username' => 'handono', 'email' => 'handono@plnindonesiapower.co.id'],
             Role::KEY_SP_TOOL => ['name' => 'LUKMAN FAJAR HIDAYAT', 'username' => 'lukman.hidayat', 'email' => 'lukman.hidayat@plnindonesiapower.co.id'],
         ],
@@ -135,7 +133,6 @@ class UserSeeder extends Seeder
                 email: self::SUPER_ADMIN_ACCOUNT['email'],
                 role: $role,
                 area: $trlaArea,
-                password: self::SUPER_ADMIN_PASSWORD,
             );
         }
     }
@@ -166,8 +163,7 @@ class UserSeeder extends Seeder
         string $name,
         string $email,
         Role $role,
-        Area $area,
-        string $password = self::DEFAULT_PASSWORD
+        Area $area
     ): void {
         $user = User::query()
             ->where('username', $username)
@@ -178,7 +174,6 @@ class UserSeeder extends Seeder
             'name' => $name,
             'username' => $username,
             'email' => $email,
-            'password' => $password,
             'role_id' => $role->id,
             'area_id' => $area->id,
         ];

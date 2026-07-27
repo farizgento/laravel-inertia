@@ -2,208 +2,58 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\LdapLoginException;
 use App\Http\Controllers\Controller;
-use App\Models\Role;
-use App\Models\User;
-use App\Services\ActivityLogger;
+use App\Services\LdapLoginService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Password as PasswordBroker;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Password as PasswordRule;
-use Throwable;
 
 class AuthController extends Controller
 {
-    private function passwordRules(): array
-    {
-        return [
-            'required',
-            'confirmed',
-            PasswordRule::min(8),
-            function (string $attribute, mixed $value, $fail): void {
-                $password = (string) $value;
-
-                if (! preg_match('/[A-Z]/', $password)) {
-                    $fail('Password harus memiliki minimal satu huruf kapital.');
-                }
-
-                if (! preg_match('/[0-9]/', $password)) {
-                    $fail('Password harus memiliki minimal satu angka.');
-                }
-            },
-        ];
-    }
-
-    public function register(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:users,username'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'area_id' => ['required', 'exists:areas,id'],
-            'password' => $this->passwordRules(),
-        ]);
-
-        $role = Role::firstOrCreate(
-            ['key' => Role::KEY_USER],
-            ['name' => 'User']
-        );
-
-        $user = User::create([
-            'name' => $validated['name'],
-            'username' => $validated['username'],
-            'email' => $validated['email'],
-            'password' => $validated['password'],
-            'area_id' => $validated['area_id'],
-            'role_id' => $role->id,
-        ]);
-
-        $user->tokens()->delete();
-        Auth::guard('web')->login($user);
-        $request->session()->regenerate();
-
-        ActivityLogger::log('register', $user, [
-            'actor' => $user,
-            'description' => "{$user->name} mendaftarkan akun baru.",
-        ]);
-
-        return response()->json([
-            'user' => $user->load(['area', 'role']),
-        ], 201);
-    }
-
-    public function login(Request $request)
+    public function login(Request $request, LdapLoginService $ldapLoginService): JsonResponse
     {
         $validated = $request->validate([
             'username' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
-        $user = User::where('username', $validated['username'])->first();
-
-        if (! $user || ! Hash::check($validated['password'], $user->password)) {
+        try {
+            $user = $ldapLoginService->attempt($validated['username'], $validated['password']);
+        } catch (LdapLoginException $exception) {
             return response()->json([
-                'message' => 'Username atau password salah.',
-            ], 401);
+                'message' => $exception->getMessage(),
+            ], $exception->status());
         }
 
-        $user->tokens()->delete();
+        if ($user->exists) {
+            $user->tokens()->delete();
+        }
+
         Auth::guard('web')->login($user);
-        $request->session()->regenerate();
+
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
+
+        $user->loadMissing(['area', 'role']);
 
         return response()->json([
-            'user' => $user->load(['area', 'role']),
+            'user' => $user,
         ]);
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
         $user = $request->user();
         $user?->tokens()->delete();
+
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return response()->json([
             'message' => 'Logout berhasil.',
-        ]);
-    }
-
-    public function changePassword(Request $request)
-    {
-        $validated = $request->validate([
-            'current_password' => ['required', 'string'],
-            'password' => $this->passwordRules(),
-        ]);
-
-        $user = $request->user();
-        abort_unless($user, 401);
-
-        if (! Hash::check($validated['current_password'], $user->password)) {
-            return response()->json([
-                'message' => 'Password saat ini tidak sesuai.',
-                'errors' => [
-                    'current_password' => ['Password saat ini tidak sesuai.'],
-                ],
-            ], 422);
-        }
-
-        $user->forceFill([
-            'password' => $validated['password'],
-        ])->save();
-
-        $user->tokens()->delete();
-
-        return response()->json([
-            'message' => 'Password akun berhasil diubah.',
-        ]);
-    }
-
-    public function forgotPassword(Request $request)
-    {
-        $validated = $request->validate([
-            'email' => ['required', 'email', 'exists:users,email'],
-        ], [
-            'email.exists' => 'Email tidak terdaftar.',
-        ]);
-
-        try {
-            $status = PasswordBroker::sendResetLink([
-                'email' => $validated['email'],
-            ]);
-        } catch (Throwable $exception) {
-            Log::error('Gagal mengirim email reset password.', [
-                'email' => $validated['email'],
-                'exception' => $exception,
-            ]);
-
-            return response()->json([
-                'message' => 'Link reset password belum dapat dikirim karena layanan email server sedang bermasalah. Silakan coba lagi beberapa saat atau hubungi administrator.',
-            ], 503);
-        }
-
-        if ($status !== PasswordBroker::RESET_LINK_SENT) {
-            return response()->json([
-                'message' => __($status),
-            ], 422);
-        }
-
-        return response()->json([
-            'message' => 'Link reset password sudah dikirim ke email Anda.',
-        ]);
-    }
-
-    public function resetPassword(Request $request)
-    {
-        $validated = $request->validate([
-            'token' => ['required', 'string'],
-            'email' => ['required', 'email'],
-            'password' => $this->passwordRules(),
-        ]);
-
-        $status = PasswordBroker::reset(
-            $validated,
-            function (User $user, string $password) {
-                $user->forceFill([
-                    'password' => $password,
-                    'remember_token' => Str::random(60),
-                ])->save();
-
-                $user->tokens()->delete();
-            }
-        );
-
-        if ($status !== PasswordBroker::PASSWORD_RESET) {
-            return response()->json([
-                'message' => __($status),
-            ], 422);
-        }
-
-        return response()->json([
-            'message' => 'Password berhasil direset. Silakan login dengan password baru.',
         ]);
     }
 }

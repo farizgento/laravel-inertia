@@ -31,9 +31,6 @@ window.axios.interceptors.response.use(
 
         const isAuthFlowRequest = [
             '/api/auth/login',
-            '/api/auth/register',
-            '/api/auth/forgot-password',
-            '/api/auth/reset-password',
         ].some((path) => url.includes(path));
 
         if (error?.response?.status === 401 && !isAuthFlowRequest) {

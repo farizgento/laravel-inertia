@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AreaController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\LaporanAlatController;
+use App\Http\Controllers\Api\LdapUserLookupController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\api\MutasiAlatController;
 use App\Http\Controllers\Api\PeminjamanController;
@@ -27,10 +28,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/login', [AuthController::class, 'login']);
-Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+Route::middleware('guest:sanctum')->group(function () {
+    Route::post('/auth/login', [AuthController::class, 'login']);
+});
 
 Route::get('/areas', [AreaController::class, 'index']);
 
@@ -43,7 +43,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', NotificationController::class);
 
     Route::post('/auth/logout', [AuthController::class, 'logout']);
-    Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
 
     Route::middleware('role:'.implode(',', [
         Role::KEY_MGR_TOOL,
@@ -57,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
     ]))->group(function () {
+        Route::get('/ldap/users', LdapUserLookupController::class);
         Route::post('/users', [UserManagementController::class, 'store']);
         Route::put('/users/{user}', [UserManagementController::class, 'update']);
         Route::delete('/users/{user}', [UserManagementController::class, 'destroy']);

@@ -19,24 +19,11 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::get('/login', function () {
-    return Inertia::render('Auth/Login');
-})->name('login');
-
-Route::get('/forgot-password', function () {
-    return Inertia::render('Auth/ForgotPassword');
-})->name('password.request');
-
-Route::get('/reset-password/{token}', function (string $token) {
-    return Inertia::render('Auth/ResetPassword', [
-        'token' => $token,
-        'email' => request('email', ''),
-    ]);
-})->name('password.reset');
-
-Route::get('/register', function () {
-    return Inertia::render('Auth/Register');
-})->name('register');
+Route::middleware('guest')->group(function () {
+    Route::get('/login', function () {
+        return Inertia::render('Auth/Login');
+    })->name('login');
+});
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard', function () {

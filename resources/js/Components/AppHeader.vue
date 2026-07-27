@@ -136,207 +136,16 @@
                     {{ displayArea }}
                 </template>
             </div>
-            <div class="relative">
-                <button
-                    class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-600"
-                    type="button"
-                    aria-label="Menu akun"
-                    :aria-expanded="isAccountOpen"
-                    @click="toggleAccountMenu"
-                >
-                    <span>Hai, {{ displayName }} ({{ displayRole }})</span>
-                    <svg
-                        class="h-4 w-4 transition"
-                        :class="isAccountOpen ? 'rotate-180' : ''"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path d="m6 9 6 6 6-6" />
-                    </svg>
-                </button>
-
-                <div
-                    v-if="isAccountOpen"
-                    class="absolute right-0 z-50 mt-2 w-43 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 shadow-xl shadow-slate-200/70"
-                >
-                    <button
-                        class="flex w-full items-center gap-3 px-3 py-1 text-left text-xs text-slate-600 transition hover:bg-slate-50 hover:text-blue-600"
-                        type="button"
-                        @click="openPasswordModal"
-                    >
-                        <svg
-                            class="h-4 w-4 shrink-0"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <rect x="4" y="11" width="16" height="9" rx="2" />
-                            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-                        </svg>
-                        Ubah Password
-                    </button>
-                </div>
+            <div class="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-slate-600 shadow-sm">
+                <span>Hai, {{ displayName }} ({{ displayRole }})</span>
             </div>
         </div>
     </header>
-
-    <teleport to="body">
-        <div
-            v-if="isPasswordModalOpen"
-            class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/40 px-4 py-6"
-            @click.self="closePasswordModal"
-        >
-            <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl shadow-slate-900/20">
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <h3 class="text-lg font-semibold text-slate-900">Ubah Password</h3>
-                        <p class="mt-1 text-sm text-slate-500">Gunakan password baru minimal 8 karakter, 1 kapital, dan 1 angka.</p>
-                    </div>
-                    <button
-                        class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:text-slate-700"
-                        type="button"
-                        :disabled="isChangingPassword"
-                        @click="closePasswordModal"
-                    >
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 6 6 18" />
-                            <path d="M6 6 18 18" />
-                        </svg>
-                    </button>
-                </div>
-
-                <form class="mt-5 space-y-4" @submit.prevent="submitChangePassword">
-                    <label class="block space-y-2 text-sm font-medium text-slate-700">
-                        <span>Password Saat Ini</span>
-                        <div class="relative">
-                            <input
-                                v-model="passwordForm.current_password"
-                                :type="showCurrentPassword ? 'text' : 'password'"
-                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 pr-10 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                placeholder="Masukkan password saat ini"
-                            />
-                            <button
-                                class="absolute inset-y-0 right-3 flex items-center text-slate-400 transition hover:text-blue-600"
-                                type="button"
-                                :aria-label="showCurrentPassword ? 'Sembunyikan password saat ini' : 'Tampilkan password saat ini'"
-                                @click="showCurrentPassword = !showCurrentPassword"
-                            >
-                                <svg v-if="showCurrentPassword" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M3 3l18 18" />
-                                    <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
-                                    <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.5 4 10 8a13.2 13.2 0 0 1-3.1 4.6" />
-                                    <path d="M6.6 6.6A13.2 13.2 0 0 0 2 12c1.5 4 5 8 10 8 1.4 0 2.7-.3 3.9-.9" />
-                                </svg>
-                                <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M2 12s3.5-8 10-8 10 8 10 8-3.5 8-10 8S2 12 2 12Z" />
-                                    <circle cx="12" cy="12" r="3" />
-                                </svg>
-                            </button>
-                        </div>
-                        <span v-if="passwordErrors.current_password" class="block text-xs text-rose-500">
-                            {{ passwordErrors.current_password }}
-                        </span>
-                    </label>
-
-                    <label class="block space-y-2 text-sm font-medium text-slate-700">
-                        <span>Password Baru</span>
-                        <div class="relative">
-                            <input
-                                v-model="passwordForm.password"
-                                :type="showNewPassword ? 'text' : 'password'"
-                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 pr-10 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                placeholder="Minimal 8 karakter"
-                            />
-                            <button
-                                class="absolute inset-y-0 right-3 flex items-center text-slate-400 transition hover:text-blue-600"
-                                type="button"
-                                :aria-label="showNewPassword ? 'Sembunyikan password baru' : 'Tampilkan password baru'"
-                                @click="showNewPassword = !showNewPassword"
-                            >
-                                <svg v-if="showNewPassword" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M3 3l18 18" />
-                                    <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
-                                    <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.5 4 10 8a13.2 13.2 0 0 1-3.1 4.6" />
-                                    <path d="M6.6 6.6A13.2 13.2 0 0 0 2 12c1.5 4 5 8 10 8 1.4 0 2.7-.3 3.9-.9" />
-                                </svg>
-                                <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M2 12s3.5-8 10-8 10 8 10 8-3.5 8-10 8S2 12 2 12Z" />
-                                    <circle cx="12" cy="12" r="3" />
-                                </svg>
-                            </button>
-                        </div>
-                        <span v-if="passwordErrors.password" class="block text-xs text-rose-500">
-                            {{ passwordErrors.password }}
-                        </span>
-                    </label>
-
-                    <label class="block space-y-2 text-sm font-medium text-slate-700">
-                        <span>Konfirmasi Password Baru</span>
-                        <div class="relative">
-                            <input
-                                v-model="passwordForm.password_confirmation"
-                                :type="showNewPasswordConfirmation ? 'text' : 'password'"
-                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 pr-10 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                placeholder="Ulangi password baru"
-                            />
-                            <button
-                                class="absolute inset-y-0 right-3 flex items-center text-slate-400 transition hover:text-blue-600"
-                                type="button"
-                                :aria-label="showNewPasswordConfirmation ? 'Sembunyikan konfirmasi password baru' : 'Tampilkan konfirmasi password baru'"
-                                @click="showNewPasswordConfirmation = !showNewPasswordConfirmation"
-                            >
-                                <svg v-if="showNewPasswordConfirmation" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M3 3l18 18" />
-                                    <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
-                                    <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.5 4 10 8a13.2 13.2 0 0 1-3.1 4.6" />
-                                    <path d="M6.6 6.6A13.2 13.2 0 0 0 2 12c1.5 4 5 8 10 8 1.4 0 2.7-.3 3.9-.9" />
-                                </svg>
-                                <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M2 12s3.5-8 10-8 10 8 10 8-3.5 8-10 8S2 12 2 12Z" />
-                                    <circle cx="12" cy="12" r="3" />
-                                </svg>
-                            </button>
-                        </div>
-                    </label>
-
-                    <p v-if="passwordMessage" class="rounded-xl px-3 py-2 text-sm font-semibold" :class="passwordMessageClass">
-                        {{ passwordMessage }}
-                    </p>
-
-                    <div class="flex justify-end gap-2 pt-2">
-                        <button
-                            class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
-                            type="button"
-                            :disabled="isChangingPassword"
-                            @click="closePasswordModal"
-                        >
-                            Batal
-                        </button>
-                        <button
-                            class="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-                            type="submit"
-                            :disabled="isChangingPassword"
-                        >
-                            {{ isChangingPassword ? 'Menyimpan...' : 'Simpan' }}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </teleport>
 </template>
 
 <script setup>
-import axios from 'axios';
 import { Link } from '@inertiajs/vue3';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const emit = defineEmits(['toggle-sidebar', 'change-area']);
 
@@ -392,106 +201,12 @@ const props = defineProps({
 });
 
 const isMailboxOpen = ref(false);
-const isAccountOpen = ref(false);
-const isPasswordModalOpen = ref(false);
-const isChangingPassword = ref(false);
-const showCurrentPassword = ref(false);
-const showNewPassword = ref(false);
-const showNewPasswordConfirmation = ref(false);
-const passwordMessage = ref('');
-const passwordMessageType = ref('');
 const showAllMailbox = ref(false);
 const mailboxPreviewLimit = 5;
-const passwordForm = reactive({
-    current_password: '',
-    password: '',
-    password_confirmation: '',
-});
-const passwordErrors = reactive({
-    current_password: '',
-    password: '',
-});
 
 const visibleMailboxItems = computed(() =>
     showAllMailbox.value ? props.mailboxItems : props.mailboxItems.slice(0, mailboxPreviewLimit)
 );
-
-const passwordMessageClass = computed(() =>
-    passwordMessageType.value === 'success'
-        ? 'bg-emerald-50 text-emerald-700'
-        : 'bg-rose-50 text-rose-700'
-);
-
-const resetPasswordForm = () => {
-    passwordForm.current_password = '';
-    passwordForm.password = '';
-    passwordForm.password_confirmation = '';
-    passwordErrors.current_password = '';
-    passwordErrors.password = '';
-    passwordMessage.value = '';
-    passwordMessageType.value = '';
-    showCurrentPassword.value = false;
-    showNewPassword.value = false;
-    showNewPasswordConfirmation.value = false;
-};
-
-const toggleAccountMenu = () => {
-    isAccountOpen.value = !isAccountOpen.value;
-    if (isAccountOpen.value) {
-        isMailboxOpen.value = false;
-    }
-};
-
-const openPasswordModal = () => {
-    isAccountOpen.value = false;
-    resetPasswordForm();
-    isPasswordModalOpen.value = true;
-};
-
-const closePasswordModal = () => {
-    if (isChangingPassword.value) {
-        return;
-    }
-    isPasswordModalOpen.value = false;
-    resetPasswordForm();
-};
-
-const submitChangePassword = async () => {
-    if (isChangingPassword.value) {
-        return;
-    }
-
-    passwordErrors.current_password = '';
-    passwordErrors.password = '';
-    passwordMessage.value = '';
-    passwordMessageType.value = '';
-    isChangingPassword.value = true;
-
-    try {
-        const response = await axios.post('/api/auth/change-password', {
-            current_password: passwordForm.current_password,
-            password: passwordForm.password,
-            password_confirmation: passwordForm.password_confirmation,
-        });
-        passwordMessageType.value = 'success';
-        passwordMessage.value = response.data?.message ?? 'Password akun berhasil diubah.';
-        passwordForm.current_password = '';
-        passwordForm.password = '';
-        passwordForm.password_confirmation = '';
-    } catch (error) {
-        const errors = error.response?.data?.errors ?? {};
-        passwordErrors.current_password = Array.isArray(errors.current_password)
-            ? errors.current_password[0]
-            : '';
-        passwordErrors.password = Array.isArray(errors.password)
-            ? errors.password[0]
-            : '';
-        passwordMessageType.value = 'error';
-        passwordMessage.value = error.response?.data?.message ?? 'Gagal mengubah password.';
-    } finally {
-        isChangingPassword.value = false;
-    }
-};
 
 const formatMailboxCount = (count) => {
     const normalized = Number(count ?? 0);
@@ -512,9 +227,4 @@ watch(
     }
 );
 
-watch(isMailboxOpen, (next) => {
-    if (next) {
-        isAccountOpen.value = false;
-    }
-});
 </script>

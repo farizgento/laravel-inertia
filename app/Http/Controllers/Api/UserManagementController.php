@@ -5,11 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\LdapDirectoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Validator;
 
 class UserManagementController extends Controller
 {
@@ -174,30 +175,6 @@ class UserManagementController extends Controller
         );
     }
 
-    private function passwordRules(string $presence): array
-    {
-        return [
-            $presence,
-            'confirmed',
-            Password::min(8),
-            function (string $attribute, mixed $value, $fail): void {
-                $password = (string) $value;
-
-                if ($password === '') {
-                    return;
-                }
-
-                if (! preg_match('/[A-Z]/', $password)) {
-                    $fail('Password harus memiliki minimal satu huruf kapital.');
-                }
-
-                if (! preg_match('/[0-9]/', $password)) {
-                    $fail('Password harus memiliki minimal satu angka.');
-                }
-            },
-        ];
-    }
-
     public function index(Request $request): array
     {
         $actor = $this->authorizeIndexActor($request);
@@ -255,28 +232,48 @@ class UserManagementController extends Controller
         ];
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, LdapDirectoryService $ldapDirectoryService): JsonResponse
     {
         $actor = $this->authorizeCrudActor($request);
         $allowedRoleKeys = $this->allowedRoleKeysForActor($actor);
 
         $validated = $request->validate([
+            'ldap_dn' => ['required', 'string', 'max:2000'],
+            'role_key' => ['required', 'string', Rule::in($allowedRoleKeys)],
+            'area_id' => ['required', 'integer', 'exists:areas,id'],
+        ]);
+        $validated = $this->applyWritableArea($actor, $validated);
+
+        $ldapUser = $ldapDirectoryService->findUserByDn($validated['ldap_dn']);
+
+        if (! $ldapUser) {
+            return response()->json([
+                'message' => 'Data pengguna LDAP tidak ditemukan atau atributnya belum lengkap.',
+                'errors' => [
+                    'ldap_dn' => ['Pilih pengguna dari hasil pencarian LDAP.'],
+                ],
+            ], 422);
+        }
+
+        $ldapValidator = Validator::make($ldapUser, [
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'role_key' => ['required', 'string', Rule::in($allowedRoleKeys)],
-            'area_id' => ['required', 'integer', 'exists:areas,id'],
-            'password' => $this->passwordRules('required'),
         ]);
-        $validated = $this->applyWritableArea($actor, $validated);
+
+        if ($ldapValidator->fails()) {
+            return response()->json([
+                'message' => 'Data LDAP tidak dapat digunakan.',
+                'errors' => $ldapValidator->errors(),
+            ], 422);
+        }
 
         $role = $this->findRole($validated['role_key']);
 
         $user = User::create([
-            'name' => $validated['name'],
-            'username' => $validated['username'],
-            'email' => $validated['email'],
-            'password' => $validated['password'],
+            'name' => $ldapUser['name'],
+            'username' => $ldapUser['username'],
+            'email' => $ldapUser['email'],
             'role_id' => $role->id,
             'area_id' => (int) $validated['area_id'],
         ]);
@@ -301,7 +298,6 @@ class UserManagementController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'role_key' => ['required', 'string', Rule::in($allowedRoleKeys)],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
-            'password' => $this->passwordRules('nullable'),
         ]);
         $validated = $this->applyWritableArea($actor, $validated);
 
@@ -314,10 +310,6 @@ class UserManagementController extends Controller
             'role_id' => $role->id,
             'area_id' => (int) $validated['area_id'],
         ];
-
-        if (! empty($validated['password'])) {
-            $payload['password'] = $validated['password'];
-        }
 
         $user->update($payload);
 

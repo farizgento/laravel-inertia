@@ -131,14 +131,6 @@
                             {{ processing ? 'Memproses...' : 'Masuk' }}
                         </button>
                     </form>
-                    <div class="mt-4 text-center">
-                        <Link
-                            href="/forgot-password"
-                            class="text-sm font-semibold text-blue-600 transition hover:text-blue-700"
-                        >
-                            Lupa password?
-                        </Link>
-                    </div>
                 </div>
 
                 <p class="mt-6 text-center text-xs text-slate-400">
@@ -150,7 +142,7 @@
 </template>
 
 <script setup>
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
 import { ref } from 'vue';
 

@@ -238,35 +238,75 @@
                 </div>
 
                 <div class="mt-5 grid gap-4 md:grid-cols-2">
-                    <label class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+                    <div v-if="!isEdit" class="space-y-3 md:col-span-2">
+                        <label class="space-y-2 text-sm font-medium text-slate-700">
+                            <span>Cari Pengguna LDAP *</span>
+                            <input
+                                v-model="ldapSearch"
+                                type="text"
+                                placeholder="Ketik minimal 3 karakter nama, username, atau email"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            />
+                        </label>
+
+                        <div v-if="selectedLdapUser" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm">
+                            <p class="font-semibold text-emerald-800">{{ selectedLdapUser.name }}</p>
+                            <p class="mt-1 text-emerald-700">{{ selectedLdapUser.username }} | {{ selectedLdapUser.email }}</p>
+                        </div>
+
+                        <div v-else-if="isSearchingLdap" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                            Mencari pengguna LDAP...
+                        </div>
+
+                        <div v-else-if="ldapResults.length" class="max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white">
+                            <button
+                                v-for="ldapUser in ldapResults"
+                                :key="ldapUser.dn"
+                                class="block w-full border-b border-slate-100 px-4 py-3 text-left text-sm transition last:border-b-0 hover:bg-blue-50"
+                                type="button"
+                                @click="selectLdapUser(ldapUser)"
+                            >
+                                <span class="block font-semibold text-slate-900">{{ ldapUser.name }}</span>
+                                <span class="mt-1 block text-xs text-slate-500">{{ ldapUser.username }} | {{ ldapUser.email }}</span>
+                            </button>
+                        </div>
+
+                        <p v-if="errors.ldap_dn || ldapSearchError" class="text-xs text-rose-500">
+                            {{ errors.ldap_dn || ldapSearchError }}
+                        </p>
+                    </div>
+
+                    <label v-if="isEdit" class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
                         <span>Nama Lengkap *</span>
                         <input
                             v-model="form.name"
                             type="text"
                             placeholder="Masukkan nama pengguna"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            readonly
+                            class="w-full rounded-xl border border-slate-200 bg-slate-100 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none cursor-not-allowed"
                         />
                         <p v-if="errors.name" class="text-xs text-rose-500">{{ errors.name }}</p>
                     </label>
 
-                    <label class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+                    <label v-if="isEdit" class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
                         <span>Username *</span>
                         <input
                             v-model="form.username"
                             type="text"
                             placeholder="Username untuk login"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            readonly
+                            class="w-full rounded-xl border border-slate-200 bg-slate-100 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none cursor-not-allowed"
                         />
                         <p v-if="errors.username" class="text-xs text-rose-500">{{ errors.username }}</p>
                     </label>
 
-                    <label class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+                    <label v-if="isEdit" class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
                         <span>Email *</span>
                         <input
                             v-model="form.email"
                             type="email"
                             placeholder="nama@perusahaan.com"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            class="w-full rounded-xl border border-slate-200 bg-slate-100 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none cursor-not-allowed"
                         />
                         <p v-if="errors.email" class="text-xs text-rose-500">{{ errors.email }}</p>
                     </label>
@@ -300,64 +340,6 @@
                         <p v-if="errors.area_id" class="text-xs text-rose-500">{{ errors.area_id }}</p>
                     </label>
 
-                    <label class="space-y-2 text-sm font-medium text-slate-700">
-                        <span>{{ isEdit ? 'Password Baru' : 'Password' }} {{ isEdit ? '' : '*' }}</span>
-                        <div class="relative">
-                            <input
-                                v-model="form.password"
-                                :type="showPassword ? 'text' : 'password'"
-                                :placeholder="isEdit ? 'Kosongkan jika tidak diubah' : 'Minimal 8 karakter, 1 kapital, 1 angka'"
-                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 pr-10 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            />
-                            <button
-                                class="absolute inset-y-0 right-3 flex items-center text-slate-400 transition hover:text-blue-600"
-                                type="button"
-                                :aria-label="showPassword ? 'Sembunyikan password' : 'Tampilkan password'"
-                                @click="showPassword = !showPassword"
-                            >
-                                <svg v-if="showPassword" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M3 3l18 18" />
-                                    <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
-                                    <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.5 4 10 8a13.2 13.2 0 0 1-3.1 4.6" />
-                                    <path d="M6.6 6.6A13.2 13.2 0 0 0 2 12c1.5 4 5 8 10 8 1.4 0 2.7-.3 3.9-.9" />
-                                </svg>
-                                <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M2 12s3.5-8 10-8 10 8 10 8-3.5 8-10 8S2 12 2 12Z" />
-                                    <circle cx="12" cy="12" r="3" />
-                                </svg>
-                            </button>
-                        </div>
-                        <p v-if="errors.password" class="text-xs text-rose-500">{{ errors.password }}</p>
-                    </label>
-
-                    <label class="space-y-2 text-sm font-medium text-slate-700">
-                        <span>Konfirmasi Password{{ isEdit ? ' Baru' : '' }}</span>
-                        <div class="relative">
-                            <input
-                                v-model="form.password_confirmation"
-                                :type="showPasswordConfirmation ? 'text' : 'password'"
-                                :placeholder="isEdit ? 'Ikuti password baru' : 'Ulangi password'"
-                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 pr-10 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            />
-                            <button
-                                class="absolute inset-y-0 right-3 flex items-center text-slate-400 transition hover:text-blue-600"
-                                type="button"
-                                :aria-label="showPasswordConfirmation ? 'Sembunyikan konfirmasi password' : 'Tampilkan konfirmasi password'"
-                                @click="showPasswordConfirmation = !showPasswordConfirmation"
-                            >
-                                <svg v-if="showPasswordConfirmation" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M3 3l18 18" />
-                                    <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
-                                    <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.5 4 10 8a13.2 13.2 0 0 1-3.1 4.6" />
-                                    <path d="M6.6 6.6A13.2 13.2 0 0 0 2 12c1.5 4 5 8 10 8 1.4 0 2.7-.3 3.9-.9" />
-                                </svg>
-                                <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M2 12s3.5-8 10-8 10 8 10 8-3.5 8-10 8S2 12 2 12Z" />
-                                    <circle cx="12" cy="12" r="3" />
-                                </svg>
-                            </button>
-                        </div>
-                    </label>
                 </div>
 
                 <p v-if="errors.general || formError" class="mt-3 text-sm font-semibold text-rose-500">
@@ -375,7 +357,7 @@
                     <button
                         class="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                         type="button"
-                        :disabled="isSubmitting"
+                        :disabled="isSubmitting || (!isEdit && !form.ldap_dn)"
                         @click="submitForm"
                     >
                         {{ isSubmitting ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Simpan' }}
@@ -433,10 +415,15 @@ const selectedArea = ref('');
 const alertMessage = ref('');
 const alertType = ref('success');
 const alertTitle = ref('');
-const showPassword = ref(false);
-const showPasswordConfirmation = ref(false);
+const ldapSearch = ref('');
+const ldapResults = ref([]);
+const selectedLdapUser = ref(null);
+const isSearchingLdap = ref(false);
+const ldapSearchError = ref('');
 let alertTimeout = null;
 let filterTimeout = null;
+let ldapSearchTimeout = null;
+let ldapSearchRequestId = 0;
 
 const pagination = reactive({
     currentPage: 1,
@@ -452,8 +439,7 @@ const form = reactive({
     email: '',
     role_key: '',
     area_id: '',
-    password: '',
-    password_confirmation: '',
+    ldap_dn: '',
 });
 
 const isEdit = computed(() => form.id !== null);
@@ -582,11 +568,17 @@ const resetForm = () => {
     form.email = '';
     form.role_key = '';
     form.area_id = '';
-    form.password = '';
-    form.password_confirmation = '';
-    showPassword.value = false;
-    showPasswordConfirmation.value = false;
+    form.ldap_dn = '';
     form.area_id = adminAreaId.value;
+    ldapSearch.value = '';
+    ldapResults.value = [];
+    selectedLdapUser.value = null;
+    isSearchingLdap.value = false;
+    ldapSearchError.value = '';
+    ldapSearchRequestId += 1;
+    if (ldapSearchTimeout) {
+        clearTimeout(ldapSearchTimeout);
+    }
     errors.value = {};
     formError.value = '';
 };
@@ -609,10 +601,11 @@ const openEdit = (user) => {
     form.email = user.email ?? '';
     form.role_key = user.role_key ?? '';
     form.area_id = isAreaLocked.value ? adminAreaId.value : user.area_id ? String(user.area_id) : '';
-    form.password = '';
-    form.password_confirmation = '';
-    showPassword.value = false;
-    showPasswordConfirmation.value = false;
+    form.ldap_dn = '';
+    ldapSearch.value = '';
+    ldapResults.value = [];
+    selectedLdapUser.value = null;
+    ldapSearchError.value = '';
     errors.value = {};
     formError.value = '';
     formOpen.value = true;
@@ -690,6 +683,71 @@ const goToPage = (page) => {
     loadUsers();
 };
 
+const ldapUserLabel = (ldapUser) => `${ldapUser.name} (${ldapUser.username})`;
+
+const selectLdapUser = (ldapUser) => {
+    selectedLdapUser.value = ldapUser;
+    ldapResults.value = [];
+    ldapSearch.value = ldapUserLabel(ldapUser);
+    form.ldap_dn = ldapUser.dn;
+    form.name = ldapUser.name;
+    form.username = ldapUser.username;
+    form.email = ldapUser.email;
+    errors.value = {
+        ...errors.value,
+        ldap_dn: '',
+        name: '',
+        username: '',
+        email: '',
+    };
+};
+
+const searchLdapUsers = async () => {
+    if (!formOpen.value || isEdit.value) {
+        return;
+    }
+
+    const keyword = ldapSearch.value.trim();
+    const requestId = ++ldapSearchRequestId;
+
+    form.ldap_dn = '';
+    selectedLdapUser.value = null;
+    ldapSearchError.value = '';
+
+    if (keyword.length < 3) {
+        ldapResults.value = [];
+        return;
+    }
+
+    isSearchingLdap.value = true;
+
+    try {
+        const response = await axios.get('/api/ldap/users', {
+            params: { search: keyword },
+        });
+
+        if (requestId !== ldapSearchRequestId) {
+            return;
+        }
+
+        ldapResults.value = Array.isArray(response.data?.data) ? response.data.data : [];
+        if (!ldapResults.value.length) {
+            ldapSearchError.value = response.data?.message ?? 'Data LDAP tidak ditemukan.';
+        }
+    } catch (error) {
+        if (requestId !== ldapSearchRequestId) {
+            return;
+        }
+
+        ldapResults.value = [];
+        ldapSearchError.value = error.response?.data?.message ?? 'Gagal mencari data LDAP.';
+    } finally {
+        if (requestId === ldapSearchRequestId) {
+            isSearchingLdap.value = false;
+        }
+    }
+};
+
 const submitForm = async () => {
     if (!canManageUsers.value) {
         return;
@@ -699,23 +757,21 @@ const submitForm = async () => {
     formError.value = '';
 
     try {
-        const payload = {
-            name: form.name,
-            username: form.username,
-            email: form.email,
-            role_key: form.role_key,
-            area_id: form.area_id ? Number(form.area_id) : null,
-        };
-
         if (isEdit.value) {
-            if (form.password) {
-                payload.password = form.password;
-                payload.password_confirmation = form.password_confirmation;
-            }
+            const payload = {
+                name: form.name,
+                username: form.username,
+                email: form.email,
+                role_key: form.role_key,
+                area_id: form.area_id ? Number(form.area_id) : null,
+            };
             await axios.put(`/api/users/${form.id}`, payload);
         } else {
-            payload.password = form.password;
-            payload.password_confirmation = form.password_confirmation;
+            const payload = {
+                ldap_dn: form.ldap_dn,
+                role_key: form.role_key,
+                area_id: form.area_id ? Number(form.area_id) : null,
+            };
             await axios.post('/api/users', payload);
         }
 
@@ -787,6 +843,22 @@ watch(
         }, 300);
     }
 );
+
+watch(ldapSearch, () => {
+    if (isEdit.value || !formOpen.value) {
+        return;
+    }
+
+    if (selectedLdapUser.value && ldapSearch.value === ldapUserLabel(selectedLdapUser.value)) {
+        return;
+    }
+
+    if (ldapSearchTimeout) {
+        clearTimeout(ldapSearchTimeout);
+    }
+
+    ldapSearchTimeout = setTimeout(searchLdapUsers, 350);
+});
 
 watch(selectedRole, () => {
     pagination.currentPage = 1;
