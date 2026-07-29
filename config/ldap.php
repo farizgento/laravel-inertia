@@ -21,6 +21,15 @@ return [
         ],
     ],
 
+    'sync' => [
+        'base_dn' => env('LDAP_SYNC_BASE_DN'),
+        'unit_attribute' => env('LDAP_SYNC_UNIT_ATTRIBUTE', 'physicaldeliveryofficename'),
+        'unit_values' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', env('LDAP_SYNC_UNIT_VALUES', 'Unit Bisnis Pemeliharaan,MAINTENANCE SERVICES UNIT'))
+        ))),
+    ],
+
     'logging' => [
         'enabled' => (bool) env('LDAP_LOGGING', true),
         'channel' => env('LOG_CHANNEL', 'stack'),

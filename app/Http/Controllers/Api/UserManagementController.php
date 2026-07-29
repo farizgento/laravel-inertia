@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\LdapUser;
 use App\Models\Role;
 use App\Models\User;
-use App\Services\LdapDirectoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
@@ -232,30 +232,34 @@ class UserManagementController extends Controller
         ];
     }
 
-    public function store(Request $request, LdapDirectoryService $ldapDirectoryService): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         $actor = $this->authorizeCrudActor($request);
         $allowedRoleKeys = $this->allowedRoleKeysForActor($actor);
 
         $validated = $request->validate([
-            'ldap_dn' => ['required', 'string', 'max:2000'],
+            'ldap_user_id' => ['required', 'integer', 'exists:ldap_users,id'],
             'role_key' => ['required', 'string', Rule::in($allowedRoleKeys)],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
         ]);
         $validated = $this->applyWritableArea($actor, $validated);
 
-        $ldapUser = $ldapDirectoryService->findUserByDn($validated['ldap_dn']);
+        $ldapUser = LdapUser::query()->find($validated['ldap_user_id']);
 
         if (! $ldapUser) {
             return response()->json([
-                'message' => 'Data pengguna LDAP tidak ditemukan atau atributnya belum lengkap.',
+                'message' => 'Data pengguna LDAP belum tersedia di cache lokal.',
                 'errors' => [
-                    'ldap_dn' => ['Pilih pengguna dari hasil pencarian LDAP.'],
+                    'ldap_user_id' => ['Pilih pengguna dari hasil pencarian LDAP.'],
                 ],
             ], 422);
         }
 
-        $ldapValidator = Validator::make($ldapUser, [
+        $ldapValidator = Validator::make([
+            'name' => $ldapUser->name,
+            'username' => $ldapUser->username,
+            'email' => $ldapUser->email,
+        ], [
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
@@ -271,9 +275,9 @@ class UserManagementController extends Controller
         $role = $this->findRole($validated['role_key']);
 
         $user = User::create([
-            'name' => $ldapUser['name'],
-            'username' => $ldapUser['username'],
-            'email' => $ldapUser['email'],
+            'name' => $ldapUser->name,
+            'username' => $ldapUser->username,
+            'email' => $ldapUser->email,
             'role_id' => $role->id,
             'area_id' => (int) $validated['area_id'],
         ]);
@@ -293,9 +297,6 @@ class UserManagementController extends Controller
         abort_unless($manageableUser, 404);
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', Rule::unique('users', 'username')->ignore($user->id)],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'role_key' => ['required', 'string', Rule::in($allowedRoleKeys)],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
         ]);
@@ -304,9 +305,6 @@ class UserManagementController extends Controller
         $role = $this->findRole($validated['role_key']);
 
         $payload = [
-            'name' => $validated['name'],
-            'username' => $validated['username'],
-            'email' => $validated['email'],
             'role_id' => $role->id,
             'area_id' => (int) $validated['area_id'],
         ];

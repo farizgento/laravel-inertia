@@ -11,9 +11,10 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
-    private array $countCache = [];
-    private array $laporanCountCache = [];
-    private array $latestCache = [];
+    private array $actionStatsCache = [];
+    private array $laporanStatsCache = [];
+    private array $reviewStatsCache = [];
+    private array $userActionStatsCache = [];
 
     public function __invoke(Request $request)
     {
@@ -106,66 +107,184 @@ class NotificationController extends Controller
 
     private function countSourceAction(?int $areaId, string $kategori, array $statuses): int
     {
-        $cacheKey = $this->countCacheKey('source', $areaId, $kategori, $statuses);
-        if (array_key_exists($cacheKey, $this->countCache)) {
-            return $this->countCache[$cacheKey];
-        }
-
-        return $this->countCache[$cacheKey] = (int) $this->sourceAreaFilter(
-            $this->applyKategori($this->peminjamanActionQuery($statuses), $kategori),
-            $areaId
-        )->count();
+        return $this->sumActionRows(
+            $this->actionStats($areaId),
+            fn (array $row) => $this->matchesStatus($row, $statuses)
+                && $this->matchesKategori($row, $kategori)
+                && $this->matchesArea($row['area_id'], $areaId)
+        );
     }
 
     private function countRequesterAction(?int $areaId, array $statuses): int
     {
-        $cacheKey = $this->countCacheKey('requester', $areaId, Peminjaman::KATEGORI_ANTAR_AREA, $statuses);
-        if (array_key_exists($cacheKey, $this->countCache)) {
-            return $this->countCache[$cacheKey];
-        }
-
-        return $this->countCache[$cacheKey] = (int) $this->requesterAreaFilter(
-            $this->applyKategori($this->peminjamanActionQuery($statuses), Peminjaman::KATEGORI_ANTAR_AREA),
-            $areaId
-        )->count();
-    }
-
-    private function countCacheKey(string $scope, ?int $areaId, string $kategori, array $statuses): string
-    {
-        sort($statuses);
-
-        return implode('|', [
-            $scope,
-            $areaId ?? 'all',
-            $kategori,
-            implode(',', $statuses),
-        ]);
+        return $this->sumActionRows(
+            $this->actionStats($areaId),
+            fn (array $row) => $this->matchesStatus($row, $statuses)
+                && $this->matchesKategori($row, Peminjaman::KATEGORI_ANTAR_AREA)
+                && $this->matchesArea($row['requester_area_id'], $areaId)
+        );
     }
 
     private function latestSourceAction(?int $areaId, string $kategori, array $statuses): string
     {
-        $cacheKey = $this->countCacheKey('latest-source', $areaId, $kategori, $statuses);
-        if (array_key_exists($cacheKey, $this->latestCache)) {
-            return $this->latestCache[$cacheKey];
-        }
-
-        return $this->latestCache[$cacheKey] = (string) $this->sourceAreaFilter(
-            $this->applyKategori($this->peminjamanActionQuery($statuses), $kategori),
-            $areaId
-        )->max('updated_at');
+        return $this->latestActionRows(
+            $this->actionStats($areaId),
+            fn (array $row) => $this->matchesStatus($row, $statuses)
+                && $this->matchesKategori($row, $kategori)
+                && $this->matchesArea($row['area_id'], $areaId)
+        );
     }
 
     private function latestRequesterAction(?int $areaId, array $statuses): string
     {
-        $cacheKey = $this->countCacheKey('latest-requester', $areaId, Peminjaman::KATEGORI_ANTAR_AREA, $statuses);
-        if (array_key_exists($cacheKey, $this->latestCache)) {
-            return $this->latestCache[$cacheKey];
+        return $this->latestActionRows(
+            $this->actionStats($areaId),
+            fn (array $row) => $this->matchesStatus($row, $statuses)
+                && $this->matchesKategori($row, Peminjaman::KATEGORI_ANTAR_AREA)
+                && $this->matchesArea($row['requester_area_id'], $areaId)
+        );
+    }
+
+    private function actionStats(?int $areaId): array
+    {
+        $cacheKey = $areaId ? "area:{$areaId}" : 'all';
+        if (array_key_exists($cacheKey, $this->actionStatsCache)) {
+            return $this->actionStatsCache[$cacheKey];
         }
 
-        return $this->latestCache[$cacheKey] = (string) $this->requesterAreaFilter(
-            $this->applyKategori($this->peminjamanActionQuery($statuses), Peminjaman::KATEGORI_ANTAR_AREA),
-            $areaId
-        )->max('updated_at');
+        $statuses = array_values(array_unique([
+            Peminjaman::STATUS_MENUNGGU_REVIEW,
+            Peminjaman::STATUS_DISETUJUI,
+            Peminjaman::STATUS_DIKIRIM,
+            Peminjaman::STATUS_DITERIMA,
+            Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS,
+            Peminjaman::STATUS_DIKEMBALIKAN_SEMUANYA,
+        ]));
+
+        return $this->actionStatsCache[$cacheKey] = $this->peminjamanActionQuery($statuses)
+            ->when($areaId, function (Builder $query) use ($areaId) {
+                $query->where(function (Builder $areaQuery) use ($areaId) {
+                    $areaQuery
+                        ->where('area_id', $areaId)
+                        ->orWhere('requester_area_id', $areaId);
+                });
+            })
+            ->selectRaw('status, kategori, is_inter_area, area_id, requester_area_id, COUNT(*) as total, MAX(updated_at) as latest_at')
+            ->groupBy('status', 'kategori', 'is_inter_area', 'area_id', 'requester_area_id')
+            ->get()
+            ->map(fn ($row) => [
+                'status' => (string) $row->status,
+                'kategori' => $row->kategori,
+                'is_inter_area' => $this->toBool($row->is_inter_area),
+                'area_id' => $this->normalizeAreaId($row->area_id),
+                'requester_area_id' => $this->normalizeAreaId($row->requester_area_id),
+                'total' => (int) $row->total,
+                'latest_at' => (string) ($row->latest_at ?? ''),
+            ])
+            ->all();
+    }
+
+    private function matchesStatus(array $row, array $statuses): bool
+    {
+        return in_array($row['status'], $statuses, true);
+    }
+
+    private function matchesKategori(array $row, string $kategori): bool
+    {
+        $rowKategori = (string) ($row['kategori'] ?? '');
+
+        if ($kategori === Peminjaman::KATEGORI_ANTAR_AREA) {
+            return $rowKategori === Peminjaman::KATEGORI_ANTAR_AREA || $row['is_inter_area'] === true;
+        }
+
+        return in_array($rowKategori, [Peminjaman::KATEGORI_INTRA_AREA, ''], true)
+            && $row['is_inter_area'] === false;
+    }
+
+    private function matchesArea(?int $candidateAreaId, ?int $areaId): bool
+    {
+        return ! $areaId || $candidateAreaId === (int) $areaId;
+    }
+
+    private function sumActionRows(array $rows, callable $filter): int
+    {
+        return (int) collect($rows)
+            ->filter($filter)
+            ->sum('total');
+    }
+
+    private function latestActionRows(array $rows, callable $filter): string
+    {
+        return (string) collect($rows)
+            ->filter($filter)
+            ->max('latest_at');
+    }
+
+    private function reviewStats(?int $areaId): array
+    {
+        if (! $areaId) {
+            return [];
+        }
+
+        $cacheKey = "area:{$areaId}";
+        if (array_key_exists($cacheKey, $this->reviewStatsCache)) {
+            return $this->reviewStatsCache[$cacheKey];
+        }
+
+        return $this->reviewStatsCache[$cacheKey] = Peminjaman::query()
+            ->whereIn('status', [
+                Peminjaman::STATUS_MENUNGGU_REVIEW,
+                Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM,
+            ])
+            ->where(function (Builder $query) use ($areaId) {
+                $query
+                    ->where('area_id', $areaId)
+                    ->orWhere('requester_area_id', $areaId);
+            })
+            ->selectRaw('status, kategori, is_inter_area, area_id, requester_area_id, COUNT(*) as total, MAX(updated_at) as latest_at')
+            ->groupBy('status', 'kategori', 'is_inter_area', 'area_id', 'requester_area_id')
+            ->get()
+            ->map(fn ($row) => [
+                'status' => (string) $row->status,
+                'kategori' => $row->kategori,
+                'is_inter_area' => $this->toBool($row->is_inter_area),
+                'area_id' => $this->normalizeAreaId($row->area_id),
+                'requester_area_id' => $this->normalizeAreaId($row->requester_area_id),
+                'total' => (int) $row->total,
+                'latest_at' => (string) ($row->latest_at ?? ''),
+            ])
+            ->all();
+    }
+
+    private function laporanStats(string $roleKey, ?int $areaId, bool $shouldFilterArea): array
+    {
+        $cacheKey = implode('|', [
+            'laporan',
+            $roleKey,
+            $shouldFilterArea ? "area:{$areaId}" : 'all',
+        ]);
+
+        if (array_key_exists($cacheKey, $this->laporanStatsCache)) {
+            return $this->laporanStatsCache[$cacheKey];
+        }
+
+        if ($shouldFilterArea && ! $areaId) {
+            return $this->laporanStatsCache[$cacheKey] = [];
+        }
+
+        return $this->laporanStatsCache[$cacheKey] = LaporanAlat::query()
+            ->where('status', 'Dilaporkan')
+            ->when($shouldFilterArea, fn (Builder $query) => $query->where('area_id', $areaId))
+            ->selectRaw('kategori, COUNT(*) as total, MAX(updated_at) as latest_at')
+            ->groupBy('kategori')
+            ->get()
+            ->mapWithKeys(fn ($row) => [
+                (string) $row->kategori => [
+                    'total' => (int) $row->total,
+                    'latest_at' => (string) ($row->latest_at ?? ''),
+                ],
+            ])
+            ->all();
     }
 
     private function sidebarCounts(string $roleKey, ?int $areaId): array
@@ -253,22 +372,34 @@ class NotificationController extends Controller
 
     private function mutasiActionCount(?int $areaId, array $statuses): int
     {
-        $cacheKey = $this->countCacheKey('mutasi', $areaId, 'mutasi-alat', $statuses);
-        if (array_key_exists($cacheKey, $this->countCache)) {
-            return $this->countCache[$cacheKey];
+        if (! $areaId) {
+            return 0;
         }
 
-        return $this->countCache[$cacheKey] = (int) $this->mutasiActionQuery($areaId, $statuses)->count();
+        return $this->sumActionRows(
+            $this->actionStats($areaId),
+            fn (array $row) => $this->matchesStatus($row, $statuses)
+                && (
+                    ($this->matchesKategori($row, Peminjaman::KATEGORI_INTRA_AREA) && $this->matchesArea($row['area_id'], $areaId))
+                    || ($this->matchesKategori($row, Peminjaman::KATEGORI_ANTAR_AREA) && $this->matchesArea($row['requester_area_id'], $areaId))
+                )
+        );
     }
 
     private function latestMutasiAction(?int $areaId, array $statuses): string
     {
-        $cacheKey = $this->countCacheKey('latest-mutasi', $areaId, 'mutasi-alat', $statuses);
-        if (array_key_exists($cacheKey, $this->latestCache)) {
-            return $this->latestCache[$cacheKey];
+        if (! $areaId) {
+            return '';
         }
 
-        return $this->latestCache[$cacheKey] = (string) $this->mutasiActionQuery($areaId, $statuses)->max('updated_at');
+        return $this->latestActionRows(
+            $this->actionStats($areaId),
+            fn (array $row) => $this->matchesStatus($row, $statuses)
+                && (
+                    ($this->matchesKategori($row, Peminjaman::KATEGORI_INTRA_AREA) && $this->matchesArea($row['area_id'], $areaId))
+                    || ($this->matchesKategori($row, Peminjaman::KATEGORI_ANTAR_AREA) && $this->matchesArea($row['requester_area_id'], $areaId))
+                )
+        );
     }
 
     private function reviewCount(?int $areaId): int
@@ -277,49 +408,31 @@ class NotificationController extends Controller
             return 0;
         }
 
-        return (int) Peminjaman::query()
-            ->where(function (Builder $sub) use ($areaId) {
-                $sub->where(function (Builder $sourceQuery) use ($areaId) {
-                    $sourceQuery
-                        ->where('area_id', $areaId)
-                        ->where('status', Peminjaman::STATUS_MENUNGGU_REVIEW);
-                })->orWhere(function (Builder $requesterQuery) use ($areaId) {
-                    $requesterQuery
-                        ->where('is_inter_area', true)
-                        ->where('requester_area_id', $areaId)
-                        ->where('status', Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM);
-                });
-            })
-            ->count();
+        return $this->sumActionRows(
+            $this->reviewStats($areaId),
+            fn (array $row) => (
+                $row['status'] === Peminjaman::STATUS_MENUNGGU_REVIEW
+                && $this->matchesArea($row['area_id'], $areaId)
+            ) || (
+                $row['status'] === Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM
+                && $this->matchesKategori($row, Peminjaman::KATEGORI_ANTAR_AREA)
+                && $this->matchesArea($row['requester_area_id'], $areaId)
+            )
+        );
     }
 
     private function laporanCounts(string $roleKey, ?int $areaId): array
     {
-        $cacheKey = implode('|', ['laporan', $roleKey, $areaId ?? 'all']);
-        if (array_key_exists($cacheKey, $this->laporanCountCache)) {
-            return $this->laporanCountCache[$cacheKey];
-        }
+        $stats = $this->laporanStats(
+            $roleKey,
+            $areaId,
+            in_array($roleKey, [Role::KEY_GUEST, Role::KEY_SP_TOOL, Role::KEY_PIC_TOOL, Role::KEY_MGR_TOOL], true)
+                || ! empty($areaId)
+        );
 
-        $query = LaporanAlat::query()->where('status', 'Dilaporkan');
-        $shouldFilterArea = in_array($roleKey, [Role::KEY_GUEST, Role::KEY_SP_TOOL, Role::KEY_PIC_TOOL, Role::KEY_MGR_TOOL], true)
-            || ! empty($areaId);
-
-        if ($shouldFilterArea) {
-            if (! $areaId) {
-                return $this->laporanCountCache[$cacheKey] = ['kerusakan' => 0, 'kehilangan' => 0];
-            }
-
-            $query->where('area_id', $areaId);
-        }
-
-        $counts = $query
-            ->selectRaw('kategori, COUNT(*) as total')
-            ->groupBy('kategori')
-            ->pluck('total', 'kategori');
-
-        return $this->laporanCountCache[$cacheKey] = [
-            'kerusakan' => (int) ($counts[LaporanAlat::CATEGORY_KERUSAKAN] ?? 0),
-            'kehilangan' => (int) ($counts[LaporanAlat::CATEGORY_KEHILANGAN] ?? 0),
+        return [
+            'kerusakan' => (int) ($stats[LaporanAlat::CATEGORY_KERUSAKAN]['total'] ?? 0),
+            'kehilangan' => (int) ($stats[LaporanAlat::CATEGORY_KEHILANGAN]['total'] ?? 0),
         ];
     }
 
@@ -383,26 +496,12 @@ class NotificationController extends Controller
 
     private function latestLaporanAt(string $roleKey, ?int $areaId, string $kategori): string
     {
-        $cacheKey = implode('|', ['latest-laporan', $roleKey, $areaId ?? 'all', $kategori]);
-        if (array_key_exists($cacheKey, $this->latestCache)) {
-            return $this->latestCache[$cacheKey];
-        }
-
-        $query = LaporanAlat::query()
-            ->where('status', 'Dilaporkan')
-            ->where('kategori', $kategori);
         $shouldFilterArea = in_array($roleKey, [Role::KEY_SP_TOOL, Role::KEY_PIC_TOOL, Role::KEY_MGR_TOOL], true)
             || ! empty($areaId);
 
-        if ($shouldFilterArea) {
-            if (! $areaId) {
-                return $this->latestCache[$cacheKey] = '';
-            }
+        $stats = $this->laporanStats($roleKey, $areaId, $shouldFilterArea);
 
-            $query->where('area_id', $areaId);
-        }
-
-        return $this->latestCache[$cacheKey] = (string) $query->max('updated_at');
+        return (string) ($stats[$kategori]['latest_at'] ?? '');
     }
 
     private function picToolMailboxItems(?int $areaId, bool $includeRequesterActions = true): array
@@ -486,31 +585,21 @@ class NotificationController extends Controller
             return [];
         }
 
-        $intraCount = (int) $this->sourceAreaFilter(
-            $this->applyKategori(
-                Peminjaman::query()->where('status', Peminjaman::STATUS_MENUNGGU_REVIEW),
-                Peminjaman::KATEGORI_INTRA_AREA
-            ),
-            $areaId
-        )->count();
-
-        $antarCount = (int) Peminjaman::query()
-            ->where(function (Builder $sub) use ($areaId) {
-                $sub->where(function (Builder $requesterQuery) use ($areaId) {
-                    $requesterQuery
-                        ->where('requester_area_id', $areaId)
-                        ->where('status', Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM);
-                })->orWhere(function (Builder $sourceQuery) use ($areaId) {
-                    $sourceQuery
-                        ->where('area_id', $areaId)
-                        ->where('status', Peminjaman::STATUS_MENUNGGU_REVIEW);
-                });
-            })
-            ->where(function (Builder $sub) {
-                $sub->where('kategori', Peminjaman::KATEGORI_ANTAR_AREA)
-                    ->orWhere('is_inter_area', true);
-            })
-            ->count();
+        $reviewStats = $this->reviewStats($areaId);
+        $intraCount = $this->sumActionRows(
+            $reviewStats,
+            fn (array $row) => $row['status'] === Peminjaman::STATUS_MENUNGGU_REVIEW
+                && $this->matchesKategori($row, Peminjaman::KATEGORI_INTRA_AREA)
+                && $this->matchesArea($row['area_id'], $areaId)
+        );
+        $antarCount = $this->sumActionRows(
+            $reviewStats,
+            fn (array $row) => $this->matchesKategori($row, Peminjaman::KATEGORI_ANTAR_AREA)
+                && (
+                    ($row['status'] === Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM && $this->matchesArea($row['requester_area_id'], $areaId))
+                    || ($row['status'] === Peminjaman::STATUS_MENUNGGU_REVIEW && $this->matchesArea($row['area_id'], $areaId))
+                )
+        );
 
         return [
             [
@@ -538,28 +627,14 @@ class NotificationController extends Controller
             return '';
         }
 
-        $cacheKey = implode('|', ['latest-review-antar', $areaId]);
-        if (array_key_exists($cacheKey, $this->latestCache)) {
-            return $this->latestCache[$cacheKey];
-        }
-
-        return $this->latestCache[$cacheKey] = (string) Peminjaman::query()
-            ->where(function (Builder $sub) use ($areaId) {
-                $sub->where(function (Builder $requesterQuery) use ($areaId) {
-                    $requesterQuery
-                        ->where('requester_area_id', $areaId)
-                        ->where('status', Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM);
-                })->orWhere(function (Builder $sourceQuery) use ($areaId) {
-                    $sourceQuery
-                        ->where('area_id', $areaId)
-                        ->where('status', Peminjaman::STATUS_MENUNGGU_REVIEW);
-                });
-            })
-            ->where(function (Builder $sub) {
-                $sub->where('kategori', Peminjaman::KATEGORI_ANTAR_AREA)
-                    ->orWhere('is_inter_area', true);
-            })
-            ->max('updated_at');
+        return $this->latestActionRows(
+            $this->reviewStats($areaId),
+            fn (array $row) => $this->matchesKategori($row, Peminjaman::KATEGORI_ANTAR_AREA)
+                && (
+                    ($row['status'] === Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM && $this->matchesArea($row['requester_area_id'], $areaId))
+                    || ($row['status'] === Peminjaman::STATUS_MENUNGGU_REVIEW && $this->matchesArea($row['area_id'], $areaId))
+                )
+        );
     }
 
     private function userMailboxItems(int $userId): array
@@ -569,10 +644,7 @@ class NotificationController extends Controller
                 'key' => 'user-penerimaan',
                 'title' => 'Peminjaman - Intra Area - Dikirim',
                 'description' => 'Perlu diterima',
-                'count' => (int) $this->applyKategori(
-                    $this->peminjamanActionQuery([Peminjaman::STATUS_DIKIRIM])->where('user_id', $userId),
-                    Peminjaman::KATEGORI_INTRA_AREA
-                )->count(),
+                'count' => $this->userActionCount($userId, [Peminjaman::STATUS_DIKIRIM]),
                 'href' => '/mutasi-alat?tab=dikirim',
                 'sort_at' => $this->latestUserAction($userId, [Peminjaman::STATUS_DIKIRIM]),
             ],
@@ -580,27 +652,63 @@ class NotificationController extends Controller
                 'key' => 'user-pengembalian',
                 'title' => 'Peminjaman - Intra Area - Diterima',
                 'description' => 'Perlu dikembalikan',
-                'count' => (int) $this->applyKategori(
-                    $this->peminjamanActionQuery([Peminjaman::STATUS_DITERIMA, Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS])->where('user_id', $userId),
-                    Peminjaman::KATEGORI_INTRA_AREA
-                )->count(),
+                'count' => $this->userActionCount($userId, [Peminjaman::STATUS_DITERIMA, Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS]),
                 'href' => '/mutasi-alat?tab=diterima',
                 'sort_at' => $this->latestUserAction($userId, [Peminjaman::STATUS_DITERIMA, Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS]),
             ],
         ];
     }
 
+    private function userActionCount(int $userId, array $statuses): int
+    {
+        return $this->sumActionRows(
+            $this->userActionStats($userId),
+            fn (array $row) => $this->matchesStatus($row, $statuses)
+                && $this->matchesKategori($row, Peminjaman::KATEGORI_INTRA_AREA)
+        );
+    }
+
     private function latestUserAction(int $userId, array $statuses): string
     {
-        $cacheKey = $this->countCacheKey("latest-user-{$userId}", null, Peminjaman::KATEGORI_INTRA_AREA, $statuses);
-        if (array_key_exists($cacheKey, $this->latestCache)) {
-            return $this->latestCache[$cacheKey];
+        return $this->latestActionRows(
+            $this->userActionStats($userId),
+            fn (array $row) => $this->matchesStatus($row, $statuses)
+                && $this->matchesKategori($row, Peminjaman::KATEGORI_INTRA_AREA)
+        );
+    }
+
+    private function userActionStats(int $userId): array
+    {
+        if (array_key_exists($userId, $this->userActionStatsCache)) {
+            return $this->userActionStatsCache[$userId];
         }
 
-        return $this->latestCache[$cacheKey] = (string) $this->applyKategori(
-            $this->peminjamanActionQuery($statuses)->where('user_id', $userId),
-            Peminjaman::KATEGORI_INTRA_AREA
-        )->max('updated_at');
+        return $this->userActionStatsCache[$userId] = $this->peminjamanActionQuery([
+            Peminjaman::STATUS_DIKIRIM,
+            Peminjaman::STATUS_DITERIMA,
+            Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS,
+        ])
+            ->where('user_id', $userId)
+            ->selectRaw('status, kategori, is_inter_area, COUNT(*) as total, MAX(updated_at) as latest_at')
+            ->groupBy('status', 'kategori', 'is_inter_area')
+            ->get()
+            ->map(fn ($row) => [
+                'status' => (string) $row->status,
+                'kategori' => $row->kategori,
+                'is_inter_area' => $this->toBool($row->is_inter_area),
+                'total' => (int) $row->total,
+                'latest_at' => (string) ($row->latest_at ?? ''),
+            ])
+            ->all();
+    }
+
+    private function normalizeAreaId($areaId): ?int
+    {
+        return $areaId === null || $areaId === '' ? null : (int) $areaId;
+    }
+
+    private function toBool($value): bool
+    {
+        return in_array($value, [true, 1, '1', 'true', 'TRUE', 'Y', 'y'], true);
     }
 }
-

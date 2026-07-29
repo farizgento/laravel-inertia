@@ -61,10 +61,14 @@ class DashboardController extends Controller
             ->pluck('total', 'status')
             ->map(fn ($value) => (int) $value);
 
+        $alatTotals = (clone $alatQuery)
+            ->selectRaw('COUNT(*) as total_jenis, COALESCE(SUM(total_aset), 0) as total_aset')
+            ->first();
+
         $summary = [
-            'total_peminjaman' => (clone $peminjamanQuery)->count(),
-            'total_aset_area' => (int) (clone $alatQuery)->sum('total_aset'),
-            'total_jenis_alat_area' => (clone $alatQuery)->count(),
+            'total_peminjaman' => (int) $statusCounts->sum(),
+            'total_aset_area' => (int) ($alatTotals->total_aset ?? 0),
+            'total_jenis_alat_area' => (int) ($alatTotals->total_jenis ?? 0),
             'menunggu_review' =>
                 (int) ($statusCounts[Peminjaman::STATUS_PERLU_DIREVIEW] ?? 0) +
                 (int) ($statusCounts[Peminjaman::STATUS_PERLU_DISETUJUI] ?? 0),
@@ -168,14 +172,16 @@ class DashboardController extends Controller
         }
 
         $series = $monthly->values();
+        $alatTotals = Alat::query()
+            ->selectRaw('COUNT(*) as total_jenis, COALESCE(SUM(total_aset), 0) as total_aset')
+            ->first();
 
         return [
             'kerusakan_tahunan' => (int) $series->sum('kerusakan'),
             'kehilangan_tahunan' => (int) $series->sum('kehilangan'),
-            'total_aset_semua_area' => (int) Alat::query()->sum('total_aset'),
-            'total_jenis_alat_semua_area' => (int) Alat::query()->count(),
+            'total_aset_semua_area' => (int) ($alatTotals->total_aset ?? 0),
+            'total_jenis_alat_semua_area' => (int) ($alatTotals->total_jenis ?? 0),
             'series' => $series,
         ];
     }
 }
-

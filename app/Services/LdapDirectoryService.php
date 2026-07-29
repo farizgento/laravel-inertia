@@ -2,8 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\LdapUser;
 use Illuminate\Support\Collection;
-use LdapRecord\Models\ActiveDirectory\User as LdapUser;
+use LdapRecord\Models\ActiveDirectory\User as DirectoryUser;
 use Throwable;
 
 class LdapDirectoryService
@@ -13,76 +14,72 @@ class LdapDirectoryService
         'displayname',
         'mail',
         'name',
+        'physicaldeliveryofficename',
         'samaccountname',
         'uid',
         'userprincipalname',
     ];
 
-    /**
-     * @return array<int, array{dn: string, name: string, username: string, email: string}>
-     */
-    public function searchUsers(string $term, int $limit = 10): array
+    public function syncUsers(): int
     {
-        $term = trim($term);
+        $now = now();
+        $sourceUsers = $this->fetchUsersFromDirectory();
 
-        if (strlen($term) < 3) {
-            return [];
+        if ($sourceUsers === []) {
+            return 0;
         }
 
-        $results = collect();
+        foreach (array_chunk($sourceUsers, 200) as $chunk) {
+            foreach ($chunk as $attributes) {
+                LdapUser::query()->updateOrCreate(
+                    ['ldap_dn' => $attributes['ldap_dn']],
+                    [
+                        'name' => $attributes['name'],
+                        'username' => $attributes['username'],
+                        'email' => $attributes['email'],
+                        'last_synced_at' => $now,
+                    ]
+                );
+            }
+        }
+
+        LdapUser::query()
+            ->where('last_synced_at', '<', $now)
+            ->delete();
+
+        return count($sourceUsers);
+    }
+
+    /**
+     * @return array<int, array{ldap_dn: string, name: string, username: string, email: string}>
+     */
+    private function fetchUsersFromDirectory(): array
+    {
+        $results = [];
 
         foreach ($this->candidateBaseDns() as $baseDn) {
-            $users = LdapUser::query()
+            $query = DirectoryUser::query()
                 ->in($baseDn)
-                ->select(self::SELECT_ATTRIBUTES)
-                ->orFilter(function ($query) use ($term): void {
-                    $query
-                        ->whereStartsWith('samaccountname', $term)
-                        ->orWhereStartsWith('uid', $term)
-                        ->orWhereStartsWith('displayname', $term)
-                        ->orWhereStartsWith('cn', $term)
-                        ->orWhereStartsWith('mail', $term);
-                })
-                ->limit($limit)
+                ->select(self::SELECT_ATTRIBUTES);
+
+            if (! $this->hasSyncBaseDn()) {
+                $query = $this->applyMaintenanceUnitFilter($query);
+            }
+
+            $users = $query
+                ->limit(7000)
                 ->get();
 
             foreach ($users as $user) {
                 $data = $this->formatUser($user);
 
-                if ($data && ! $results->has($data['dn'])) {
-                    $results->put($data['dn'], $data);
+                if ($data) {
+                    $results[$data['ldap_dn']] = $data;
                 }
             }
-
-            if ($results->count() >= $limit) {
-                break;
-            }
         }
 
-        return $results
-            ->values()
-            ->take($limit)
-            ->all();
-    }
-
-    /**
-     * @return array{dn: string, name: string, username: string, email: string}|null
-     */
-    public function findUserByDn(string $dn): ?array
-    {
-        $dn = trim($dn);
-
-        if ($dn === '') {
-            return null;
-        }
-
-        $user = LdapUser::find($dn, self::SELECT_ATTRIBUTES);
-
-        if (! $user instanceof LdapUser) {
-            return null;
-        }
-
-        return $this->formatUser($user);
+        return array_values($results);
     }
 
     /**
@@ -90,12 +87,16 @@ class LdapDirectoryService
      */
     private function candidateBaseDns(): array
     {
+        if ($this->hasSyncBaseDn()) {
+            return [trim((string) config('ldap.sync.base_dn', ''))];
+        }
+
         $baseDns = Collection::make([
             trim((string) config('ldap.connections.default.base_dn', '')),
         ]);
 
         try {
-            $rootDse = LdapUser::getRootDse();
+            $rootDse = DirectoryUser::getRootDse();
             $baseDns->push(trim((string) $rootDse->getFirstAttribute('defaultnamingcontext', '')));
         } catch (Throwable) {
             //
@@ -108,10 +109,39 @@ class LdapDirectoryService
             ->all();
     }
 
+    private function hasSyncBaseDn(): bool
+    {
+        return trim((string) config('ldap.sync.base_dn', '')) !== '';
+    }
+
+    private function applyMaintenanceUnitFilter($query)
+    {
+        $attribute = trim((string) config('ldap.sync.unit_attribute', 'physicaldeliveryofficename'));
+        $values = array_values(array_filter(array_map(
+            'trim',
+            (array) config('ldap.sync.unit_values', [])
+        )));
+
+        if ($attribute === '' || $values === []) {
+            return $query;
+        }
+
+        return $query->where(function ($builder) use ($attribute, $values): void {
+            foreach ($values as $index => $value) {
+                if ($index === 0) {
+                    $builder->where($attribute, '=', $value);
+                    continue;
+                }
+
+                $builder->orWhere($attribute, '=', $value);
+            }
+        });
+    }
+
     /**
-     * @return array{dn: string, name: string, username: string, email: string}|null
+     * @return array{ldap_dn: string, name: string, username: string, email: string}|null
      */
-    private function formatUser(LdapUser $user): ?array
+    private function formatUser(DirectoryUser $user): ?array
     {
         $dn = trim((string) $user->getDn());
         $name = trim((string) (
@@ -133,7 +163,7 @@ class LdapDirectoryService
         }
 
         return [
-            'dn' => $dn,
+            'ldap_dn' => $dn,
             'name' => $name,
             'username' => $username,
             'email' => $email,

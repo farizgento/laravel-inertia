@@ -20,7 +20,6 @@
                     <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
                         <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-300">Area Aktif</p>
                         <p class="mt-2 text-lg font-semibold text-white">{{ currentAreaName }}</p>
-                        <p class="mt-1 text-xs text-slate-400">Diperbarui {{ generatedAtLabel }}</p>
                         <p v-if="isLoading" class="mt-2 text-xs font-semibold text-cyan-200">Memuat insight dashboard...</p>
                     </div>
                 </div>
@@ -271,7 +270,6 @@ const dashboard = reactive({
     },
     meta: {
         role_key: '',
-        generated_at: '',
         show_operational_insights: false,
     },
 });
@@ -292,24 +290,6 @@ const summary = computed(() => dashboard.summary);
 const insights = computed(() => dashboard.insights);
 const showOperationalInsights = computed(() => !!dashboard.meta.show_operational_insights);
 const currentYearLabel = computed(() => new Date().getFullYear());
-const generatedAtLabel = computed(() => {
-    if (!dashboard.meta.generated_at) {
-        return 'baru saja';
-    }
-
-    const date = new Date(dashboard.meta.generated_at);
-    if (Number.isNaN(date.getTime())) {
-        return 'baru saja';
-    }
-
-    return new Intl.DateTimeFormat('id-ID', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    }).format(date);
-});
 
 const formatNumber = (value) => new Intl.NumberFormat('id-ID').format(value ?? 0);
 
@@ -409,7 +389,6 @@ const applyPayload = (payload = {}) => {
     };
     dashboard.meta = {
         role_key: payload?.meta?.role_key ?? roleKey.value,
-        generated_at: payload?.meta?.generated_at ?? '',
         show_operational_insights: !!payload?.meta?.show_operational_insights,
     };
 };

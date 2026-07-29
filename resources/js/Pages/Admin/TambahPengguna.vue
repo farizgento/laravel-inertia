@@ -261,7 +261,7 @@
                         <div v-else-if="ldapResults.length" class="max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white">
                             <button
                                 v-for="ldapUser in ldapResults"
-                                :key="ldapUser.dn"
+                                :key="ldapUser.id"
                                 class="block w-full border-b border-slate-100 px-4 py-3 text-left text-sm transition last:border-b-0 hover:bg-blue-50"
                                 type="button"
                                 @click="selectLdapUser(ldapUser)"
@@ -271,8 +271,8 @@
                             </button>
                         </div>
 
-                        <p v-if="errors.ldap_dn || ldapSearchError" class="text-xs text-rose-500">
-                            {{ errors.ldap_dn || ldapSearchError }}
+                        <p v-if="errors.ldap_user_id || ldapSearchError" class="text-xs text-rose-500">
+                            {{ errors.ldap_user_id || ldapSearchError }}
                         </p>
                     </div>
 
@@ -306,6 +306,7 @@
                             v-model="form.email"
                             type="email"
                             placeholder="nama@perusahaan.com"
+                            readonly
                             class="w-full rounded-xl border border-slate-200 bg-slate-100 px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none cursor-not-allowed"
                         />
                         <p v-if="errors.email" class="text-xs text-rose-500">{{ errors.email }}</p>
@@ -357,7 +358,7 @@
                     <button
                         class="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                         type="button"
-                        :disabled="isSubmitting || (!isEdit && !form.ldap_dn)"
+                        :disabled="isSubmitting || (!isEdit && !form.ldap_user_id)"
                         @click="submitForm"
                     >
                         {{ isSubmitting ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Simpan' }}
@@ -439,7 +440,7 @@ const form = reactive({
     email: '',
     role_key: '',
     area_id: '',
-    ldap_dn: '',
+    ldap_user_id: '',
 });
 
 const isEdit = computed(() => form.id !== null);
@@ -568,7 +569,7 @@ const resetForm = () => {
     form.email = '';
     form.role_key = '';
     form.area_id = '';
-    form.ldap_dn = '';
+    form.ldap_user_id = '';
     form.area_id = adminAreaId.value;
     ldapSearch.value = '';
     ldapResults.value = [];
@@ -601,7 +602,7 @@ const openEdit = (user) => {
     form.email = user.email ?? '';
     form.role_key = user.role_key ?? '';
     form.area_id = isAreaLocked.value ? adminAreaId.value : user.area_id ? String(user.area_id) : '';
-    form.ldap_dn = '';
+    form.ldap_user_id = '';
     ldapSearch.value = '';
     ldapResults.value = [];
     selectedLdapUser.value = null;
@@ -689,13 +690,13 @@ const selectLdapUser = (ldapUser) => {
     selectedLdapUser.value = ldapUser;
     ldapResults.value = [];
     ldapSearch.value = ldapUserLabel(ldapUser);
-    form.ldap_dn = ldapUser.dn;
+    form.ldap_user_id = ldapUser.id;
     form.name = ldapUser.name;
     form.username = ldapUser.username;
     form.email = ldapUser.email;
     errors.value = {
         ...errors.value,
-        ldap_dn: '',
+        ldap_user_id: '',
         name: '',
         username: '',
         email: '',
@@ -710,7 +711,7 @@ const searchLdapUsers = async () => {
     const keyword = ldapSearch.value.trim();
     const requestId = ++ldapSearchRequestId;
 
-    form.ldap_dn = '';
+    form.ldap_user_id = '';
     selectedLdapUser.value = null;
     ldapSearchError.value = '';
 
@@ -759,16 +760,13 @@ const submitForm = async () => {
     try {
         if (isEdit.value) {
             const payload = {
-                name: form.name,
-                username: form.username,
-                email: form.email,
                 role_key: form.role_key,
                 area_id: form.area_id ? Number(form.area_id) : null,
             };
             await axios.put(`/api/users/${form.id}`, payload);
         } else {
             const payload = {
-                ldap_dn: form.ldap_dn,
+                ldap_user_id: form.ldap_user_id,
                 role_key: form.role_key,
                 area_id: form.area_id ? Number(form.area_id) : null,
             };
