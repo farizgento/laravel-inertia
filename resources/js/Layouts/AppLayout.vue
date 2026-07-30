@@ -9,7 +9,7 @@
             @close="closeFlash"
         />
         <div
-            v-if="isAreaSwitching || isGlobalLoading"
+            v-if="isAreaSwitching || isGlobalLoadingVisible"
             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40"
         >
             <div class="rounded-2xl bg-white px-5 py-4 shadow-xl">
@@ -115,6 +115,7 @@ const props = defineProps({
 
 const page = usePage();
 const SIDEBAR_BADGE_POLL_INTERVAL_MS = 10000;
+const GLOBAL_LOADING_DELAY_MS = 180;
 const isSidebarOpen = ref(
     typeof window !== 'undefined' &&
         window.matchMedia('(min-width: 1024px)').matches
@@ -125,6 +126,8 @@ const areas = ref([]);
 const activeAreaId = ref(null);
 const isAreaSwitching = ref(false);
 const globalLoadingCount = ref(0);
+const isGlobalLoadingVisible = ref(false);
+const globalLoadingTimerId = ref(null);
 const requestInterceptorId = ref(null);
 const responseInterceptorId = ref(null);
 const reviewPendingCount = ref(0);
@@ -225,10 +228,25 @@ const setAreaSwitching = (value) => {
 
 const startGlobalLoading = () => {
     globalLoadingCount.value += 1;
+    if (globalLoadingCount.value === 1 && globalLoadingTimerId.value === null) {
+        globalLoadingTimerId.value = window.setTimeout(() => {
+            if (globalLoadingCount.value > 0) {
+                isGlobalLoadingVisible.value = true;
+            }
+            globalLoadingTimerId.value = null;
+        }, GLOBAL_LOADING_DELAY_MS);
+    }
 };
 
 const stopGlobalLoading = () => {
     globalLoadingCount.value = Math.max(0, globalLoadingCount.value - 1);
+    if (globalLoadingCount.value === 0) {
+        if (globalLoadingTimerId.value !== null) {
+            window.clearTimeout(globalLoadingTimerId.value);
+            globalLoadingTimerId.value = null;
+        }
+        isGlobalLoadingVisible.value = false;
+    }
 };
 
 const shouldAttachAreaContext = (config) => {
@@ -262,6 +280,20 @@ const attachAreaContext = (config) => {
     return config;
 };
 
+const shouldShowGlobalLoading = (config) => {
+    if (config?.__skipGlobalLoading) {
+        return false;
+    }
+
+    if (config?.__showGlobalLoading === true) {
+        return true;
+    }
+
+    const method = String(config?.method ?? 'get').toLowerCase();
+
+    return ['post', 'put', 'patch', 'delete'].includes(method);
+};
+
 const attachLoadingInterceptors = () => {
     if (requestInterceptorId.value !== null || responseInterceptorId.value !== null) {
         return;
@@ -269,14 +301,14 @@ const attachLoadingInterceptors = () => {
     requestInterceptorId.value = axios.interceptors.request.use(
         (config) => {
             config = attachAreaContext(config);
-            if (config?.__skipGlobalLoading) {
-                return config;
+            if (shouldShowGlobalLoading(config)) {
+                config.__usesGlobalLoading = true;
+                startGlobalLoading();
             }
-            startGlobalLoading();
             return config;
         },
         (error) => {
-            if (!error?.config?.__skipGlobalLoading) {
+            if (error?.config?.__usesGlobalLoading) {
                 stopGlobalLoading();
             }
             return Promise.reject(error);
@@ -284,13 +316,13 @@ const attachLoadingInterceptors = () => {
     );
     responseInterceptorId.value = axios.interceptors.response.use(
         (response) => {
-            if (!response?.config?.__skipGlobalLoading) {
+            if (response?.config?.__usesGlobalLoading) {
                 stopGlobalLoading();
             }
             return response;
         },
         (error) => {
-            if (!error?.config?.__skipGlobalLoading) {
+            if (error?.config?.__usesGlobalLoading) {
                 stopGlobalLoading();
             }
             return Promise.reject(error);
@@ -582,6 +614,18 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+    if (requestInterceptorId.value !== null) {
+        axios.interceptors.request.eject(requestInterceptorId.value);
+        requestInterceptorId.value = null;
+    }
+    if (responseInterceptorId.value !== null) {
+        axios.interceptors.response.eject(responseInterceptorId.value);
+        responseInterceptorId.value = null;
+    }
+    if (globalLoadingTimerId.value !== null) {
+        window.clearTimeout(globalLoadingTimerId.value);
+        globalLoadingTimerId.value = null;
+    }
     stopSidebarBadgePolling();
     if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', handleVisibilityChange);

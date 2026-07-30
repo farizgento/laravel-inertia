@@ -20,7 +20,6 @@
                     <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
                         <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-300">Area Aktif</p>
                         <p class="mt-2 text-lg font-semibold text-white">{{ currentAreaName }}</p>
-                        <p v-if="isLoading" class="mt-2 text-xs font-semibold text-cyan-200">Memuat insight dashboard...</p>
                     </div>
                 </div>
 

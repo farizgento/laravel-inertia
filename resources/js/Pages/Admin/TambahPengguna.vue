@@ -115,50 +115,52 @@
                                 {{ loadError }}
                             </td>
                         </tr>
-                        <tr v-else v-for="user in users" :key="user.id">
-                            <td class="px-4 py-4">
-                                <div>
-                                    <p class="font-semibold text-slate-900">{{ user.name }}</p>
-                                    <p class="mt-1 text-xs text-slate-500">ID #{{ user.id }}</p>
-                                </div>
-                            </td>
-                            <td class="px-4 py-4 text-slate-600">{{ user.username }}</td>
-                            <td class="px-4 py-4 text-slate-600">{{ user.email }}</td>
-                            <td class="px-4 py-4">
-                                <span
-                                    class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
-                                    :class="roleBadgeClass(user.role_key)"
-                                >
-                                    {{ resolveRoleLabel(user.role_key) }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-4 text-slate-600">{{ user.area_name }}</td>
-                            <td v-if="canManageUsers" class="px-4 py-4 text-right">
-                                <div class="inline-flex items-center gap-2">
-                                    <button
-                                        class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-blue-200 hover:text-blue-600"
-                                        type="button"
-                                        @click="openEdit(user)"
+                        <template v-else>
+                            <tr v-for="user in users" :key="user.id">
+                                <td class="px-4 py-4">
+                                    <div>
+                                        <p class="font-semibold text-slate-900">{{ user.name }}</p>
+                                        <p class="mt-1 text-xs text-slate-500">ID #{{ user.id }}</p>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-4 text-slate-600">{{ user.username }}</td>
+                                <td class="px-4 py-4 text-slate-600">{{ user.email }}</td>
+                                <td class="px-4 py-4">
+                                    <span
+                                        class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                                        :class="roleBadgeClass(user.role_key)"
                                     >
-                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M12 20h9" />
-                                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                                        </svg>
-                                    </button>
-                                    <button
-                                        class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-200 text-rose-500 transition hover:bg-rose-50"
-                                        type="button"
-                                        @click="removeUser(user)"
-                                    >
-                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M3 6h18" />
-                                            <path d="M8 6V4h8v2" />
-                                            <path d="m6 6 1 14h10l1-14" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                                        {{ resolveRoleLabel(user.role_key) }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4 text-slate-600">{{ user.area_name }}</td>
+                                <td v-if="canManageUsers" class="px-4 py-4 text-right">
+                                    <div class="inline-flex items-center gap-2">
+                                        <button
+                                            class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-blue-200 hover:text-blue-600"
+                                            type="button"
+                                            @click="openEdit(user)"
+                                        >
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 20h9" />
+                                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-200 text-rose-500 transition hover:bg-rose-50"
+                                            type="button"
+                                            @click="removeUser(user)"
+                                        >
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M3 6h18" />
+                                                <path d="M8 6V4h8v2" />
+                                                <path d="m6 6 1 14h10l1-14" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
                         <tr v-if="!isLoading && !loadError && !users.length">
                             <td :colspan="canManageUsers ? 6 : 5" class="px-4 py-6 text-center text-sm text-slate-500">
                                 Tidak ada data pengguna.
@@ -372,7 +374,7 @@
 <script setup>
 import axios from 'axios';
 import { usePage } from '@inertiajs/vue3';
-import { computed, inject, onMounted, reactive, ref, watch } from 'vue';
+import { computed, inject, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ToastNotification from '../../Components/ToastNotification.vue';
 
@@ -425,6 +427,8 @@ let alertTimeout = null;
 let filterTimeout = null;
 let ldapSearchTimeout = null;
 let ldapSearchRequestId = 0;
+let usersRequestId = 0;
+let isInitializingFilters = true;
 
 const pagination = reactive({
     currentPage: 1,
@@ -462,6 +466,11 @@ const filterRoleOptions = computed(() =>
     (isSuperAdmin.value || isMgrTool.value)
         ? [...baseRoleOptions, ...superAdminExtraRoleOptions]
         : baseRoleOptions
+);
+const roleLabelMap = computed(() =>
+    Object.fromEntries(
+        [...baseRoleOptions, ...superAdminExtraRoleOptions].map((role) => [role.value, role.label])
+    )
 );
 const pageTitle = computed(() => (isMgrTool.value ? 'Data Pengguna' : 'Kelola Pengguna'));
 const pageSubtitle = computed(() =>
@@ -504,11 +513,7 @@ const normalizeErrors = (payload) => {
 };
 
 const resolveRoleLabel = (roleKey) => {
-    const matchedRole = filterRoleOptions.value.find((role) => role.value === roleKey)
-        ?? superAdminExtraRoleOptions.find((role) => role.value === roleKey)
-        ?? baseRoleOptions.find((role) => role.value === roleKey);
-
-    return matchedRole?.label ?? roleKey ?? '-';
+    return roleLabelMap.value[roleKey] ?? roleKey ?? '-';
 };
 
 const roleBadgeClass = (roleKey) => {
@@ -568,7 +573,6 @@ const resetForm = () => {
     form.username = '';
     form.email = '';
     form.role_key = '';
-    form.area_id = '';
     form.ldap_user_id = '';
     form.area_id = adminAreaId.value;
     ldapSearch.value = '';
@@ -619,7 +623,9 @@ const closeForm = () => {
 
 const loadAreas = async () => {
     try {
-        const response = await axios.get('/api/areas');
+        const response = await axios.get('/api/areas', {
+            __skipGlobalLoading: true,
+        });
         areas.value = Array.isArray(response.data) ? response.data : [];
         if (isSuperAdmin.value && !selectedArea.value && activeAreaId.value) {
             selectedArea.value = String(activeAreaId.value);
@@ -653,12 +659,33 @@ const buildParams = () => {
     return params;
 };
 
+const scheduleLoadUsers = (delay = 0) => {
+    if (filterTimeout) {
+        clearTimeout(filterTimeout);
+    }
+
+    filterTimeout = setTimeout(() => {
+        filterTimeout = null;
+        pagination.currentPage = 1;
+        loadUsers();
+    }, delay);
+};
+
 const loadUsers = async () => {
+    const requestId = ++usersRequestId;
     isLoading.value = true;
     loadError.value = '';
 
     try {
-        const response = await axios.get('/api/users', { params: buildParams() });
+        const response = await axios.get('/api/users', {
+            params: buildParams(),
+            __skipGlobalLoading: true,
+        });
+
+        if (requestId !== usersRequestId) {
+            return;
+        }
+
         const payload = response.data ?? {};
         users.value = Array.isArray(payload.data) ? payload.data : [];
         pagination.currentPage = Number(payload.meta?.current_page ?? 1) || 1;
@@ -666,10 +693,16 @@ const loadUsers = async () => {
         pagination.perPage = Number(payload.meta?.per_page ?? pagination.perPage) || 10;
         pagination.total = Number(payload.meta?.total ?? users.value.length) || 0;
     } catch (error) {
+        if (requestId !== usersRequestId) {
+            return;
+        }
+
         users.value = [];
         loadError.value = error.response?.data?.message ?? 'Gagal memuat data pengguna.';
     } finally {
-        isLoading.value = false;
+        if (requestId === usersRequestId) {
+            isLoading.value = false;
+        }
     }
 };
 
@@ -680,7 +713,13 @@ const goToPage = (page) => {
         return;
     }
 
+    if (filterTimeout) {
+        clearTimeout(filterTimeout);
+        filterTimeout = null;
+    }
+
     pagination.currentPage = next;
+    usersRequestId += 1;
     loadUsers();
 };
 
@@ -725,6 +764,7 @@ const searchLdapUsers = async () => {
     try {
         const response = await axios.get('/api/ldap/users', {
             params: { search: keyword },
+            __skipGlobalLoading: true,
         });
 
         if (requestId !== ldapSearchRequestId) {
@@ -831,14 +871,7 @@ watch([adminAreaId, availableAreas], () => {
 watch(
     search,
     () => {
-        if (filterTimeout) {
-            clearTimeout(filterTimeout);
-        }
-
-        filterTimeout = setTimeout(() => {
-            pagination.currentPage = 1;
-            loadUsers();
-        }, 300);
+        scheduleLoadUsers(300);
     }
 );
 
@@ -859,13 +892,19 @@ watch(ldapSearch, () => {
 });
 
 watch(selectedRole, () => {
-    pagination.currentPage = 1;
-    loadUsers();
+    if (isInitializingFilters) {
+        return;
+    }
+
+    scheduleLoadUsers();
 });
 
 watch(selectedArea, () => {
-    pagination.currentPage = 1;
-    loadUsers();
+    if (isInitializingFilters) {
+        return;
+    }
+
+    scheduleLoadUsers();
 });
 
 watch(
@@ -882,7 +921,27 @@ watch(
     { immediate: true }
 );
 
-onMounted(() => {
-    Promise.all([loadAreas(), loadUsers()]);
+onMounted(async () => {
+    await loadAreas();
+    isInitializingFilters = false;
+    loadUsers();
+});
+
+onBeforeUnmount(() => {
+    usersRequestId += 1;
+    ldapSearchRequestId += 1;
+
+    if (alertTimeout) {
+        clearTimeout(alertTimeout);
+        alertTimeout = null;
+    }
+    if (filterTimeout) {
+        clearTimeout(filterTimeout);
+        filterTimeout = null;
+    }
+    if (ldapSearchTimeout) {
+        clearTimeout(ldapSearchTimeout);
+        ldapSearchTimeout = null;
+    }
 });
 </script>

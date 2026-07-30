@@ -6,11 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\LdapUser;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Database\QueryException;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class UserManagementController extends Controller
 {
@@ -26,10 +27,15 @@ class UserManagementController extends Controller
         Role::KEY_ADMIN,
     ];
 
+    /**
+     * @var array<string, Role>
+     */
+    private array $roleCache = [];
+
     private function authorizeIndexActor(Request $request): User
     {
         $actor = $request->user();
-        $actor?->loadMissing(['role', 'area']);
+        $actor?->loadMissing('role:id,key');
 
         abort_unless(
             $actor && in_array($actor->role?->key, [Role::KEY_MGR_TOOL, Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true),
@@ -42,7 +48,7 @@ class UserManagementController extends Controller
     private function authorizeCrudActor(Request $request): User
     {
         $actor = $request->user();
-        $actor?->loadMissing(['role', 'area']);
+        $actor?->loadMissing('role:id,key');
 
         abort_unless(
             $actor && in_array($actor->role?->key, [Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true),
@@ -98,40 +104,26 @@ class UserManagementController extends Controller
         return $validated;
     }
 
-    private function manageableUsersQuery(User $actor)
+    private function manageableUsersQuery(User $actor): Builder
     {
-        $allowedRoleKeys = $this->allowedRoleKeysForActor($actor);
-
-        $query = User::query()
-            ->with(['area', 'role'])
-            ->whereHas('role', function ($query) use ($allowedRoleKeys) {
-                $query->whereIn('key', $allowedRoleKeys);
-            });
-
-        if ($this->isAreaScopedAdmin($actor)) {
-            if ($actor->area_id) {
-                $query->where('area_id', $actor->area_id);
-            } else {
-                $query->whereRaw('1 = 0');
-            }
-        }
-
-        return $query;
+        return $this->scopedUsersQuery($actor, $this->allowedRoleKeysForActor($actor));
     }
 
-    private function visibleUsersQuery(User $actor)
+    private function visibleUsersQuery(User $actor): Builder
     {
-        $visibleRoleKeys = $this->visibleRoleKeysForActor($actor);
+        return $this->scopedUsersQuery($actor, $this->visibleRoleKeysForActor($actor));
+    }
 
+    private function scopedUsersQuery(User $actor, array $roleKeys): Builder
+    {
         $query = User::query()
-            ->with(['area', 'role'])
-            ->whereHas('role', function ($query) use ($visibleRoleKeys) {
-                $query->whereIn('key', $visibleRoleKeys);
-            });
+            ->join('roles', 'roles.id', '=', 'users.role_id')
+            ->leftJoin('areas', 'areas.id', '=', 'users.area_id')
+            ->whereIn('roles.key', $roleKeys);
 
         if ($this->isAreaScopedAdmin($actor)) {
             if ($actor->area_id) {
-                $query->where('area_id', $actor->area_id);
+                $query->where('users.area_id', $actor->area_id);
             } else {
                 $query->whereRaw('1 = 0');
             }
@@ -148,17 +140,21 @@ class UserManagementController extends Controller
             'username' => $user->username,
             'email' => $user->email,
             'area_id' => $user->area_id,
-            'area_name' => $user->area?->name ?? '-',
+            'area_name' => $user->getAttribute('area_name') ?? $user->area?->name ?? '-',
             'role_id' => $user->role_id,
-            'role_key' => $user->role?->key ?? '',
-            'role_name' => $user->role?->name ?? '-',
+            'role_key' => $user->getAttribute('role_key') ?? $user->role?->key ?? '',
+            'role_name' => $user->getAttribute('role_name') ?? $user->role?->name ?? '-',
             'created_at' => optional($user->created_at)?->toISOString(),
         ];
     }
 
     private function findRole(string $roleKey): Role
     {
-        return Role::firstOrCreate(
+        if (isset($this->roleCache[$roleKey])) {
+            return $this->roleCache[$roleKey];
+        }
+
+        return $this->roleCache[$roleKey] = Role::firstOrCreate(
             ['key' => $roleKey],
             [
                 'name' => match ($roleKey) {
@@ -191,32 +187,38 @@ class UserManagementController extends Controller
         if ($search !== '') {
             $query->where(function ($builder) use ($search) {
                 $builder
-                    ->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('username', 'like', '%' . $search . '%')
-                    ->orWhere('email', 'like', '%' . $search . '%')
-                    ->orWhereHas('area', function ($areaQuery) use ($search) {
-                        $areaQuery->where('name', 'like', '%' . $search . '%');
-                    })
-                    ->orWhereHas('role', function ($roleQuery) use ($search) {
-                        $roleQuery
-                            ->where('name', 'like', '%' . $search . '%')
-                            ->orWhere('key', 'like', '%' . $search . '%');
-                    });
+                    ->where('users.name', 'like', '%' . $search . '%')
+                    ->orWhere('users.username', 'like', '%' . $search . '%')
+                    ->orWhere('users.email', 'like', '%' . $search . '%')
+                    ->orWhere('areas.name', 'like', '%' . $search . '%')
+                    ->orWhere('roles.name', 'like', '%' . $search . '%')
+                    ->orWhere('roles.key', 'like', '%' . $search . '%');
             });
         }
 
         if (in_array($roleKey, $visibleRoleKeys, true)) {
-            $query->whereHas('role', function ($roleQuery) use ($roleKey) {
-                $roleQuery->where('key', $roleKey);
-            });
+            $query->where('roles.key', $roleKey);
         }
 
         if (in_array($actor->role?->key, [Role::KEY_MGR_TOOL, Role::KEY_SUPER_ADMIN], true) && $areaId > 0) {
-            $query->where('area_id', $areaId);
+            $query->where('users.area_id', $areaId);
         }
 
         $users = $query
-            ->orderBy('name')
+            ->select([
+                'users.id',
+                'users.name',
+                'users.username',
+                'users.email',
+                'users.area_id',
+                'users.role_id',
+                'users.created_at',
+                'areas.name as area_name',
+                'roles.key as role_key',
+                'roles.name as role_name',
+            ])
+            ->orderBy('users.name')
+            ->orderBy('users.id')
             ->paginate($perPage);
 
         return [
@@ -238,13 +240,15 @@ class UserManagementController extends Controller
         $allowedRoleKeys = $this->allowedRoleKeysForActor($actor);
 
         $validated = $request->validate([
-            'ldap_user_id' => ['required', 'integer', 'exists:ldap_users,id'],
+            'ldap_user_id' => ['required', 'integer'],
             'role_key' => ['required', 'string', Rule::in($allowedRoleKeys)],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
         ]);
         $validated = $this->applyWritableArea($actor, $validated);
 
-        $ldapUser = LdapUser::query()->find($validated['ldap_user_id']);
+        $ldapUser = LdapUser::query()
+            ->select(['id', 'name', 'username', 'email'])
+            ->find($validated['ldap_user_id']);
 
         if (! $ldapUser) {
             return response()->json([
@@ -284,7 +288,7 @@ class UserManagementController extends Controller
 
         return response()->json([
             'message' => 'Pengguna berhasil ditambahkan.',
-            'user' => $user->load(['area', 'role']),
+            'user' => $user->load(['area:id,name', 'role:id,key,name']),
         ], 201);
     }
 
@@ -293,8 +297,12 @@ class UserManagementController extends Controller
         $actor = $this->authorizeCrudActor($request);
         $allowedRoleKeys = $this->allowedRoleKeysForActor($actor);
 
-        $manageableUser = $this->manageableUsersQuery($actor)->find($user->id);
-        abort_unless($manageableUser, 404);
+        abort_unless(
+            $this->manageableUsersQuery($actor)
+                ->where('users.id', $user->id)
+                ->exists(),
+            404
+        );
 
         $validated = $request->validate([
             'role_key' => ['required', 'string', Rule::in($allowedRoleKeys)],
@@ -313,7 +321,7 @@ class UserManagementController extends Controller
 
         return response()->json([
             'message' => 'Pengguna berhasil diperbarui.',
-            'user' => $user->fresh()->load(['area', 'role']),
+            'user' => $user->fresh()->load(['area:id,name', 'role:id,key,name']),
         ]);
     }
 
@@ -321,8 +329,12 @@ class UserManagementController extends Controller
     {
         $actor = $this->authorizeCrudActor($request);
 
-        $manageableUser = $this->manageableUsersQuery($actor)->find($user->id);
-        abort_unless($manageableUser, 404);
+        abort_unless(
+            $this->manageableUsersQuery($actor)
+                ->where('users.id', $user->id)
+                ->exists(),
+            404
+        );
 
         if ((int) $actor->id === (int) $user->id) {
             return response()->json([
