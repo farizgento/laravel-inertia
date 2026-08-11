@@ -218,6 +218,7 @@ import { computed, inject, onMounted, reactive, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ToastNotification from '../../Components/ToastNotification.vue';
+import { loadAreas as loadSharedAreas } from '../../lib/areas';
 
 defineOptions({
     layout: (h, page) =>
@@ -333,8 +334,7 @@ const normalizeTool = (item) => ({
 
 const loadAreas = async () => {
     try {
-        const response = await axios.get('/api/areas');
-        areas.value = Array.isArray(response.data) ? response.data : [];
+        areas.value = await loadSharedAreas();
     } catch (error) {
         areas.value = [];
     }

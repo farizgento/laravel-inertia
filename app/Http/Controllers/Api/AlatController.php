@@ -156,6 +156,24 @@ class AlatController extends Controller
         ] + $extra;
     }
 
+    /**
+     * Mode ringan untuk pengisian dropdown alat: hanya butuh id/kode/nama sehingga
+     * agregasi stok terpinjam dan payload lengkap tidak perlu dihitung.
+     */
+    private function wantsSelectPayload(Request $request): bool
+    {
+        return $request->boolean('for_select');
+    }
+
+    private function formatAlatForSelect(Alat $alat, array $extra = []): array
+    {
+        return [
+            'id' => $alat->id,
+            'kode' => $alat->kode,
+            'nama' => $alat->nama,
+        ] + $extra;
+    }
+
     private function borrowedMap(array $alatIds): array
     {
         if (! $alatIds) {
@@ -217,7 +235,11 @@ class AlatController extends Controller
         $classification = trim((string) ($request->query('klasifikasi_alat', $request->query('classification', ''))));
         $areaId = $this->resolveReadableAreaId($request);
 
-        $query = Alat::query()->with('area:id,name,slug,kode');
+        // Accessor "kode" pada Alat membaca relasi area, jadi relasi tersebut tetap
+        // harus di-eager-load walau pada mode ringan agar tidak memicu N+1.
+        $query = $this->wantsSelectPayload($request)
+            ? Alat::query()->select(['id', 'nama', 'area_id'])->with('area:id,kode')
+            : Alat::query()->with('area:id,name,slug,kode');
 
         if ($search !== '') {
             $keyword = mb_strtolower($search);
@@ -294,6 +316,11 @@ class AlatController extends Controller
         }
 
         $alats = $query->orderBy('nama')->get();
+
+        if ($this->wantsSelectPayload($request)) {
+            return $alats->map(fn (Alat $alat) => $this->formatAlatForSelect($alat))->values();
+        }
+
         $borrowedMap = $this->borrowedMap($alats->pluck('id')->all());
 
         return $alats->map(function (Alat $alat) use ($borrowedMap) {
@@ -309,13 +336,17 @@ class AlatController extends Controller
             return $this->paginatedIndexForArea($areaId, $ownedQuery, $request, $perPageNormalized);
         }
 
+        $forSelect = $this->wantsSelectPayload($request);
+
         $ownedAlats = $ownedQuery->orderBy('nama')->get();
         $sharedStocks = AreaAlatStock::query()
-            ->with([
-                'alat:id,nama,jenis_alat,klasifikasi_alat,total_aset,area_id',
-                'alat.area:id,name,slug,kode',
-                'sourcePeminjaman:id,tanggal_pinjam,tanggal_kembali',
-            ])
+            ->with($forSelect
+                ? ['alat:id,nama,area_id', 'alat.area:id,kode']
+                : [
+                    'alat:id,nama,jenis_alat,klasifikasi_alat,total_aset,area_id',
+                    'alat.area:id,name,slug,kode',
+                    'sourcePeminjaman:id,tanggal_pinjam,tanggal_kembali',
+                ])
             ->where('area_id', $areaId)
             ->where('active', true)
             ->where('qty', '>', 0)
@@ -339,6 +370,24 @@ class AlatController extends Controller
                 }
             })
             ->get();
+
+        if ($forSelect) {
+            return $ownedAlats
+                ->toBase()
+                ->map(fn (Alat $alat) => $this->formatAlatForSelect($alat, [
+                    'is_shared_area_stock' => false,
+                ]))
+                ->merge(
+                    $sharedStocks
+                        ->toBase()
+                        ->filter(fn (AreaAlatStock $stock) => $stock->alat)
+                        ->map(fn (AreaAlatStock $stock) => $this->formatAlatForSelect($stock->alat, [
+                            'is_shared_area_stock' => true,
+                        ]))
+                )
+                ->sortBy('nama')
+                ->values();
+        }
 
         $alatIds = $ownedAlats
             ->pluck('id')

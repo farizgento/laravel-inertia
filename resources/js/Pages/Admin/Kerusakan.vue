@@ -590,7 +590,7 @@ const loadReports = async () => {
 
 const loadTools = async () => {
     try {
-        const params = {};
+        const params = { for_select: 1 };
         if (currentAreaId.value) {
             params.area_id = currentAreaId.value;
         }

@@ -242,6 +242,7 @@ import axios from 'axios';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ToastNotification from '../../Components/ToastNotification.vue';
+import { invalidateAreasCache } from '../../lib/areas';
 
 defineOptions({
     layout: (h, page) =>
@@ -430,6 +431,7 @@ const submitForm = async () => {
             await axios.post('/api/admin/areas', payload);
         }
 
+        invalidateAreasCache();
         await loadAreas();
         showAlert('success', `Area berhasil ${isEdit.value ? 'diperbarui' : 'ditambahkan'}.`);
         closeForm();
@@ -459,6 +461,7 @@ const removeArea = async (area) => {
             pagination.currentPage -= 1;
         }
 
+        invalidateAreasCache();
         await loadAreas();
         showAlert('success', 'Area berhasil dihapus.');
     } catch (error) {

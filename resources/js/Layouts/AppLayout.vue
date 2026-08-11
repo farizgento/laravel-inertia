@@ -97,6 +97,7 @@ import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue';
 import AppHeader from '../Components/AppHeader.vue';
 import AppSidebar from '../Components/AppSidebar.vue';
 import ToastNotification from '../Components/ToastNotification.vue';
+import { loadAreas as loadSharedAreas } from '../lib/areas';
 
 const props = defineProps({
     title: {
@@ -114,7 +115,7 @@ const props = defineProps({
 });
 
 const page = usePage();
-const SIDEBAR_BADGE_POLL_INTERVAL_MS = 10000;
+const SIDEBAR_BADGE_POLL_INTERVAL_MS = 30000;
 const GLOBAL_LOADING_DELAY_MS = 180;
 const isSidebarOpen = ref(
     typeof window !== 'undefined' &&
@@ -372,8 +373,7 @@ const loadAreas = async () => {
         return;
     }
     try {
-        const response = await axios.get('/api/areas');
-        areas.value = Array.isArray(response.data) ? response.data : [];
+        areas.value = await loadSharedAreas();
     } catch (err) {
         areas.value = [];
     } finally {
@@ -408,6 +408,9 @@ const clearNotificationPayload = () => {
     });
 };
 
+let pendingNotificationRequest = null;
+let pendingNotificationKey = '';
+
 const refreshNotifications = async ({ silent = false } = {}) => {
     if (!isApiReady.value) {
         return;
@@ -418,28 +421,46 @@ const refreshNotifications = async ({ silent = false } = {}) => {
         params.area_id = activeAreaId.value;
     }
 
+    // Saat mount, onMounted dan watcher activeAreaId/roleKey bisa memicu refresh
+    // hampir bersamaan. Permintaan identik yang masih berjalan cukup ditunggu
+    // agar tidak mengirim request duplikat ke endpoint yang sama.
+    const requestKey = String(params.area_id ?? 'all');
+    if (pendingNotificationRequest && pendingNotificationKey === requestKey) {
+        return pendingNotificationRequest;
+    }
+
     const requestId = notificationRequestId + 1;
     notificationRequestId = requestId;
     isRefreshingSidebarCounts.value = true;
-    try {
-        const response = await axios.get('/api/notifications', {
-            params,
-            __skipGlobalLoading: silent,
-        });
-        if (requestId !== notificationRequestId) {
-            return;
+
+    pendingNotificationKey = requestKey;
+    pendingNotificationRequest = (async () => {
+        try {
+            const response = await axios.get('/api/notifications', {
+                params,
+                __skipGlobalLoading: silent,
+            });
+            if (requestId !== notificationRequestId) {
+                return;
+            }
+            applyNotificationPayload(response.data);
+        } catch (err) {
+            if (requestId !== notificationRequestId) {
+                return;
+            }
+            clearNotificationPayload();
+        } finally {
+            if (pendingNotificationKey === requestKey) {
+                pendingNotificationRequest = null;
+                pendingNotificationKey = '';
+            }
+            if (requestId === notificationRequestId) {
+                isRefreshingSidebarCounts.value = false;
+            }
         }
-        applyNotificationPayload(response.data);
-    } catch (err) {
-        if (requestId !== notificationRequestId) {
-            return;
-        }
-        clearNotificationPayload();
-    } finally {
-        if (requestId === notificationRequestId) {
-            isRefreshingSidebarCounts.value = false;
-        }
-    }
+    })();
+
+    return pendingNotificationRequest;
 };
 
 const refreshReviewPendingCount = refreshNotifications;

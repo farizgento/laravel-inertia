@@ -421,6 +421,7 @@ import { computed, inject, onMounted, reactive, ref, watch } from 'vue';
 import CartModal from './CartModal.vue';
 import CheckoutModal from './CheckoutModal.vue';
 import ToastNotification from './ToastNotification.vue';
+import { loadAreas as loadSharedAreas } from '../lib/areas';
 
 const STORAGE_KEY_PREFIX = 'peminjaman_cart_v1';
 const page = usePage();
@@ -609,8 +610,7 @@ const buildFilterParams = () => {
 
 const loadAreas = async () => {
     try {
-        const response = await axios.get('/api/areas');
-        areas.value = Array.isArray(response.data) ? response.data : [];
+        areas.value = await loadSharedAreas();
     } catch (error) {
         areas.value = [];
     }

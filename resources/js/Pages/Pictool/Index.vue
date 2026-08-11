@@ -559,6 +559,7 @@ import { computed, inject, onBeforeUnmount, onMounted, reactive, ref, watch } fr
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ToastNotification from '../../Components/ToastNotification.vue';
+import { loadAreas as loadSharedAreas } from '../../lib/areas';
 
 defineOptions({
     layout: (h, page) =>
@@ -878,8 +879,7 @@ const pollImportStatus = async (importId) => {
 
 const loadAreas = async () => {
     try {
-        const response = await axios.get('/api/areas');
-        areas.value = Array.isArray(response.data) ? response.data : [];
+        areas.value = await loadSharedAreas();
     } catch (error) {
         areas.value = [];
     }
@@ -1237,7 +1237,15 @@ onMounted(() => {
     if (isAreaSwitcherRole.value) {
         setAreaSwitching?.(true);
     }
-    Promise.all([loadAreas(), loadTools()]).finally(() => {
+
+    // Untuk super admin, area aktif baru terisi setelah AppLayout selesai memuat
+    // daftar area. Memuat alat di sini akan menghasilkan request tanpa area_id
+    // yang datanya langsung ditimpa oleh watcher activeAreaId di bawah, jadi
+    // biarkan watcher tersebut yang menjadi satu-satunya pemicu.
+    const areaWatcherWillLoadTools = isSuperAdmin.value && isAreaSwitcherRole.value;
+    const tasks = areaWatcherWillLoadTools ? [loadAreas()] : [loadAreas(), loadTools()];
+
+    Promise.all(tasks).finally(() => {
         if (isAreaSwitcherRole.value) {
             setAreaSwitching?.(false);
         }
