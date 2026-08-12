@@ -637,12 +637,13 @@ const loadCachedUser = () => {
 const cachedUser = ref(loadCachedUser());
 const authUser = computed(() => page.props.auth?.user ?? cachedUser.value);
 const roleKey = computed(() => (authUser.value?.role?.key ?? '').toLowerCase());
+const isSpTool = computed(() => roleKey.value === 'sp_tool');
 const isMgrTool = computed(() => roleKey.value === 'mgr_tool');
 const isSuperAdmin = computed(() => roleKey.value === 'super_admin');
 const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
 const canManageTools = computed(() => ['pic_tool', 'admin', 'super_admin'].includes(roleKey.value));
 const canExportTools = computed(() => true);
-const canFilterByArea = computed(() => isMgrTool.value);
+const canFilterByArea = computed(() => isSpTool.value || isMgrTool.value);
 const activeAreaId = inject('activeAreaId', ref(null));
 const activeAreaName = inject('activeAreaName', ref('Area aktif'));
 const setAreaSwitching = inject('setAreaSwitching', null);
@@ -1238,11 +1239,10 @@ onMounted(() => {
         setAreaSwitching?.(true);
     }
 
-    // Untuk super admin, area aktif baru terisi setelah AppLayout selesai memuat
-    // daftar area. Memuat alat di sini akan menghasilkan request tanpa area_id
-    // yang datanya langsung ditimpa oleh watcher activeAreaId di bawah, jadi
-    // biarkan watcher tersebut yang menjadi satu-satunya pemicu.
-    const areaWatcherWillLoadTools = isSuperAdmin.value && isAreaSwitcherRole.value;
+    // Untuk super admin, area aktif kadang sudah tersedia saat halaman ini
+    // dibuat ulang oleh key area di AppLayout. Dalam kondisi itu watcher
+    // activeAreaId tidak terpanggil lagi, jadi data harus dimuat saat mount.
+    const areaWatcherWillLoadTools = isSuperAdmin.value && isAreaSwitcherRole.value && !activeAreaId.value;
     const tasks = areaWatcherWillLoadTools ? [loadAreas()] : [loadAreas(), loadTools()];
 
     Promise.all(tasks).finally(() => {

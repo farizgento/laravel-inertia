@@ -17,8 +17,8 @@
             <div>
                 <h2 class="text-lg font-semibold text-slate-900">Daftar Pengguna</h2>
                 <p class="mt-1 text-sm text-slate-500">
-                    {{ isMgrTool
-                        ? 'Mgr Tool hanya dapat melihat data pengguna tanpa menambah, mengubah, atau menghapus.'
+                    {{ isSpTool || isMgrTool
+                        ? 'SP Tool dan Mgr Tool hanya dapat melihat data pengguna tanpa menambah, mengubah, atau menghapus.'
                         : isSuperAdmin
                         ? 'Super Admin dapat mengelola user, SP Tool, Pic Tool, Mgr Tool, dan Admin.'
                         : 'Admin dapat mengelola user, SP Tool, Pic Tool, dan Mgr Tool pada area sendiri.' }}
@@ -452,11 +452,12 @@ const isEdit = computed(() => form.id !== null);
 const authUser = computed(() => page.props.auth?.user ?? null);
 const roleKey = computed(() => String(authUser.value?.role?.key ?? '').toLowerCase());
 const isSuperAdmin = computed(() => roleKey.value === 'super_admin');
+const isSpTool = computed(() => roleKey.value === 'sp_tool');
 const isMgrTool = computed(() => roleKey.value === 'mgr_tool');
 const adminAreaId = computed(() => authUser.value?.area?.id ? String(authUser.value.area.id) : '');
 const isAdminRole = computed(() => roleKey.value === 'admin');
 const canManageUsers = computed(() => isSuperAdmin.value || isAdminRole.value);
-const canFilterByArea = computed(() => isSuperAdmin.value || isMgrTool.value);
+const canFilterByArea = computed(() => isSuperAdmin.value || isSpTool.value || isMgrTool.value);
 const activeAreaId = inject('activeAreaId', ref(null));
 const formRoleOptions = computed(() =>
     isSuperAdmin.value
@@ -464,7 +465,7 @@ const formRoleOptions = computed(() =>
         : baseRoleOptions
 );
 const filterRoleOptions = computed(() =>
-    (isSuperAdmin.value || isMgrTool.value)
+    (isSuperAdmin.value || isSpTool.value || isMgrTool.value)
         ? [...baseRoleOptions, ...superAdminExtraRoleOptions]
         : baseRoleOptions
 );
@@ -473,9 +474,9 @@ const roleLabelMap = computed(() =>
         [...baseRoleOptions, ...superAdminExtraRoleOptions].map((role) => [role.value, role.label])
     )
 );
-const pageTitle = computed(() => (isMgrTool.value ? 'Data Pengguna' : 'Kelola Pengguna'));
+const pageTitle = computed(() => ((isSpTool.value || isMgrTool.value) ? 'Data Pengguna' : 'Kelola Pengguna'));
 const pageSubtitle = computed(() =>
-    isMgrTool.value
+    (isSpTool.value || isMgrTool.value)
         ? 'Lihat data akun operasional tanpa akses CRUD.'
         : 'Kelola akun operasional dengan filter role, pencarian, dan form modal.'
 );

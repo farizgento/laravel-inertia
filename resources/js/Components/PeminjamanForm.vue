@@ -424,9 +424,11 @@ import ToastNotification from './ToastNotification.vue';
 import { loadAreas as loadSharedAreas } from '../lib/areas';
 
 const STORAGE_KEY_PREFIX = 'peminjaman_cart_v1';
+const REPEAT_DRAFT_STORAGE_KEY = 'peminjaman_repeat_draft_v1';
 const page = usePage();
 const cachedUserId = ref(null);
 const cachedUser = ref(null);
+const initialUserAreaId = page.props.auth?.user?.area?.id ?? '';
 
 const loadCachedUserId = () => {
     return null;
@@ -438,7 +440,7 @@ const loadCachedUser = () => {
 
 const katalog = ref([]);
 const areas = ref([]);
-const selectedAreaId = ref('');
+const selectedAreaId = ref(initialUserAreaId ? String(initialUserAreaId) : '');
 const isLoading = ref(false);
 const loadError = ref('');
 const toolCache = reactive({});
@@ -511,6 +513,26 @@ const loadCartFromStorage = () => {
         cart.value = Array.isArray(parsed) ? parsed : [];
     } catch (error) {
         cart.value = [];
+    }
+};
+
+const loadRepeatDraft = () => {
+    if (typeof window === 'undefined') {
+        return null;
+    }
+
+    const stored = window.sessionStorage.getItem(REPEAT_DRAFT_STORAGE_KEY);
+    if (!stored) {
+        return null;
+    }
+
+    window.sessionStorage.removeItem(REPEAT_DRAFT_STORAGE_KEY);
+
+    try {
+        const parsed = JSON.parse(stored);
+        return parsed && Array.isArray(parsed.items) ? parsed : null;
+    } catch (error) {
+        return null;
     }
 };
 
@@ -591,6 +613,53 @@ const cacheTool = (tool) => {
     };
 };
 
+const applyRepeatDraft = (draft) => {
+    if (!draft || isReadOnlyCatalog.value) {
+        return;
+    }
+
+    const draftItems = draft.items
+        .map((item) => {
+            const id = item?.id ?? item?.alat_id ?? null;
+            const qty = Math.max(1, Math.floor(Number(item?.qty ?? 0)));
+            const stok = Math.max(qty, Math.floor(Number(item?.stok ?? qty)));
+
+            if (!id || !Number.isFinite(qty) || qty <= 0) {
+                return null;
+            }
+
+            cacheTool({
+                id,
+                kode: item?.kode ?? item?.code ?? '-',
+                nama: item?.nama ?? item?.name ?? '-',
+                stok,
+                deskripsi: item?.deskripsi ?? '',
+                lokasi: item?.lokasi ?? '',
+            });
+
+            cartDrafts[id] = Math.min(qty, stok);
+
+            return {
+                id,
+                qty: Math.min(qty, stok),
+            };
+        })
+        .filter(Boolean);
+
+    if (!draftItems.length) {
+        return;
+    }
+
+    cart.value = draftItems;
+    form.value = {
+        tanggal_pinjam: draft.tanggal_pinjam ?? '',
+        tanggal_kembali: draft.tanggal_kembali ?? '',
+        pekerjaan: draft.pekerjaan ?? '',
+    };
+    drawerOpen.value = true;
+    showAlert('success', 'Draft peminjaman ulang sudah dimuat. Silakan sesuaikan alat, jumlah, atau periode sebelum checkout.');
+};
+
 let filterTimeout = null;
 
 const buildFilterParams = () => {
@@ -668,8 +737,8 @@ onMounted(() => {
     if (typeof window !== 'undefined') {
         cachedUserId.value = loadCachedUserId();
         cachedUser.value = loadCachedUser();
-        selectedAreaId.value = userAreaId.value ? String(userAreaId.value) : '';
         loadCartFromStorage();
+        applyRepeatDraft(loadRepeatDraft());
     }
     loadAreas();
     loadKatalog(buildFilterParams());

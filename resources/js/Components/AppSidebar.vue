@@ -774,6 +774,12 @@ const menuItems = computed(() => {
                     ...(isSpTool
                         ? [
                               {
+                                  key: 'tambah-pengguna',
+                                  label: 'Pengguna',
+                                  href: '/tambah-pengguna',
+                                  icon: 'users',
+                              },
+                              {
                                   key: 'review',
                                   label: 'Review Peminjaman',
                                   href: '/review-peminjaman',

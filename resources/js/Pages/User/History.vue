@@ -237,6 +237,20 @@
                                             Detail
                                         </button>
                                         <button
+                                            v-if="canRepeatPeminjaman(item)"
+                                            class="inline-flex items-center gap-2 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-700 transition hover:border-cyan-300"
+                                            type="button"
+                                            @click="repeatPeminjaman(item)"
+                                        >
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M17 1l4 4-4 4" />
+                                                <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                                                <path d="M7 23l-4-4 4-4" />
+                                                <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                                            </svg>
+                                            Ajukan Ulang
+                                        </button>
+                                        <button
                                             v-if="canManagePeminjaman"
                                             class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-300"
                                             type="button"
@@ -479,7 +493,7 @@
 <script setup>
 import axios from 'axios';
 import { computed, inject, onMounted, reactive, ref, watch } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import PeminjamanDetailModal from '../../Components/PeminjamanDetailModal.vue';
 import SuratJalanModal from '../../Components/SuratJalanModal.vue';
@@ -571,6 +585,7 @@ const editableStatuses = [
     'Selesai',
     'Ditolak',
 ];
+const REPEAT_DRAFT_STORAGE_KEY = 'peminjaman_repeat_draft_v1';
 
 const filteredItems = computed(() => items.value);
 
@@ -632,9 +647,64 @@ const suratJalanDocuments = (item) => {
 };
 
 const hasSuratJalan = (item) => suratJalanDocuments(item).length > 0;
+const canCreateIntraPeminjaman = computed(() => ['user', 'admin', 'super_admin'].includes(roleKey.value));
+const canRepeatPeminjaman = (item) =>
+    canCreateIntraPeminjaman.value
+    && item?.kategori === 'Intra Area'
+    && !item?.isInterArea
+    && Array.isArray(item?.tools)
+    && item.tools.some((tool) => tool.alat_id && Number(tool.qty ?? 0) > 0);
 
 const closeDetail = () => {
     selectedItem.value = null;
+};
+
+const repeatPeminjaman = (item) => {
+    if (!canRepeatPeminjaman(item) || typeof window === 'undefined') {
+        return;
+    }
+
+    const draftItems = item.tools
+        .map((tool) => {
+            const qty = Number(tool?.qty ?? 0);
+            const stockHint = Math.max(
+                qty,
+                Number(tool?.approvedQty ?? 0),
+                Number(tool?.remainingQty ?? 0),
+                1
+            );
+
+            return {
+                id: tool?.alat_id ?? null,
+                qty,
+                kode: tool?.code ?? '-',
+                nama: tool?.name ?? '-',
+                stok: stockHint,
+            };
+        })
+        .filter((tool) => tool.id && tool.qty > 0);
+
+    if (!draftItems.length) {
+        return;
+    }
+
+    window.sessionStorage.setItem(
+        REPEAT_DRAFT_STORAGE_KEY,
+        JSON.stringify({
+            source_id: item.id,
+            pekerjaan: item.title && item.title !== '-' ? item.title : '',
+            tanggal_pinjam: item.borrowDateValue ?? '',
+            tanggal_kembali: item.returnDateValue ?? '',
+            area_id: item.areaId ?? currentAreaId.value ?? null,
+            items: draftItems,
+        })
+    );
+
+    router.visit('/peminjaman', {
+        data: {
+            repeat_from: item.id,
+        },
+    });
 };
 
 const openEdit = (item) => {

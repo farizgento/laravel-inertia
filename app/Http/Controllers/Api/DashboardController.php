@@ -28,6 +28,7 @@ class DashboardController extends Controller
         $user->loadMissing(['role', 'area']);
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
         $isAreaSwitcherRole = in_array($roleKey, [Role::KEY_GUEST, Role::KEY_SUPER_ADMIN], true);
+        $canChooseDashboardArea = in_array($roleKey, [Role::KEY_SP_TOOL, Role::KEY_MGR_TOOL], true);
         $showOperationalInsights = in_array($roleKey, [
             Role::KEY_GUEST,
             Role::KEY_SP_TOOL,
@@ -36,7 +37,7 @@ class DashboardController extends Controller
             Role::KEY_SUPER_ADMIN,
         ], true);
 
-        $effectiveAreaId = $isAreaSwitcherRole
+        $effectiveAreaId = ($isAreaSwitcherRole || $canChooseDashboardArea)
             ? ($validated['area_id'] ?? $user->area_id)
             : $user->area_id;
 
@@ -102,6 +103,7 @@ class DashboardController extends Controller
             'meta' => [
                 'role_key' => $roleKey,
                 'is_area_switcher' => $isAreaSwitcherRole,
+                'can_choose_dashboard_area' => $canChooseDashboardArea,
                 'show_operational_insights' => $showOperationalInsights,
                 'generated_at' => now()->toIso8601String(),
             ],

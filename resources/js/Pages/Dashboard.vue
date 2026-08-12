@@ -13,13 +13,23 @@
                             Halo, {{ greetingName }}.
                         </h1>
                         <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-                            Ringkasan operasional untuk {{ currentAreaName }}. Semua angka di bawah mengikuti area aktif pengguna yang login.
+                            Ringkasan operasional untuk {{ currentAreaName }}. Semua angka di bawah mengikuti area dashboard yang sedang dipilih.
                         </p>
                     </div>
-
                     <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
                         <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-300">Area Aktif</p>
-                        <p class="mt-2 text-lg font-semibold text-white">{{ currentAreaName }}</p>
+                        <select
+                            v-if="canChooseDashboardArea"
+                            v-model="selectedAreaId"
+                            class="mt-2 h-10 w-full min-w-56 rounded-xl border border-white/10 bg-slate-950/60 px-3 text-sm font-semibold text-white outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/20"
+                            :disabled="isLoadingAreas || isLoading"
+                        >
+                            <option value="">Pilih area</option>
+                            <option v-for="area in areas" :key="area.id" :value="String(area.id)">
+                                {{ area.name }}
+                            </option>
+                        </select>
+                        <p v-else class="mt-2 text-lg font-semibold text-white">{{ currentAreaName }}</p>
                     </div>
                 </div>
 
@@ -220,6 +230,7 @@ import axios from 'axios';
 import { computed, inject, onMounted, reactive, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../Layouts/AppLayout.vue';
+import { loadAreas as loadSharedAreas } from '../lib/areas';
 
 defineOptions({
     layout: (h, page) =>
@@ -273,12 +284,18 @@ const dashboard = reactive({
     },
 });
 
+const areas = ref([]);
+const selectedAreaId = ref('');
 const isLoading = ref(false);
+const isLoadingAreas = ref(false);
 const loadError = ref('');
 
 const roleKey = computed(() =>
     (page.props.auth?.user?.role?.key ?? cachedUser.value?.role?.key ?? '').toLowerCase()
 );
+const authUser = computed(() => page.props.auth?.user ?? cachedUser.value);
+const userAreaId = computed(() => authUser.value?.area_id ?? authUser.value?.area?.id ?? '');
+const canChooseDashboardArea = computed(() => ['sp_tool', 'mgr_tool'].includes(roleKey.value));
 const greetingName = computed(() => page.props.auth?.user?.name ?? cachedUser.value?.name ?? 'Pengguna');
 const currentAreaName = computed(() =>
     (dashboard.area.id ? dashboard.area.name : '') ||
@@ -291,6 +308,7 @@ const showOperationalInsights = computed(() => !!dashboard.meta.show_operational
 const currentYearLabel = computed(() => new Date().getFullYear());
 
 const formatNumber = (value) => new Intl.NumberFormat('id-ID').format(value ?? 0);
+const normalizeAreaId = (value) => (value === null || value === undefined || value === '' ? '' : String(value));
 
 const summaryCards = computed(() => [
     {
@@ -388,20 +406,46 @@ const applyPayload = (payload = {}) => {
     };
     dashboard.meta = {
         role_key: payload?.meta?.role_key ?? roleKey.value,
+        can_choose_dashboard_area: !!payload?.meta?.can_choose_dashboard_area,
         show_operational_insights: !!payload?.meta?.show_operational_insights,
     };
 };
 
 const buildParams = () => {
     const params = {};
-    if (isAreaSwitcherRole.value && activeAreaId.value) {
+    if (canChooseDashboardArea.value && selectedAreaId.value) {
+        params.area_id = selectedAreaId.value;
+    } else if (isAreaSwitcherRole.value && activeAreaId.value) {
         params.area_id = activeAreaId.value;
     }
     return params;
 };
 
+const loadDashboardAreas = async () => {
+    if (!canChooseDashboardArea.value) {
+        areas.value = [];
+        return;
+    }
+
+    isLoadingAreas.value = true;
+    try {
+        areas.value = await loadSharedAreas();
+        if (!selectedAreaId.value && userAreaId.value) {
+            selectedAreaId.value = normalizeAreaId(userAreaId.value);
+        }
+    } catch (error) {
+        areas.value = [];
+    } finally {
+        isLoadingAreas.value = false;
+    }
+};
+
 const loadDashboard = async () => {
-    if (isAreaSwitcherRole.value && !activeAreaId.value) {
+    if (canChooseDashboardArea.value && !selectedAreaId.value) {
+        return;
+    }
+
+    if (!canChooseDashboardArea.value && isAreaSwitcherRole.value && !activeAreaId.value) {
         return;
     }
 
@@ -422,10 +466,38 @@ const loadDashboard = async () => {
 
 onMounted(() => {
     cachedUser.value = loadCachedUser();
+    if (canChooseDashboardArea.value) {
+        selectedAreaId.value = normalizeAreaId(userAreaId.value);
+        loadDashboardAreas();
+        return;
+    }
+
     if (!isAreaSwitcherRole.value || activeAreaId.value) {
         loadDashboard();
     }
 });
+
+watch(
+    selectedAreaId,
+    (next, prev) => {
+        if (!canChooseDashboardArea.value || !next || next === prev) {
+            return;
+        }
+
+        loadDashboard();
+    }
+);
+
+watch(
+    userAreaId,
+    (next) => {
+        if (!canChooseDashboardArea.value || selectedAreaId.value || !next) {
+            return;
+        }
+
+        selectedAreaId.value = normalizeAreaId(next);
+    }
+);
 
 watch(
     () => activeAreaId.value,

@@ -38,7 +38,7 @@ class UserManagementController extends Controller
         $actor?->loadMissing('role:id,key');
 
         abort_unless(
-            $actor && in_array($actor->role?->key, [Role::KEY_MGR_TOOL, Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true),
+            $actor && in_array($actor->role?->key, [Role::KEY_SP_TOOL, Role::KEY_MGR_TOOL, Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true),
             403
         );
 
@@ -77,7 +77,7 @@ class UserManagementController extends Controller
 
     private function visibleRoleKeysForActor(User $actor): array
     {
-        if (in_array($actor->role?->key, [Role::KEY_MGR_TOOL, Role::KEY_SUPER_ADMIN], true)) {
+        if (in_array($actor->role?->key, [Role::KEY_SP_TOOL, Role::KEY_MGR_TOOL, Role::KEY_SUPER_ADMIN], true)) {
             return [
                 ...self::DEFAULT_ALLOWED_ROLE_KEYS,
                 ...self::SUPER_ADMIN_EXTRA_ROLE_KEYS,
@@ -200,7 +200,7 @@ class UserManagementController extends Controller
             $query->where('roles.key', $roleKey);
         }
 
-        if (in_array($actor->role?->key, [Role::KEY_MGR_TOOL, Role::KEY_SUPER_ADMIN], true) && $areaId > 0) {
+        if (in_array($actor->role?->key, [Role::KEY_SP_TOOL, Role::KEY_MGR_TOOL, Role::KEY_SUPER_ADMIN], true) && $areaId > 0) {
             $query->where('users.area_id', $areaId);
         }
 

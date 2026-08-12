@@ -40,6 +40,13 @@ class AlatController extends Controller
         return $roleKey === Role::KEY_MGR_TOOL;
     }
 
+    private function isSpTool(?Request $request): bool
+    {
+        $roleKey = strtolower((string) ($request?->user()?->role?->key ?? ''));
+
+        return $roleKey === Role::KEY_SP_TOOL;
+    }
+
     private function isGuest(?Request $request): bool
     {
         $roleKey = strtolower((string) ($request?->user()?->role?->key ?? ''));
@@ -87,7 +94,7 @@ class AlatController extends Controller
             return $userAreaId ? (int) $userAreaId : null;
         }
 
-        if ($request->user() && ($this->isAreaSwitcherReader($request) || $this->isMgrTool($request))) {
+        if ($request->user() && ($this->isAreaSwitcherReader($request) || $this->isSpTool($request) || $this->isMgrTool($request))) {
             return $requestedAreaId;
         }
 
