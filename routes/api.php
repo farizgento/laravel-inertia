@@ -28,13 +28,13 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('guest:sanctum')->group(function () {
+Route::middleware('guest')->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login']);
 });
 
 Route::get('/areas', [AreaController::class, 'index']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user()->load(['area', 'role']);
     });
@@ -316,3 +316,4 @@ Route::middleware('auth:sanctum')->group(function () {
             Role::KEY_SUPER_ADMIN,
         ]));
 });
+
