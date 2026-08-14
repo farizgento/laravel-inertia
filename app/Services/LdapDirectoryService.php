@@ -87,8 +87,8 @@ class LdapDirectoryService
      */
     private function candidateBaseDns(): array
     {
-        if ($this->hasSyncBaseDn()) {
-            return [trim((string) config('ldap.sync.base_dn', ''))];
+        if ($syncBaseDn = $this->effectiveSyncBaseDn()) {
+            return [$syncBaseDn];
         }
 
         $baseDns = Collection::make([
@@ -96,8 +96,7 @@ class LdapDirectoryService
         ]);
 
         try {
-            $rootDse = DirectoryUser::getRootDse();
-            $baseDns->push(trim((string) $rootDse->getFirstAttribute('defaultnamingcontext', '')));
+            $baseDns->push($this->defaultNamingContext());
         } catch (Throwable) {
             //
         }
@@ -111,7 +110,41 @@ class LdapDirectoryService
 
     private function hasSyncBaseDn(): bool
     {
-        return trim((string) config('ldap.sync.base_dn', '')) !== '';
+        return $this->effectiveSyncBaseDn() !== '';
+    }
+
+    private function effectiveSyncBaseDn(): string
+    {
+        $syncBaseDn = trim((string) config('ldap.sync.base_dn', ''));
+
+        if ($syncBaseDn !== '') {
+            return $syncBaseDn;
+        }
+
+        $configuredBaseDn = trim((string) config('ldap.connections.default.base_dn', ''));
+
+        if ($configuredBaseDn === '') {
+            return '';
+        }
+
+        try {
+            $defaultNamingContext = $this->defaultNamingContext();
+
+            if ($defaultNamingContext !== '' && strcasecmp($configuredBaseDn, $defaultNamingContext) !== 0) {
+                return $configuredBaseDn;
+            }
+        } catch (Throwable) {
+            //
+        }
+
+        return '';
+    }
+
+    private function defaultNamingContext(): string
+    {
+        $rootDse = DirectoryUser::getRootDse();
+
+        return trim((string) $rootDse->getFirstAttribute('defaultnamingcontext', ''));
     }
 
     private function applyMaintenanceUnitFilter($query)
@@ -126,16 +159,16 @@ class LdapDirectoryService
             return $query;
         }
 
-        return $query->where(function ($builder) use ($attribute, $values): void {
-            foreach ($values as $index => $value) {
-                if ($index === 0) {
-                    $builder->where($attribute, '=', $value);
-                    continue;
-                }
+        $escapedAttribute = $query->escape($attribute)->forDnAndFilter()->get();
+        $rawFilter = '(|'.collect($values)
+            ->map(fn (string $value) => sprintf(
+                '(%s=%s)',
+                $escapedAttribute,
+                $query->escape($value)->get()
+            ))
+            ->implode('').')';
 
-                $builder->orWhere($attribute, '=', $value);
-            }
-        });
+        return $query->rawFilter($rawFilter);
     }
 
     /**

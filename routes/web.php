@@ -25,7 +25,7 @@ Route::middleware('guest')->group(function () {
     })->name('login');
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->middleware('role:' . implode(',', [
@@ -200,3 +200,4 @@ Route::middleware('auth:sanctum')->group(function () {
         return Inertia::render('Admin/Area');
     })->middleware('role:' . Role::KEY_SUPER_ADMIN)->name('area.index');
 });
+
