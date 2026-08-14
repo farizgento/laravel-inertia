@@ -16,8 +16,8 @@ use Inertia\Inertia;
 */
 
 Route::get('/', function () {
-    return redirect()->route('login');
-});
+    return Inertia::render('Landing');
+})->name('landing');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', function () {
