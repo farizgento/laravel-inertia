@@ -859,15 +859,27 @@ const normalizeHistory = (item) => {
             pengirimNama: item?.pengirim_nama ?? '',
             suratJalanUrl: item?.surat_jalan_url ?? '',
             suratJalanPath: item?.surat_jalan_path ?? '',
+            suratJalanDownloadUrl: item?.surat_jalan_download_url ?? item?.surat_jalan_url ?? '',
+            suratJalanOriginalName: item?.surat_jalan_original_name ?? '',
+            suratJalanType: item?.surat_jalan_type ?? '',
             pengembaliNama: item?.pengembali_nama ?? '',
             returnSuratJalanUrl: item?.surat_jalan_pengembalian_url ?? '',
             returnSuratJalanPath: item?.surat_jalan_pengembalian_path ?? '',
+            returnSuratJalanDownloadUrl: item?.surat_jalan_pengembalian_download_url ?? item?.surat_jalan_pengembalian_url ?? '',
+            returnSuratJalanOriginalName: item?.surat_jalan_pengembalian_original_name ?? '',
+            returnSuratJalanType: item?.surat_jalan_pengembalian_type ?? '',
             suratJalanItems: Array.isArray(item?.surat_jalan_items)
                 ? item.surat_jalan_items.map((document, index) => ({
+                      id: document?.id ?? null,
+                      type: document?.type ?? document?.document_type ?? '',
                       label: document?.label ?? `Surat Jalan ${index + 1}`,
                       url: document?.url ?? '',
                       path: document?.path ?? '',
+                      downloadUrl: document?.download_url ?? document?.downloadUrl ?? document?.url ?? '',
+                      originalName: document?.original_name ?? document?.originalName ?? '',
+                      mimeType: document?.mime_type ?? document?.mimeType ?? '',
                       pengirimName: document?.pengirim_nama ?? '',
+                      createdAt: document?.created_at ?? '',
                   }))
                 : [],
             tools,
@@ -939,23 +951,29 @@ const suratJalanDocuments = (item) => {
     }
 
     if (Array.isArray(item.suratJalanItems) && item.suratJalanItems.length) {
-        return item.suratJalanItems.filter((document) => document.url || document.path);
+        return item.suratJalanItems.filter((document) => document.url || document.path || document.downloadUrl);
     }
 
     return [
-        item.suratJalanUrl || item.suratJalanPath
+        item.suratJalanUrl || item.suratJalanPath || item.suratJalanDownloadUrl
             ? {
-                  label: 'Surat Jalan Masuk',
+                  label: 'Surat Jalan Pengiriman',
                   url: item.suratJalanUrl,
                   path: item.suratJalanPath,
+                  downloadUrl: item.suratJalanDownloadUrl,
+                  originalName: item.suratJalanOriginalName,
+                  type: item.suratJalanType,
                   pengirimName: item.pengirimNama,
               }
             : null,
-        item.returnSuratJalanUrl || item.returnSuratJalanPath
+        item.returnSuratJalanUrl || item.returnSuratJalanPath || item.returnSuratJalanDownloadUrl
             ? {
-                  label: 'Surat Jalan Keluar',
+                  label: 'Surat Jalan Pengembalian',
                   url: item.returnSuratJalanUrl,
                   path: item.returnSuratJalanPath,
+                  downloadUrl: item.returnSuratJalanDownloadUrl,
+                  originalName: item.returnSuratJalanOriginalName,
+                  type: item.returnSuratJalanType,
                   pengirimName: item.pengembaliNama,
               }
             : null,
@@ -1263,15 +1281,23 @@ const submitShipping = async (payload) => {
     try {
         const formData = new FormData();
         formData.append('pengirim_nama', payload.pengirimNama ?? '');
-        formData.append('surat_jalan', payload.suratJalan ?? null);
+        (Array.isArray(payload.photos) ? payload.photos : []).forEach((photo) => {
+            formData.append('photos[]', photo);
+        });
         await axios.post(`/api/pengiriman/${payload.peminjamanId}/kirim`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
         await loadHistory();
         shippingItem.value = null;
-        showAlert('success', 'Pengiriman berhasil dikirim.');
+        showAlert('success', 'Pengiriman berhasil dikirim dan surat jalan Excel telah dibuat.');
     } catch (error) {
-        loadError.value = error.response?.data?.message ?? 'Gagal mengirim peminjaman.';
+        const errors = error.response?.data?.errors ?? {};
+        loadError.value =
+            errors.photos?.[0] ??
+            Object.entries(errors).find(([key]) => key.startsWith('photos.'))?.[1]?.[0] ??
+            errors.pengirim_nama?.[0] ??
+            error.response?.data?.message ??
+            'Gagal mengirim peminjaman.';
         showAlert('error', loadError.value);
     } finally {
         isShipping.value = false;
@@ -1303,4 +1329,3 @@ onMounted(() => {
     loadHistory();
 });
 </script>
-

@@ -7,8 +7,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\LaporanAlatController;
 use App\Http\Controllers\Api\LdapUserLookupController;
-use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\api\MutasiAlatController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PeminjamanController;
 use App\Http\Controllers\Api\PengirimanController;
 use App\Http\Controllers\Api\ReviewPeminjamanController;
@@ -132,6 +132,20 @@ Route::middleware('auth')->group(function () {
         Route::post('/pengiriman/{peminjaman}/terima', [PengirimanController::class, 'terima']);
         Route::post('/pengiriman/{peminjaman}/kembalikan', [PengirimanController::class, 'kembalikan']);
     });
+
+    Route::get(
+        '/pengiriman/{peminjaman}/surat-jalan-peminjaman/download',
+        [PengirimanController::class, 'downloadOutgoingSuratJalan']
+    )
+        ->name('pengiriman.surat-jalan-peminjaman.download')
+        ->middleware('role:'.implode(',', [
+            Role::KEY_USER,
+            Role::KEY_SP_TOOL,
+            Role::KEY_PIC_TOOL,
+            Role::KEY_MGR_TOOL,
+            Role::KEY_ADMIN,
+            Role::KEY_SUPER_ADMIN,
+        ]));
 
     Route::middleware('role:'.implode(',', [
         Role::KEY_PIC_TOOL,
@@ -316,4 +330,3 @@ Route::middleware('auth')->group(function () {
             Role::KEY_SUPER_ADMIN,
         ]));
 });
-

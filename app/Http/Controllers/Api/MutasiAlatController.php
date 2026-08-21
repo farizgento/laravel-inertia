@@ -44,7 +44,7 @@ class MutasiAlatController extends Controller
                     $sub->where('approved_qty', '>', 0);
                 },
                 'items.alat.area',
-                'suratJalans',
+                'suratJalans.photos',
                 'area',
                 'requesterArea',
                 'reviewer',
@@ -102,7 +102,7 @@ class MutasiAlatController extends Controller
 
         if ($search !== '') {
             $query->where(function ($sub) use ($search) {
-                $sub->where('pekerjaan', 'like', '%' . $search . '%')
+                $sub->where('pekerjaan', 'like', '%'.$search.'%')
                     ->orWhere('id', $search);
             });
         }
@@ -112,6 +112,7 @@ class MutasiAlatController extends Controller
         return $peminjamans->map(function (Peminjaman $peminjaman) {
             $tools = $peminjaman->items->map(function (PeminjamanItem $item) {
                 $alat = $item->alat;
+
                 return [
                     'item_id' => $item->id,
                     'alat_id' => $item->alat_id,
@@ -127,19 +128,35 @@ class MutasiAlatController extends Controller
             })->values();
 
             $suratJalans = $peminjaman->suratJalans->values();
-            $suratJalanPengiriman = $suratJalans->first();
-            $suratJalanPengembalian = $suratJalans->count() > 1 ? $suratJalans->last() : null;
+            $suratJalanPengiriman = $suratJalans
+                ->firstWhere('jenis', SuratJalan::TYPE_SHIPMENT);
+            $suratJalanPengembalian = $suratJalans
+                ->where('jenis', SuratJalan::TYPE_RETURN)
+                ->last();
+            $returnDocumentIndex = 0;
             $suratJalanItems = $suratJalans
-                ->map(function (SuratJalan $suratJalan, int $index) {
+                ->filter(fn (SuratJalan $suratJalan) => $suratJalan->isShipment() || $suratJalan->isReturn())
+                ->map(function (SuratJalan $suratJalan) use (&$returnDocumentIndex) {
+                    $isShipment = $suratJalan->isShipment();
+                    if ($suratJalan->isReturn()) {
+                        $returnDocumentIndex++;
+                    }
+
                     return [
                         'id' => $suratJalan->id,
-                        'label' => $index === 0 ? 'Surat Jalan Masuk' : 'Surat Jalan Keluar ' . $index,
+                        'type' => $suratJalan->jenis,
+                        'label' => $isShipment
+                            ? 'Surat Jalan Pengiriman'
+                            : 'Surat Jalan Pengembalian '.$returnDocumentIndex,
                         'pengirim_nama' => $suratJalan->pengirim_nama,
                         'path' => $suratJalan->path,
-                        'url' => $suratJalan->path
-                            ? url('/storage/' . ltrim($suratJalan->path, '/'))
-                            : null,
+                        'url' => $suratJalan->download_url,
+                        'download_url' => $suratJalan->download_url,
                         'original_name' => $suratJalan->original_name,
+                        'mime_type' => $suratJalan->mime,
+                        'photo_count' => $suratJalan->relationLoaded('photos')
+                            ? $suratJalan->photos->count()
+                            : $suratJalan->photos()->count(),
                         'created_at' => $suratJalan->created_at
                             ? $suratJalan->created_at->format('d M Y H:i')
                             : null,
@@ -172,14 +189,16 @@ class MutasiAlatController extends Controller
                 'kategori' => $peminjaman->kategori ?? Peminjaman::KATEGORI_INTRA_AREA,
                 'pengirim_nama' => $suratJalanPengiriman?->pengirim_nama,
                 'surat_jalan_path' => $suratJalanPengiriman?->path,
-                'surat_jalan_url' => $suratJalanPengiriman?->path
-                    ? url('/storage/' . ltrim($suratJalanPengiriman->path, '/'))
-                    : null,
+                'surat_jalan_url' => $suratJalanPengiriman?->download_url,
+                'surat_jalan_download_url' => $suratJalanPengiriman?->download_url,
+                'surat_jalan_original_name' => $suratJalanPengiriman?->original_name,
+                'surat_jalan_type' => $suratJalanPengiriman?->jenis,
                 'pengembali_nama' => $suratJalanPengembalian?->pengirim_nama,
                 'surat_jalan_pengembalian_path' => $suratJalanPengembalian?->path,
-                'surat_jalan_pengembalian_url' => $suratJalanPengembalian?->path
-                    ? url('/storage/' . ltrim($suratJalanPengembalian->path, '/'))
-                    : null,
+                'surat_jalan_pengembalian_url' => $suratJalanPengembalian?->download_url,
+                'surat_jalan_pengembalian_download_url' => $suratJalanPengembalian?->download_url,
+                'surat_jalan_pengembalian_original_name' => $suratJalanPengembalian?->original_name,
+                'surat_jalan_pengembalian_type' => $suratJalanPengembalian?->jenis,
                 'surat_jalan_items' => $suratJalanItems,
                 'tools' => $tools,
             ];
@@ -190,6 +209,7 @@ class MutasiAlatController extends Controller
     {
         if (in_array($areaScope, ['source', 'requester'], true)) {
             $query->where($areaColumn, $areaId);
+
             return;
         }
 

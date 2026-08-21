@@ -97,6 +97,13 @@ class Peminjaman extends Model
         return $this->hasMany(SuratJalan::class, 'peminjaman_id')->orderBy('id');
     }
 
+    public function shipmentSuratJalan(): HasOne
+    {
+        return $this->hasOne(SuratJalan::class, 'peminjaman_id')
+            ->where('jenis', SuratJalan::TYPE_SHIPMENT)
+            ->where('urutan', 1);
+    }
+
     public function area(): BelongsTo
     {
         return $this->belongsTo(Area::class);
@@ -154,4 +161,3 @@ class Peminjaman extends Model
         return self::STATUS_DIKEMBALIKAN_SEMUANYA;
     }
 }
-

@@ -13,9 +13,11 @@ use App\Models\SuratJalan;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class PeminjamanController extends Controller
 {
@@ -62,7 +64,7 @@ class PeminjamanController extends Controller
         $kategori = trim((string) $request->query('kategori', ''));
 
         $query = Peminjaman::query()
-            ->with(['items.alat.area', 'suratJalans', 'user', 'reviewer', 'requesterReviewer', 'area', 'requesterArea'])
+            ->with(['items.alat.area', 'suratJalans.photos', 'user', 'reviewer', 'requesterReviewer', 'area', 'requesterArea'])
             ->orderByDesc('created_at');
 
         if ($isGuest) {
@@ -104,7 +106,7 @@ class PeminjamanController extends Controller
 
         if ($search !== '') {
             $query->where(function ($sub) use ($search) {
-                $sub->where('pekerjaan', 'like', '%' . $search . '%')
+                $sub->where('pekerjaan', 'like', '%'.$search.'%')
                     ->orWhere('id', $search);
             });
         }
@@ -164,7 +166,7 @@ class PeminjamanController extends Controller
                             : null,
                         'path' => $laporan->path,
                         'url' => $laporan->path
-                            ? url('/storage/' . ltrim($laporan->path, '/'))
+                            ? url('/storage/'.ltrim($laporan->path, '/'))
                             : null,
                         'original_name' => $laporan->original_name,
                     ];
@@ -190,19 +192,35 @@ class PeminjamanController extends Controller
             ->values();
 
         $suratJalans = $peminjaman->suratJalans->values();
-        $suratJalanPengiriman = $suratJalans->first();
-        $suratJalanPengembalian = $suratJalans->count() > 1 ? $suratJalans->last() : null;
+        $suratJalanPengiriman = $suratJalans
+            ->firstWhere('jenis', SuratJalan::TYPE_SHIPMENT);
+        $suratJalanPengembalian = $suratJalans
+            ->where('jenis', SuratJalan::TYPE_RETURN)
+            ->last();
+        $returnDocumentIndex = 0;
         $suratJalanItems = $suratJalans
-            ->map(function (SuratJalan $suratJalan, int $index) {
+            ->filter(fn (SuratJalan $suratJalan) => $suratJalan->isShipment() || $suratJalan->isReturn())
+            ->map(function (SuratJalan $suratJalan) use (&$returnDocumentIndex) {
+                $isShipment = $suratJalan->isShipment();
+                if ($suratJalan->isReturn()) {
+                    $returnDocumentIndex++;
+                }
+
                 return [
                     'id' => $suratJalan->id,
-                    'label' => $index === 0 ? 'Surat Jalan Masuk' : 'Surat Jalan Keluar ' . $index,
+                    'type' => $suratJalan->jenis,
+                    'label' => $isShipment
+                        ? 'Surat Jalan Pengiriman'
+                        : 'Surat Jalan Pengembalian '.$returnDocumentIndex,
                     'pengirim_nama' => $suratJalan->pengirim_nama,
                     'path' => $suratJalan->path,
-                    'url' => $suratJalan->path
-                        ? url('/storage/' . ltrim($suratJalan->path, '/'))
-                        : null,
+                    'url' => $suratJalan->download_url,
+                    'download_url' => $suratJalan->download_url,
                     'original_name' => $suratJalan->original_name,
+                    'mime_type' => $suratJalan->mime,
+                    'photo_count' => $suratJalan->relationLoaded('photos')
+                        ? $suratJalan->photos->count()
+                        : $suratJalan->photos()->count(),
                     'created_at' => $suratJalan->created_at
                         ? $suratJalan->created_at->format('d M Y H:i')
                         : null,
@@ -237,14 +255,16 @@ class PeminjamanController extends Controller
             'kategori' => $peminjaman->kategori ?? Peminjaman::KATEGORI_INTRA_AREA,
             'pengirim_nama' => $suratJalanPengiriman?->pengirim_nama,
             'surat_jalan_path' => $suratJalanPengiriman?->path,
-            'surat_jalan_url' => $suratJalanPengiriman?->path
-                ? url('/storage/' . ltrim($suratJalanPengiriman->path, '/'))
-                : null,
+            'surat_jalan_url' => $suratJalanPengiriman?->download_url,
+            'surat_jalan_download_url' => $suratJalanPengiriman?->download_url,
+            'surat_jalan_original_name' => $suratJalanPengiriman?->original_name,
+            'surat_jalan_type' => $suratJalanPengiriman?->jenis,
             'pengembali_nama' => $suratJalanPengembalian?->pengirim_nama,
             'surat_jalan_pengembalian_path' => $suratJalanPengembalian?->path,
-            'surat_jalan_pengembalian_url' => $suratJalanPengembalian?->path
-                ? url('/storage/' . ltrim($suratJalanPengembalian->path, '/'))
-                : null,
+            'surat_jalan_pengembalian_url' => $suratJalanPengembalian?->download_url,
+            'surat_jalan_pengembalian_download_url' => $suratJalanPengembalian?->download_url,
+            'surat_jalan_pengembalian_original_name' => $suratJalanPengembalian?->original_name,
+            'surat_jalan_pengembalian_type' => $suratJalanPengembalian?->jenis,
             'surat_jalan_items' => $suratJalanItems,
             'tools' => $tools,
             'reports' => $reports,
@@ -295,7 +315,7 @@ class PeminjamanController extends Controller
 
         $rows = $query->get()->flatMap(function (Peminjaman $peminjaman) {
             $createdAt = $peminjaman->created_at?->format('d/m/Y H:i') ?? '-';
-            $periode = trim(($peminjaman->tanggal_pinjam?->format('d/m/Y') ?? '-') . ' - ' . ($peminjaman->tanggal_kembali?->format('d/m/Y') ?? '-'));
+            $periode = trim(($peminjaman->tanggal_pinjam?->format('d/m/Y') ?? '-').' - '.($peminjaman->tanggal_kembali?->format('d/m/Y') ?? '-'));
             $base = [
                 'ID Peminjaman' => $peminjaman->id,
                 'Pekerjaan' => $peminjaman->pekerjaan,
@@ -340,7 +360,7 @@ class PeminjamanController extends Controller
             });
         })->values();
 
-        $filename = 'riwayat-peminjaman-' . now()->format('Ymd-His') . '.csv';
+        $filename = 'riwayat-peminjaman-'.now()->format('Ymd-His').'.csv';
 
         return response()->streamDownload(function () use ($rows) {
             $handle = fopen('php://output', 'wb');
@@ -545,7 +565,7 @@ class PeminjamanController extends Controller
             'pekerjaan' => ['required', 'string', 'max:1000'],
             'tanggal_pinjam' => ['required', 'date'],
             'tanggal_kembali' => ['required', 'date', 'after_or_equal:tanggal_pinjam'],
-            'status' => ['required', 'in:' . implode(',', [
+            'status' => ['required', 'in:'.implode(',', [
                 Peminjaman::STATUS_PERLU_DISETUJUI,
                 Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM,
                 Peminjaman::STATUS_DISETUJUI,
@@ -558,14 +578,46 @@ class PeminjamanController extends Controller
             ])],
         ]);
 
-        $peminjaman->update([
-            'pekerjaan' => $validated['pekerjaan'],
-            'tanggal_pinjam' => $validated['tanggal_pinjam'],
-            'tanggal_kembali' => $validated['tanggal_kembali'],
-            'status' => $validated['status'],
-        ]);
+        $protectedWorkflowStatuses = [
+            Peminjaman::STATUS_DIKIRIM,
+            Peminjaman::STATUS_DITERIMA,
+            Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS,
+            Peminjaman::STATUS_DIKEMBALIKAN_SEMUANYA,
+            Peminjaman::STATUS_SELESAI,
+        ];
 
-        $peminjaman->load(['items.alat.area', 'suratJalans', 'user', 'reviewer', 'requesterReviewer', 'area', 'requesterArea']);
+        $peminjaman = DB::transaction(function () use ($peminjaman, $validated, $protectedWorkflowStatuses) {
+            $lockedPeminjaman = Peminjaman::query()
+                ->whereKey($peminjaman->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (
+                $validated['status'] !== $lockedPeminjaman->status
+                && (
+                    in_array($validated['status'], $protectedWorkflowStatuses, true)
+                    || in_array($lockedPeminjaman->status, $protectedWorkflowStatuses, true)
+                )
+            ) {
+                throw ValidationException::withMessages([
+                    'status' => [
+                        'Perubahan status pengiriman, penerimaan, pengembalian, atau selesai '
+                        .'harus melalui alur operasional terkait.',
+                    ],
+                ]);
+            }
+
+            $lockedPeminjaman->update([
+                'pekerjaan' => $validated['pekerjaan'],
+                'tanggal_pinjam' => $validated['tanggal_pinjam'],
+                'tanggal_kembali' => $validated['tanggal_kembali'],
+                'status' => $validated['status'],
+            ]);
+
+            return $lockedPeminjaman;
+        });
+
+        $peminjaman->load(['items.alat.area', 'suratJalans.photos', 'user', 'reviewer', 'requesterReviewer', 'area', 'requesterArea']);
 
         return response()->json($this->transformPeminjaman($peminjaman));
     }
@@ -607,7 +659,7 @@ class PeminjamanController extends Controller
         ]);
 
         $peminjamans = Peminjaman::query()
-            ->with(['suratJalans'])
+            ->with(['suratJalans.photos'])
             ->where('area_id', $validated['area_id'])
             ->get();
 
@@ -741,9 +793,9 @@ class PeminjamanController extends Controller
                 'items.alat_id',
                 DB::raw(
                     "SUM(CASE
-                        WHEN pem.status IN ('" . Peminjaman::STATUS_MENUNGGU_REVIEW . "', '" . Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM . "') THEN items.qty
-                        WHEN pem.status IN ('" . Peminjaman::STATUS_DISETUJUI . "', '" . Peminjaman::STATUS_DIKIRIM . "') THEN COALESCE(items.approved_qty, 0)
-                        WHEN pem.status IN ('" . Peminjaman::STATUS_DITERIMA . "', '" . Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS . "') THEN GREATEST(COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0), 0)
+                        WHEN pem.status IN ('".Peminjaman::STATUS_MENUNGGU_REVIEW."', '".Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM."') THEN items.qty
+                        WHEN pem.status IN ('".Peminjaman::STATUS_DISETUJUI."', '".Peminjaman::STATUS_DIKIRIM."') THEN COALESCE(items.approved_qty, 0)
+                        WHEN pem.status IN ('".Peminjaman::STATUS_DITERIMA."', '".Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS."') THEN GREATEST(COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0), 0)
                         ELSE 0
                     END) as total"
                 )
@@ -769,9 +821,9 @@ class PeminjamanController extends Controller
                 'items.alat_id',
                 DB::raw(
                     "SUM(CASE
-                        WHEN pem.status IN ('" . Peminjaman::STATUS_MENUNGGU_REVIEW . "', '" . Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM . "') THEN items.qty
-                        WHEN pem.status IN ('" . Peminjaman::STATUS_DISETUJUI . "', '" . Peminjaman::STATUS_DIKIRIM . "') THEN COALESCE(items.approved_qty, 0)
-                        WHEN pem.status IN ('" . Peminjaman::STATUS_DITERIMA . "', '" . Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS . "') THEN GREATEST(COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0), 0)
+                        WHEN pem.status IN ('".Peminjaman::STATUS_MENUNGGU_REVIEW."', '".Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM."') THEN items.qty
+                        WHEN pem.status IN ('".Peminjaman::STATUS_DISETUJUI."', '".Peminjaman::STATUS_DIKIRIM."') THEN COALESCE(items.approved_qty, 0)
+                        WHEN pem.status IN ('".Peminjaman::STATUS_DITERIMA."', '".Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS."') THEN GREATEST(COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0), 0)
                         ELSE 0
                     END) as total"
                 )
@@ -804,21 +856,39 @@ class PeminjamanController extends Controller
             return;
         }
 
-        DB::transaction(function () use ($peminjamans) {
+        $filesToDelete = DB::transaction(function () use ($peminjamans) {
             $ids = $peminjamans->pluck('id')->map(fn ($id) => (int) $id)->all();
             $logPeminjamans = Peminjaman::query()
-                ->with(['items', 'suratJalans'])
                 ->whereIn('id', $ids)
+                ->orderBy('id')
+                ->lockForUpdate()
                 ->get();
+            $logPeminjamans->load(['items', 'suratJalans.photos']);
 
-            DB::table('surat_jalan')
-                ->whereIn('peminjaman_id', $ids)
-                ->pluck('path')
-                ->filter()
-                ->each(function ($path) {
-                    Storage::disk('public')->delete($path);
-                }
-            );
+            $filesToDelete = $logPeminjamans
+                ->flatMap(fn (Peminjaman $peminjaman) => $peminjaman->suratJalans)
+                ->flatMap(function (SuratJalan $document) {
+                    $files = collect();
+
+                    if ($document->path) {
+                        $files->push([
+                            'disk' => $document->disk ?: 'public',
+                            'path' => $document->path,
+                        ]);
+                    }
+
+                    return $files->concat(
+                        $document->photos
+                            ->filter(fn ($photo) => filled($photo->path))
+                            ->map(fn ($photo) => [
+                                'disk' => $photo->disk ?: 'local',
+                                'path' => $photo->path,
+                            ])
+                    );
+                })
+                ->unique(fn (array $file) => $file['disk'].'|'.$file['path'])
+                ->values()
+                ->all();
 
             DB::table('peminjaman_items')->whereIn('peminjaman_id', $ids)->delete();
             DB::table('surat_jalan')->whereIn('peminjaman_id', $ids)->delete();
@@ -839,7 +909,22 @@ class PeminjamanController extends Controller
             }
 
             Peminjaman::query()->whereIn('id', $ids)->delete();
+
+            return $filesToDelete;
         });
+
+        foreach ($filesToDelete as $file) {
+            try {
+                if (! Storage::disk($file['disk'])->delete($file['path'])) {
+                    Log::warning('File peminjaman tidak dapat dihapus setelah transaksi database selesai.', $file);
+                }
+            } catch (Throwable $exception) {
+                Log::warning('Terjadi kesalahan saat menghapus file peminjaman.', [
+                    ...$file,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        }
     }
 
     private function peminjamanLogSnapshot(Peminjaman $peminjaman): array
@@ -857,4 +942,3 @@ class PeminjamanController extends Controller
         ];
     }
 }
-

@@ -458,12 +458,16 @@
                         <span>Status</span>
                         <select
                             v-model="editForm.status"
+                            :disabled="isWorkflowStatusProtected"
                             class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         >
                             <option v-for="status in editableStatuses" :key="status" :value="status">
                                 {{ status }}
                             </option>
                         </select>
+                        <span v-if="isWorkflowStatusProtected" class="block text-xs font-normal text-slate-500">
+                            Status ini hanya dapat diubah melalui alur operasional terkait.
+                        </span>
                     </label>
                     <p v-if="editError" class="text-sm font-semibold text-rose-500">{{ editError }}</p>
                 </div>
@@ -574,17 +578,23 @@ const editForm = reactive({
     tanggal_kembali: '',
     status: '',
 });
-const editableStatuses = [
+const safeEditableStatuses = [
     'Perlu Disetujui',
     'Perlu Direview',
     'Disetujui',
+    'Ditolak',
+];
+const workflowProtectedStatuses = new Set([
     'Dikirim',
     'Diterima',
     'Dikembalikan Partials',
     'Dikembalikan Semuanya',
     'Selesai',
-    'Ditolak',
-];
+]);
+const isWorkflowStatusProtected = computed(() => workflowProtectedStatuses.has(editItem.value?.status));
+const editableStatuses = computed(() =>
+    isWorkflowStatusProtected.value ? [editItem.value.status] : safeEditableStatuses
+);
 const REPEAT_DRAFT_STORAGE_KEY = 'peminjaman_repeat_draft_v1';
 
 const filteredItems = computed(() => items.value);
@@ -623,23 +633,29 @@ const suratJalanDocuments = (item) => {
     }
 
     if (Array.isArray(item.suratJalanItems) && item.suratJalanItems.length) {
-        return item.suratJalanItems.filter((document) => document.url || document.path);
+        return item.suratJalanItems.filter((document) => document.url || document.path || document.downloadUrl);
     }
 
     return [
-        item.suratJalanUrl || item.suratJalanPath
+        item.suratJalanUrl || item.suratJalanPath || item.suratJalanDownloadUrl
             ? {
-                  label: 'Surat Jalan',
+                  label: 'Surat Jalan Pengiriman',
                   url: item.suratJalanUrl,
                   path: item.suratJalanPath,
+                  downloadUrl: item.suratJalanDownloadUrl,
+                  originalName: item.suratJalanOriginalName,
+                  type: item.suratJalanType,
                   pengirimName: item.pengirimNama,
               }
             : null,
-        item.returnSuratJalanUrl || item.returnSuratJalanPath
+        item.returnSuratJalanUrl || item.returnSuratJalanPath || item.returnSuratJalanDownloadUrl
             ? {
-                  label: 'Surat Jalan Kembali',
+                  label: 'Surat Jalan Pengembalian',
                   url: item.returnSuratJalanUrl,
                   path: item.returnSuratJalanPath,
+                  downloadUrl: item.returnSuratJalanDownloadUrl,
+                  originalName: item.returnSuratJalanOriginalName,
+                  type: item.returnSuratJalanType,
                   pengirimName: item.pengembaliNama,
               }
             : null,
@@ -917,15 +933,27 @@ const normalizeHistory = (item) => {
         pengirimNama: item?.pengirim_nama ?? '',
         suratJalanUrl: item?.surat_jalan_url ?? '',
         suratJalanPath: item?.surat_jalan_path ?? '',
+        suratJalanDownloadUrl: item?.surat_jalan_download_url ?? item?.surat_jalan_url ?? '',
+        suratJalanOriginalName: item?.surat_jalan_original_name ?? '',
+        suratJalanType: item?.surat_jalan_type ?? '',
         pengembaliNama: item?.pengembali_nama ?? '',
         returnSuratJalanUrl: item?.surat_jalan_pengembalian_url ?? '',
         returnSuratJalanPath: item?.surat_jalan_pengembalian_path ?? '',
+        returnSuratJalanDownloadUrl: item?.surat_jalan_pengembalian_download_url ?? item?.surat_jalan_pengembalian_url ?? '',
+        returnSuratJalanOriginalName: item?.surat_jalan_pengembalian_original_name ?? '',
+        returnSuratJalanType: item?.surat_jalan_pengembalian_type ?? '',
         suratJalanItems: Array.isArray(item?.surat_jalan_items)
             ? item.surat_jalan_items.map((document, index) => ({
+                  id: document?.id ?? null,
+                  type: document?.type ?? document?.document_type ?? '',
                   label: document?.label ?? `Surat Jalan ${index + 1}`,
                   url: document?.url ?? '',
                   path: document?.path ?? '',
+                  downloadUrl: document?.download_url ?? document?.downloadUrl ?? document?.url ?? '',
+                  originalName: document?.original_name ?? document?.originalName ?? '',
+                  mimeType: document?.mime_type ?? document?.mimeType ?? '',
                   pengirimName: document?.pengirim_nama ?? '',
+                  createdAt: document?.created_at ?? '',
               }))
             : [],
         tools,

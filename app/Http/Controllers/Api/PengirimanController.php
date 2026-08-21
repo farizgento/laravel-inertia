@@ -3,22 +3,25 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\AreaAlatStock;
 use App\Models\Alat;
+use App\Models\AreaAlatStock;
 use App\Models\LaporanAlat;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanItem;
 use App\Models\Role;
 use App\Models\SuratJalan;
+use App\Services\OutgoingSuratJalanService;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Intervention\Image\ImageManager;
+use Throwable;
 
 class PengirimanController extends Controller
 {
@@ -54,13 +57,40 @@ class PengirimanController extends Controller
         }
     }
 
+    private function ensureCanDownloadOutgoingDocument(Request $request, Peminjaman $peminjaman): void
+    {
+        $user = $request->user()?->loadMissing('role');
+        abort_unless($user, 401);
+
+        $roleKey = strtolower((string) ($user->role?->key ?? ''));
+        if ($roleKey === Role::KEY_SUPER_ADMIN) {
+            return;
+        }
+
+        if ($roleKey === Role::KEY_USER) {
+            abort_unless((string) $peminjaman->user_id === (string) $user->id, 403);
+
+            return;
+        }
+
+        abort_unless(
+            in_array($roleKey, [
+                Role::KEY_PIC_TOOL,
+                Role::KEY_SP_TOOL,
+                Role::KEY_MGR_TOOL,
+                Role::KEY_ADMIN,
+            ], true)
+            && $this->peminjamanRelatedToUserArea($request, $peminjaman),
+            403
+        );
+    }
+
     private function applyRoleAreaFilter(
         $query,
         Request $request,
         bool $includeIncomingInterArea = false,
         bool $includeRequesterInterArea = false
-    )
-    {
+    ) {
         $user = $request->user();
         $user->loadMissing('role');
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
@@ -254,7 +284,7 @@ class PengirimanController extends Controller
                             : null,
                         'path' => $laporan->path,
                         'url' => $laporan->path
-                            ? url('/storage/' . ltrim($laporan->path, '/'))
+                            ? url('/storage/'.ltrim($laporan->path, '/'))
                             : null,
                         'original_name' => $laporan->original_name,
                     ];
@@ -280,19 +310,35 @@ class PengirimanController extends Controller
             ->flatMap(fn (array $tool) => $tool['reports'] ?? [])
             ->values();
         $suratJalans = $peminjaman->suratJalans->values();
-        $suratJalanPengiriman = $suratJalans->first();
-        $suratJalanPengembalian = $suratJalans->count() > 1 ? $suratJalans->last() : null;
+        $suratJalanPengiriman = $suratJalans
+            ->firstWhere('jenis', SuratJalan::TYPE_SHIPMENT);
+        $suratJalanPengembalian = $suratJalans
+            ->where('jenis', SuratJalan::TYPE_RETURN)
+            ->last();
+        $returnDocumentIndex = 0;
         $suratJalanItems = $suratJalans
-            ->map(function (SuratJalan $suratJalan, int $index) {
+            ->filter(fn (SuratJalan $suratJalan) => $suratJalan->isShipment() || $suratJalan->isReturn())
+            ->map(function (SuratJalan $suratJalan) use (&$returnDocumentIndex) {
+                $isShipment = $suratJalan->isShipment();
+                if ($suratJalan->isReturn()) {
+                    $returnDocumentIndex++;
+                }
+
                 return [
                     'id' => $suratJalan->id,
-                    'label' => $index === 0 ? 'Surat Jalan Masuk' : 'Surat Jalan Keluar ' . $index,
+                    'type' => $suratJalan->jenis,
+                    'label' => $isShipment
+                        ? 'Surat Jalan Pengiriman'
+                        : 'Surat Jalan Pengembalian '.$returnDocumentIndex,
                     'pengirim_nama' => $suratJalan->pengirim_nama,
                     'path' => $suratJalan->path,
-                    'url' => $suratJalan->path
-                        ? url('/storage/' . ltrim($suratJalan->path, '/'))
-                        : null,
+                    'url' => $suratJalan->download_url,
+                    'download_url' => $suratJalan->download_url,
                     'original_name' => $suratJalan->original_name,
+                    'mime_type' => $suratJalan->mime,
+                    'photo_count' => $suratJalan->relationLoaded('photos')
+                        ? $suratJalan->photos->count()
+                        : $suratJalan->photos()->count(),
                     'created_at' => $suratJalan->created_at
                         ? $suratJalan->created_at->format('d M Y H:i')
                         : null,
@@ -327,14 +373,16 @@ class PengirimanController extends Controller
             'kategori' => $peminjaman->kategori ?? Peminjaman::KATEGORI_INTRA_AREA,
             'pengirim_nama' => $suratJalanPengiriman?->pengirim_nama,
             'surat_jalan_path' => $suratJalanPengiriman?->path,
-            'surat_jalan_url' => $suratJalanPengiriman?->path
-                ? url('/storage/' . ltrim($suratJalanPengiriman->path, '/'))
-                : null,
+            'surat_jalan_url' => $suratJalanPengiriman?->download_url,
+            'surat_jalan_download_url' => $suratJalanPengiriman?->download_url,
+            'surat_jalan_original_name' => $suratJalanPengiriman?->original_name,
+            'surat_jalan_type' => $suratJalanPengiriman?->jenis,
             'pengembali_nama' => $suratJalanPengembalian?->pengirim_nama,
             'surat_jalan_pengembalian_path' => $suratJalanPengembalian?->path,
-            'surat_jalan_pengembalian_url' => $suratJalanPengembalian?->path
-                ? url('/storage/' . ltrim($suratJalanPengembalian->path, '/'))
-                : null,
+            'surat_jalan_pengembalian_url' => $suratJalanPengembalian?->download_url,
+            'surat_jalan_pengembalian_download_url' => $suratJalanPengembalian?->download_url,
+            'surat_jalan_pengembalian_original_name' => $suratJalanPengembalian?->original_name,
+            'surat_jalan_pengembalian_type' => $suratJalanPengembalian?->jenis,
             'surat_jalan_items' => $suratJalanItems,
             'tools' => $tools,
             'reports' => $reports,
@@ -365,7 +413,7 @@ class PengirimanController extends Controller
                     $sub->where('approved_qty', '>', 0);
                 },
                 'items.alat.area',
-                'suratJalans',
+                'suratJalans.photos',
                 'area',
                 'requesterArea',
                 'reviewer',
@@ -385,7 +433,7 @@ class PengirimanController extends Controller
 
         if ($search !== '') {
             $query->where(function ($sub) use ($search) {
-                $sub->where('pekerjaan', 'like', '%' . $search . '%')
+                $sub->where('pekerjaan', 'like', '%'.$search.'%')
                     ->orWhere('id', $search);
             });
         }
@@ -427,7 +475,7 @@ class PengirimanController extends Controller
                     $sub->where('approved_qty', '>', 0);
                 },
                 'items.alat.area',
-                'suratJalans',
+                'suratJalans.photos',
                 'area',
                 'requesterArea',
                 'reviewer',
@@ -452,7 +500,7 @@ class PengirimanController extends Controller
 
         if ($search !== '') {
             $query->where(function ($sub) use ($search) {
-                $sub->where('pekerjaan', 'like', '%' . $search . '%')
+                $sub->where('pekerjaan', 'like', '%'.$search.'%')
                     ->orWhere('id', $search);
             });
         }
@@ -516,8 +564,11 @@ class PengirimanController extends Controller
         ]);
     }
 
-    public function kirim(Request $request, Peminjaman $peminjaman)
-    {
+    public function kirim(
+        Request $request,
+        Peminjaman $peminjaman,
+        OutgoingSuratJalanService $suratJalanService
+    ) {
         $user = $request->user();
         if (! $user) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
@@ -537,39 +588,80 @@ class PengirimanController extends Controller
         }
         $this->ensureAdminCanAccessPeminjaman($request, $peminjaman);
 
+        $existingDocument = $peminjaman->suratJalans()
+            ->where('jenis', SuratJalan::TYPE_SHIPMENT)
+            ->where('urutan', 1)
+            ->with('photos')
+            ->first();
+
+        if ($peminjaman->status === Peminjaman::STATUS_DIKIRIM) {
+            if (! $suratJalanService->isReady($existingDocument)) {
+                return response()->json([
+                    'message' => 'Status sudah Dikirim, tetapi dokumen surat jalan belum lengkap. Hubungi administrator.',
+                ], 422);
+            }
+
+            return response()->json([
+                'id' => $peminjaman->id,
+                'status' => $peminjaman->status,
+                'surat_jalan_download_url' => $existingDocument->download_url,
+            ]);
+        }
+
         if ($peminjaman->status !== Peminjaman::STATUS_DISETUJUI) {
             return response()->json(['message' => 'Peminjaman tidak dalam status Disetujui.'], 422);
         }
 
         $validated = $request->validate([
             'pengirim_nama' => ['required', 'string', 'max:255'],
-            'surat_jalan' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'photos' => ['required', 'array', 'min:1', 'max:'.OutgoingSuratJalanService::MAX_PHOTOS],
+            'photos.*' => [
+                'required',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+                'dimensions:max_width='.OutgoingSuratJalanService::MAX_SOURCE_IMAGE_DIMENSION
+                    .',max_height='.OutgoingSuratJalanService::MAX_SOURCE_IMAGE_DIMENSION,
+            ],
         ]);
 
-        $file = $validated['surat_jalan'];
-        if (! $file instanceof UploadedFile) {
-            throw ValidationException::withMessages([
-                'surat_jalan' => ['Surat jalan tidak valid.'],
-            ]);
-        }
-
-        DB::transaction(function () use ($validated, $file, $peminjaman) {
-            $this->storeSuratJalan(
-                $peminjaman,
-                $file,
-                $validated['pengirim_nama'],
-                'pengiriman'
-            );
-
-            $peminjaman->update([
-                'status' => Peminjaman::STATUS_DIKIRIM,
-            ]);
-        });
+        $document = $suratJalanService->ship(
+            $peminjaman,
+            $user,
+            $validated['pengirim_nama'],
+            $validated['photos']
+        );
 
         return response()->json([
             'id' => $peminjaman->id,
-            'status' => $peminjaman->status,
+            'status' => Peminjaman::STATUS_DIKIRIM,
+            'surat_jalan_download_url' => $document->download_url,
         ]);
+    }
+
+    public function downloadOutgoingSuratJalan(
+        Request $request,
+        Peminjaman $peminjaman,
+        OutgoingSuratJalanService $suratJalanService
+    ) {
+        $this->ensureCanDownloadOutgoingDocument($request, $peminjaman);
+
+        $document = $peminjaman->suratJalans()
+            ->where('jenis', SuratJalan::TYPE_SHIPMENT)
+            ->where('urutan', 1)
+            ->first();
+
+        abort_unless($document && $document->path, 404, 'Surat jalan pengiriman belum tersedia.');
+
+        $document = $suratJalanService->ensureCurrentShipmentSubject($document);
+        $disk = $document->disk ?: 'local';
+        abort_unless(Storage::disk($disk)->exists($document->path), 404, 'File surat jalan tidak ditemukan.');
+
+        return Storage::disk($disk)->download(
+            $document->path,
+            $document->original_name ?: 'Surat-Jalan-Pengiriman-'.$peminjaman->id.'.xlsx',
+            ['Content-Type' => $document->mime ?: 'application/octet-stream']
+        );
     }
 
     public function terima(Request $request, Peminjaman $peminjaman)
@@ -679,17 +771,23 @@ class PengirimanController extends Controller
             'pengirim_nama' => ['required', 'string', 'max:255'],
             'surat_jalan' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.item_id' => ['required', 'integer'],
+            'items.*.item_id' => ['required', 'integer', 'distinct'],
             'items.*.returned_qty' => ['required', 'integer', 'min:1'],
             'laporan' => ['nullable', 'array'],
-            'laporan.*.kategori' => ['nullable', 'in:' . implode(',', [
+            'laporan.*.kategori' => ['nullable', 'in:'.implode(',', [
                 LaporanAlat::CATEGORY_KERUSAKAN,
                 LaporanAlat::CATEGORY_KEHILANGAN,
             ])],
             'laporan.*.alat_id' => ['nullable', 'integer', 'exists:alats,id'],
             'laporan.*.deskripsi' => ['nullable', 'string', 'max:1000'],
             'laporan.*.jumlah' => ['nullable', 'integer', 'min:1'],
-            'laporan.*.foto' => ['nullable', 'image', 'max:5120'],
+            'laporan.*.foto' => [
+                'nullable',
+                'image',
+                'max:5120',
+                'dimensions:max_width='.OutgoingSuratJalanService::MAX_SOURCE_IMAGE_DIMENSION
+                    .',max_height='.OutgoingSuratJalanService::MAX_SOURCE_IMAGE_DIMENSION,
+            ],
         ]);
 
         $file = $validated['surat_jalan'];
@@ -741,6 +839,8 @@ class PengirimanController extends Controller
             })
             ->values();
 
+        $reportedThisRequest = [];
+
         foreach ($laporans as $index => $laporan) {
             $requiredFields = ['kategori', 'alat_id', 'jumlah', 'deskripsi', 'foto'];
             foreach ($requiredFields as $field) {
@@ -760,56 +860,142 @@ class PengirimanController extends Controller
                 ]);
             }
 
-            if ($laporanJumlah > $returnedThisRequest[$laporanAlatId]) {
+            $reportedThisRequest[$laporanAlatId] = ($reportedThisRequest[$laporanAlatId] ?? 0) + $laporanJumlah;
+            if ($reportedThisRequest[$laporanAlatId] > $returnedThisRequest[$laporanAlatId]) {
                 throw ValidationException::withMessages([
-                    "laporan.$index.jumlah" => ['Jumlah laporan melebihi jumlah alat yang dikembalikan pada transaksi ini.'],
+                    "laporan.$index.jumlah" => [
+                        'Total jumlah laporan melebihi jumlah alat yang dikembalikan pada transaksi ini.',
+                    ],
                 ]);
             }
         }
 
-        DB::transaction(function () use ($peminjaman, $user, $submittedItems, $itemModels, $laporans, $validated, $file) {
-            $this->storeSuratJalan(
+        $storedReturnDocument = null;
+        $storedReportFiles = [];
+
+        try {
+            DB::transaction(function () use (
                 $peminjaman,
+                $user,
+                $submittedItems,
+                $laporans,
+                $validated,
                 $file,
-                $validated['pengirim_nama'],
-                'pengembalian'
-            );
+                &$storedReturnDocument,
+                &$storedReportFiles
+            ) {
+                $lockedPeminjaman = Peminjaman::query()
+                    ->whereKey($peminjaman->getKey())
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-            foreach ($submittedItems as $itemId => $payload) {
-                $item = $itemModels[$itemId];
-                $returnedQty = (int) ($payload['returned_qty'] ?? 0);
-                $item->update([
-                    'returned_qty' => (int) ($item->returned_qty ?? 0) + $returnedQty,
-                ]);
+                if (! in_array($lockedPeminjaman->status, Peminjaman::returnableStatuses(), true)) {
+                    throw ValidationException::withMessages([
+                        'status' => ['Peminjaman tidak dapat dikembalikan pada status saat ini.'],
+                    ]);
+                }
 
-                if ($peminjaman->is_inter_area && $peminjaman->requester_area_id) {
-                    $stock = AreaAlatStock::query()
-                        ->where('area_id', $peminjaman->requester_area_id)
-                        ->where('alat_id', $item->alat_id)
-                        ->where('source_peminjaman_id', $peminjaman->id)
-                        ->lockForUpdate()
-                        ->first();
+                $lockedItems = PeminjamanItem::query()
+                    ->with('alat')
+                    ->where('peminjaman_id', $lockedPeminjaman->id)
+                    ->whereIn('id', $submittedItems->keys()->all())
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
 
-                    if ($stock) {
-                        $nextQty = max((int) $stock->qty - $returnedQty, 0);
-                        $stock->update([
-                            'qty' => $nextQty,
-                            'active' => $nextQty > 0,
+                if ($lockedItems->count() !== $submittedItems->count()) {
+                    throw ValidationException::withMessages([
+                        'items' => ['Item tidak ditemukan dalam peminjaman ini.'],
+                    ]);
+                }
+
+                foreach ($submittedItems as $itemId => $payload) {
+                    $item = $lockedItems->get($itemId);
+                    $remainingQty = max(
+                        (int) ($item->approved_qty ?? 0) - (int) ($item->returned_qty ?? 0),
+                        0
+                    );
+                    $returnedQty = (int) ($payload['returned_qty'] ?? 0);
+
+                    if ($remainingQty < 1) {
+                        throw ValidationException::withMessages([
+                            'items' => ['Ada item yang sudah dikembalikan seluruhnya.'],
+                        ]);
+                    }
+
+                    if ($returnedQty > $remainingQty) {
+                        throw ValidationException::withMessages([
+                            'items' => ["Jumlah pengembalian {$item->alat?->nama} melebihi sisa yang belum kembali."],
                         ]);
                     }
                 }
+
+                $storedReturnDocument = $this->storeSuratJalan(
+                    $lockedPeminjaman,
+                    $file,
+                    $validated['pengirim_nama'],
+                    'pengembalian'
+                );
+
+                foreach ($submittedItems as $itemId => $payload) {
+                    $item = $lockedItems->get($itemId);
+                    $returnedQty = (int) ($payload['returned_qty'] ?? 0);
+                    $item->update([
+                        'returned_qty' => (int) ($item->returned_qty ?? 0) + $returnedQty,
+                    ]);
+
+                    if ($lockedPeminjaman->is_inter_area && $lockedPeminjaman->requester_area_id) {
+                        $stock = AreaAlatStock::query()
+                            ->where('area_id', $lockedPeminjaman->requester_area_id)
+                            ->where('alat_id', $item->alat_id)
+                            ->where('source_peminjaman_id', $lockedPeminjaman->id)
+                            ->lockForUpdate()
+                            ->first();
+
+                        if ($stock) {
+                            $nextQty = max((int) $stock->qty - $returnedQty, 0);
+                            $stock->update([
+                                'qty' => $nextQty,
+                                'active' => $nextQty > 0,
+                            ]);
+                        }
+                    }
+                }
+
+                $lockedPeminjaman->load('items');
+                $lockedPeminjaman->update([
+                    'status' => $lockedPeminjaman->determineReturnStatus(),
+                ]);
+
+                foreach ($laporans as $laporan) {
+                    $report = $this->storeReturnReport($lockedPeminjaman, $laporan, $user->id);
+                    $storedReportFiles[] = [
+                        'disk' => 'public',
+                        'path' => $report->path,
+                    ];
+                }
+            });
+        } catch (Throwable $exception) {
+            if ($storedReturnDocument?->path) {
+                $this->cleanupStoredFile(
+                    $storedReturnDocument->disk ?: 'public',
+                    $storedReturnDocument->path,
+                    'transaksi surat jalan pengembalian dibatalkan'
+                );
             }
 
-            $peminjaman->refresh();
-            $peminjaman->load('items');
-            $peminjaman->update([
-                'status' => $peminjaman->determineReturnStatus(),
-            ]);
-
-            foreach ($laporans as $laporan) {
-                $this->storeReturnReport($peminjaman, $laporan, $user->id);
+            foreach ($storedReportFiles as $storedReportFile) {
+                $this->cleanupStoredFile(
+                    $storedReportFile['disk'],
+                    $storedReportFile['path'],
+                    'transaksi laporan pengembalian dibatalkan'
+                );
             }
-        });
+
+            throw $exception;
+        }
+
+        $peminjaman->refresh();
 
         return response()->json([
             'id' => $peminjaman->id,
@@ -847,7 +1033,7 @@ class PengirimanController extends Controller
         }
 
         $validated = $request->validate([
-            'tanggal_kembali' => ['required', 'date', 'after_or_equal:' . $peminjaman->tanggal_pinjam?->toDateString()],
+            'tanggal_kembali' => ['required', 'date', 'after_or_equal:'.$peminjaman->tanggal_pinjam?->toDateString()],
         ]);
 
         $peminjaman->update([
@@ -897,24 +1083,47 @@ class PengirimanController extends Controller
         ]);
     }
 
-    private function storeSuratJalan(Peminjaman $peminjaman, UploadedFile $file, string $pengirimNama, string $folder): void
-    {
+    private function storeSuratJalan(
+        Peminjaman $peminjaman,
+        UploadedFile $file,
+        string $pengirimNama,
+        string $folder
+    ): SuratJalan {
+        $lockedPeminjaman = Peminjaman::query()
+            ->whereKey($peminjaman->getKey())
+            ->lockForUpdate()
+            ->firstOrFail();
+        $sequence = (int) $lockedPeminjaman->suratJalans()
+            ->where('jenis', SuratJalan::TYPE_RETURN)
+            ->max('urutan') + 1;
         $dir = "surat-jalan/{$peminjaman->id}/{$folder}";
         $extension = $file->getClientOriginalExtension() ?: 'pdf';
-        $filename = Str::uuid()->toString() . '.' . $extension;
+        $filename = Str::uuid()->toString().'.'.$extension;
         $path = $file->storeAs($dir, $filename, 'public');
+        if (! $path) {
+            throw new \RuntimeException('Surat jalan pengembalian gagal disimpan.');
+        }
 
-        SuratJalan::query()->create([
-            'peminjaman_id' => $peminjaman->id,
-            'pengirim_nama' => $pengirimNama,
-            'path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'mime' => $file->getClientMimeType(),
-            'size' => $file->getSize(),
-        ]);
+        try {
+            return SuratJalan::query()->create([
+                'peminjaman_id' => $lockedPeminjaman->id,
+                'pengirim_nama' => $pengirimNama,
+                'jenis' => SuratJalan::TYPE_RETURN,
+                'urutan' => $sequence,
+                'disk' => 'public',
+                'path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'mime' => $file->getClientMimeType(),
+                'size' => $file->getSize(),
+            ]);
+        } catch (Throwable $exception) {
+            $this->cleanupStoredFile('public', $path, 'penyimpanan record surat jalan pengembalian gagal');
+
+            throw $exception;
+        }
     }
 
-    private function storeReturnReport(Peminjaman $peminjaman, array $payload, int $userId): void
+    private function storeReturnReport(Peminjaman $peminjaman, array $payload, int $userId): LaporanAlat
     {
         $alatId = (int) ($payload['alat_id'] ?? 0);
         $jumlah = (int) ($payload['jumlah'] ?? 0);
@@ -956,20 +1165,26 @@ class PengirimanController extends Controller
         $stored = $this->storeCompressedPhoto($file, "{$payload['kategori']}/{$alat->id}");
         $reportAreaId = $peminjaman->requester_area_id ?: $peminjaman->area_id;
 
-        LaporanAlat::create([
-            'kategori' => $payload['kategori'],
-            'deskripsi' => $payload['deskripsi'],
-            'status' => 'Dilaporkan',
-            'jumlah' => $jumlah,
-            'alat_id' => $alat->id,
-            'user_id' => $userId,
-            'area_id' => $reportAreaId,
-            'source_peminjaman_id' => $peminjaman->id,
-            'path' => $stored['path'],
-            'original_name' => $file->getClientOriginalName(),
-            'mime' => $stored['mime'],
-            'size' => $stored['size'],
-        ]);
+        try {
+            return LaporanAlat::create([
+                'kategori' => $payload['kategori'],
+                'deskripsi' => $payload['deskripsi'],
+                'status' => 'Dilaporkan',
+                'jumlah' => $jumlah,
+                'alat_id' => $alat->id,
+                'user_id' => $userId,
+                'area_id' => $reportAreaId,
+                'source_peminjaman_id' => $peminjaman->id,
+                'path' => $stored['path'],
+                'original_name' => $file->getClientOriginalName(),
+                'mime' => $stored['mime'],
+                'size' => $stored['size'],
+            ]);
+        } catch (Throwable $exception) {
+            $this->cleanupStoredFile('public', $stored['path'], 'penyimpanan record laporan pengembalian gagal');
+
+            throw $exception;
+        }
     }
 
     private function storeCompressedPhoto(UploadedFile $file, string $dir): array
@@ -979,13 +1194,17 @@ class PengirimanController extends Controller
 
         $driver = null;
         if (extension_loaded('imagick')) {
-            $driver = new ImagickDriver();
+            $driver = new ImagickDriver;
         } elseif (extension_loaded('gd')) {
-            $driver = new GdDriver();
+            $driver = new GdDriver;
         }
 
         if (! $driver) {
             $path = $file->store($dir, 'public');
+            if (! $path) {
+                throw new \RuntimeException('Foto laporan pengembalian gagal disimpan.');
+            }
+
             return [
                 'path' => $path,
                 'mime' => $originalMime,
@@ -1002,9 +1221,11 @@ class PengirimanController extends Controller
             $image = $image->resizeCanvas($image->width(), $image->height(), 'ffffff');
             $encoded = $image->toJpeg(quality: 75);
 
-            $filename = Str::uuid()->toString() . '.jpg';
-            $path = $dir . '/' . $filename;
-            $disk->put($path, (string) $encoded);
+            $filename = Str::uuid()->toString().'.jpg';
+            $path = $dir.'/'.$filename;
+            if (! $disk->put($path, (string) $encoded)) {
+                throw new \RuntimeException('Foto laporan pengembalian gagal dikompresi dan disimpan.');
+            }
 
             return [
                 'path' => $path,
@@ -1013,6 +1234,10 @@ class PengirimanController extends Controller
             ];
         } catch (\Throwable $e) {
             $path = $file->store($dir, 'public');
+            if (! $path) {
+                throw new \RuntimeException('Foto laporan pengembalian gagal disimpan.', previous: $e);
+            }
+
             return [
                 'path' => $path,
                 'mime' => $originalMime,
@@ -1020,5 +1245,24 @@ class PengirimanController extends Controller
             ];
         }
     }
-}
 
+    private function cleanupStoredFile(string $disk, string $path, string $reason): void
+    {
+        try {
+            if (! Storage::disk($disk)->delete($path)) {
+                Log::warning('File gagal dibersihkan.', [
+                    'disk' => $disk,
+                    'path' => $path,
+                    'reason' => $reason,
+                ]);
+            }
+        } catch (Throwable $cleanupException) {
+            Log::warning('Terjadi kesalahan saat membersihkan file.', [
+                'disk' => $disk,
+                'path' => $path,
+                'reason' => $reason,
+                'error' => $cleanupException->getMessage(),
+            ]);
+        }
+    }
+}
