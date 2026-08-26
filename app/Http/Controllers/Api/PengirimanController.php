@@ -893,8 +893,12 @@ class PengirimanController extends Controller
             }
         }
 
-        $storedReturnDocument = null;
         $storedReportFiles = [];
+
+        // Kompresi foto (±12 detik untuk 8 foto) dikerjakan sebelum transaksi dibuka
+        // supaya row lock peminjaman dan item tidak ditahan selama pengolahan gambar.
+        $suratJalanService = app(OutgoingSuratJalanService::class);
+        $preparedPhotos = $suratJalanService->prepareReturnPhotos($peminjaman, $validated['photos']);
 
         try {
             DB::transaction(function () use (
@@ -903,7 +907,8 @@ class PengirimanController extends Controller
                 $submittedItems,
                 $laporans,
                 $validated,
-                &$storedReturnDocument,
+                $preparedPhotos,
+                $suratJalanService,
                 &$storedReportFiles
             ) {
                 $lockedPeminjaman = Peminjaman::query()
@@ -984,12 +989,12 @@ class PengirimanController extends Controller
                 }
 
                 $lockedPeminjaman->setRelation('items', $lockedItems->values());
-                $storedReturnDocument = app(OutgoingSuratJalanService::class)->createReturnDocument(
+                $suratJalanService->createReturnDocument(
                     $lockedPeminjaman,
                     $user,
                     $validated['pengirim_nama'],
                     $documentItems,
-                    $validated['photos']
+                    $preparedPhotos
                 );
 
                 $lockedPeminjaman->load('items');
@@ -1006,13 +1011,10 @@ class PengirimanController extends Controller
                 }
             });
         } catch (Throwable $exception) {
-            if ($storedReturnDocument?->path) {
-                $this->cleanupStoredFile(
-                    $storedReturnDocument->disk ?: 'local',
-                    $storedReturnDocument->path,
-                    'transaksi surat jalan pengembalian dibatalkan'
-                );
-            }
+            // Foto hasil kompresi dan workbook berbagi satu direktori, jadi membuang
+            // direktori tersebut sekaligus membersihkan keduanya. Sebelumnya hanya
+            // berkas xlsx yang dihapus sehingga foto tertinggal saat transaksi gagal.
+            $suratJalanService->discardPreparedPhotos($preparedPhotos);
 
             foreach ($storedReportFiles as $storedReportFile) {
                 $this->cleanupStoredFile(

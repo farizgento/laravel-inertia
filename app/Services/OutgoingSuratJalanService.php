@@ -41,6 +41,26 @@ class OutgoingSuratJalanService
 
     private const TEMPLATE_ITEM_ROWS = 10;
 
+    /**
+     * Tata letak baris pada sheet "MASTER SJ UP SLA".
+     *
+     * Baris "Nama Pengirim" disisipkan saat generate (lihat insertSenderRow()),
+     * bukan disimpan di berkas template, supaya drawing/logo template tetap utuh
+     * untuk dipulihkan restoreTemplateMainDrawing(). Karena penyisipan itu semua
+     * baris di bawah "Hal" bergeser satu ke bawah dibanding template mentahnya.
+     */
+    private const ROW_SUBJECT = 12;
+
+    private const ROW_SENDER = 13;
+
+    private const ROW_JOB = 14;
+
+    private const ROW_ITEM_FIRST = 18;
+
+    private const ROW_ITEM_LAST = self::ROW_ITEM_FIRST + self::TEMPLATE_ITEM_ROWS - 1;
+
+    private const ROW_PRINT_AREA_LAST = 40;
+
     private const PHOTO_SLOT_WIDTH = 302;
 
     private const PHOTO_SLOT_HEIGHT = 280;
@@ -66,10 +86,24 @@ class OutgoingSuratJalanService
      */
     public function ship(Peminjaman $peminjaman, User $actor, string $senderName, array $photos): SuratJalan
     {
-        $storageDirectory = null;
+        // Kompresi foto adalah kerja CPU murni (±900 ms per foto, ±12 detik untuk 8
+        // foto) yang sama sekali tidak menyentuh basis data. Dikerjakan di luar
+        // transaksi supaya row lock peminjaman hanya dipegang selama penulisan data,
+        // bukan selama belasan detik pengolahan gambar.
+        $storageDirectory = 'surat-jalan/'.$peminjaman->getKey().'/pengiriman/'.Str::uuid();
+        $documentPersisted = false;
 
         try {
-            return DB::transaction(function () use ($peminjaman, $actor, $senderName, $photos, &$storageDirectory) {
+            $storedPhotos = $this->compressAndStorePhotos($photos, $storageDirectory.'/photos');
+
+            $document = DB::transaction(function () use (
+                $peminjaman,
+                $actor,
+                $senderName,
+                $storageDirectory,
+                $storedPhotos,
+                &$documentPersisted
+            ) {
                 $lockedLoan = Peminjaman::query()
                     ->whereKey($peminjaman->getKey())
                     ->lockForUpdate()
@@ -126,8 +160,6 @@ class OutgoingSuratJalanService
 
                 $generatedAt = now();
                 $documentNumber = $this->documentNumber($lockedLoan, $generatedAt);
-                $storageDirectory = 'surat-jalan/'.$lockedLoan->id.'/pengiriman/'.Str::uuid();
-                $storedPhotos = $this->compressAndStorePhotos($photos, $storageDirectory.'/photos');
                 $templatePath = storage_path('templates/Surat-Jalan-Peminjaman.xlsx');
 
                 if (! is_file($templatePath)) {
@@ -140,6 +172,7 @@ class OutgoingSuratJalanService
                     $actor,
                     $generatedAt,
                     $documentNumber,
+                    $senderName,
                     $storedPhotos
                 );
 
@@ -178,13 +211,20 @@ class OutgoingSuratJalanService
                 }
 
                 $lockedLoan->update(['status' => Peminjaman::STATUS_DIKIRIM]);
+                $documentPersisted = true;
 
                 return $document->load('photos');
             });
-        } catch (Throwable $exception) {
-            if ($storageDirectory) {
+
+            // Jalur idempoten di atas mengembalikan dokumen lama tanpa memakai foto
+            // yang baru dikompresi, jadi berkas yatim itu harus dibersihkan.
+            if (! $documentPersisted) {
                 $this->cleanupStorageDirectory($storageDirectory);
             }
+
+            return $document;
+        } catch (Throwable $exception) {
+            $this->cleanupStorageDirectory($storageDirectory);
 
             throw $exception;
         }
@@ -208,103 +248,137 @@ class OutgoingSuratJalanService
     }
 
     /**
+     * Mengompresi dan menyimpan foto pengembalian di luar transaksi basis data.
+     *
+     * Dipisahkan dari createReturnDocument() supaya pemanggil dapat menjalankannya
+     * sebelum membuka transaksi: kompresi 8 foto memakan ±12 detik dan tidak boleh
+     * menahan row lock peminjaman selama itu.
+     *
+     * @param  array<int, UploadedFile>  $photos
+     * @return array{directory: string, photos: array<int, array{path: string, original_name: string, mime: string, size: int, width: int, height: int}>}
+     */
+    public function prepareReturnPhotos(Peminjaman $peminjaman, array $photos): array
+    {
+        $storageDirectory = 'surat-jalan/'.$peminjaman->getKey().'/pengembalian/'.Str::uuid();
+
+        try {
+            return [
+                'directory' => $storageDirectory,
+                'photos' => $this->compressAndStorePhotos($photos, $storageDirectory.'/photos'),
+            ];
+        } catch (Throwable $exception) {
+            $this->cleanupStorageDirectory($storageDirectory);
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * Membuang seluruh berkas yang sudah terlanjur ditulis untuk satu upaya
+     * pengembalian (foto sekaligus workbook, karena keduanya berbagi direktori).
+     *
+     * @param  array{directory: string, photos: array}  $preparedPhotos
+     */
+    public function discardPreparedPhotos(array $preparedPhotos): void
+    {
+        $directory = $preparedPhotos['directory'] ?? null;
+
+        if (is_string($directory) && $directory !== '') {
+            $this->cleanupStorageDirectory($directory);
+        }
+    }
+
+    /**
      * @param  array<int, array{item: PeminjamanItem, returned_qty: int}>  $returnItems
+     * @param  array{directory: string, photos: array}  $preparedPhotos  hasil prepareReturnPhotos()
      */
     public function createReturnDocument(
         Peminjaman $peminjaman,
         User $actor,
         string $senderName,
         array $returnItems,
-        array $photos
+        array $preparedPhotos
     ): SuratJalan {
-        $storageDirectory = null;
+        $storageDirectory = $preparedPhotos['directory'];
+        $storedPhotos = $preparedPhotos['photos'];
 
-        try {
-            $lockedLoan = Peminjaman::query()
-                ->whereKey($peminjaman->getKey())
-                ->lockForUpdate()
-                ->firstOrFail();
+        $lockedLoan = Peminjaman::query()
+            ->whereKey($peminjaman->getKey())
+            ->lockForUpdate()
+            ->firstOrFail();
 
-            if ($returnItems === []) {
-                throw ValidationException::withMessages([
-                    'items' => ['Tidak ada alat yang dikembalikan.'],
-                ]);
-            }
-
-            $lockedLoan->loadMissing([
-                'user',
-                'area',
-                'requesterArea',
-                'reviewer',
+        if ($returnItems === []) {
+            throw ValidationException::withMessages([
+                'items' => ['Tidak ada alat yang dikembalikan.'],
             ]);
-
-            $sequence = (int) $lockedLoan->suratJalans()
-                ->where('jenis', SuratJalan::TYPE_RETURN)
-                ->max('urutan') + 1;
-            $generatedAt = now();
-            $documentNumber = $this->returnDocumentNumber($lockedLoan, $generatedAt, $sequence);
-            $storageDirectory = 'surat-jalan/'.$lockedLoan->id.'/pengembalian/'.Str::uuid();
-            $storedPhotos = $this->compressAndStorePhotos($photos, $storageDirectory.'/photos');
-            $templatePath = storage_path('templates/Surat-Jalan-Peminjaman.xlsx');
-
-            if (! is_file($templatePath)) {
-                throw new RuntimeException('Template Surat-Jalan-Peminjaman.xlsx tidak ditemukan.');
-            }
-
-            $spreadsheet = $this->buildWorkbook(
-                $templatePath,
-                $lockedLoan,
-                $actor,
-                $generatedAt,
-                $documentNumber,
-                $storedPhotos,
-                'SURAT JALAN PENGEMBALIAN',
-                self::RETURN_SUBJECT,
-                $returnItems
-            );
-
-            $filename = 'Surat-Jalan-Pengembalian-'.$lockedLoan->id.'-'.$sequence.'.xlsx';
-            $documentPath = $storageDirectory.'/'.$filename;
-            $documentSize = $this->storeWorkbook($spreadsheet, $templatePath, $documentPath);
-
-            $document = SuratJalan::query()->create([
-                'peminjaman_id' => $lockedLoan->id,
-                'pengirim_nama' => $senderName,
-                'jenis' => SuratJalan::TYPE_RETURN,
-                'urutan' => $sequence,
-                'nomor' => $documentNumber,
-                'disk' => 'local',
-                'path' => $documentPath,
-                'original_name' => $filename,
-                'mime' => self::XLSX_MIME,
-                'size' => $documentSize,
-                'generated_by' => $actor->id,
-                'generated_at' => $generatedAt,
-                'template_version' => $this->templateVersion($templatePath),
-            ]);
-
-            foreach ($storedPhotos as $index => $photo) {
-                SuratJalanPhoto::query()->create([
-                    'surat_jalan_id' => $document->id,
-                    'urutan' => $index + 1,
-                    'disk' => 'local',
-                    'path' => $photo['path'],
-                    'original_name' => $photo['original_name'],
-                    'mime' => $photo['mime'],
-                    'size' => $photo['size'],
-                    'width' => $photo['width'],
-                    'height' => $photo['height'],
-                ]);
-            }
-
-            return $document->load('photos');
-        } catch (Throwable $exception) {
-            if ($storageDirectory) {
-                $this->cleanupStorageDirectory($storageDirectory);
-            }
-
-            throw $exception;
         }
+
+        $lockedLoan->loadMissing([
+            'user',
+            'area',
+            'requesterArea',
+            'reviewer',
+        ]);
+
+        $sequence = (int) $lockedLoan->suratJalans()
+            ->where('jenis', SuratJalan::TYPE_RETURN)
+            ->max('urutan') + 1;
+        $generatedAt = now();
+        $documentNumber = $this->returnDocumentNumber($lockedLoan, $generatedAt, $sequence);
+        $templatePath = storage_path('templates/Surat-Jalan-Peminjaman.xlsx');
+
+        if (! is_file($templatePath)) {
+            throw new RuntimeException('Template Surat-Jalan-Peminjaman.xlsx tidak ditemukan.');
+        }
+
+        $spreadsheet = $this->buildWorkbook(
+            $templatePath,
+            $lockedLoan,
+            $actor,
+            $generatedAt,
+            $documentNumber,
+            $senderName,
+            $storedPhotos,
+            'SURAT JALAN PENGEMBALIAN',
+            self::RETURN_SUBJECT,
+            $returnItems
+        );
+
+        $filename = 'Surat-Jalan-Pengembalian-'.$lockedLoan->id.'-'.$sequence.'.xlsx';
+        $documentPath = $storageDirectory.'/'.$filename;
+        $documentSize = $this->storeWorkbook($spreadsheet, $templatePath, $documentPath);
+
+        $document = SuratJalan::query()->create([
+            'peminjaman_id' => $lockedLoan->id,
+            'pengirim_nama' => $senderName,
+            'jenis' => SuratJalan::TYPE_RETURN,
+            'urutan' => $sequence,
+            'nomor' => $documentNumber,
+            'disk' => 'local',
+            'path' => $documentPath,
+            'original_name' => $filename,
+            'mime' => self::XLSX_MIME,
+            'size' => $documentSize,
+            'generated_by' => $actor->id,
+            'generated_at' => $generatedAt,
+            'template_version' => $this->templateVersion($templatePath),
+        ]);
+
+        foreach ($storedPhotos as $index => $photo) {
+            SuratJalanPhoto::query()->create([
+                'surat_jalan_id' => $document->id,
+                'urutan' => $index + 1,
+                'disk' => 'local',
+                'path' => $photo['path'],
+                'original_name' => $photo['original_name'],
+                'mime' => $photo['mime'],
+                'size' => $photo['size'],
+                'width' => $photo['width'],
+                'height' => $photo['height'],
+            ]);
+        }
+
+        return $document->load('photos');
     }
 
     public function ensureCurrentShipmentSubject(SuratJalan $document): SuratJalan
@@ -497,15 +571,11 @@ class OutgoingSuratJalanService
             }
 
             try {
+                // resizeCanvas(null, null) hanya menyalin ulang kanvas ke ukuran yang
+                // sama persis: hasil gambarnya identik tetapi memakan ±98 ms per foto.
                 $image = $manager->read($file->getRealPath())
                     ->orient()
-                    ->scaleDown(self::MAX_IMAGE_DIMENSION, self::MAX_IMAGE_DIMENSION)
-                    ->resizeCanvas(
-                        width: null,
-                        height: null,
-                        background: 'ffffff',
-                        position: 'center'
-                    );
+                    ->scaleDown(self::MAX_IMAGE_DIMENSION, self::MAX_IMAGE_DIMENSION);
                 $encoded = $image->toJpeg(quality: 78);
                 $path = $directory.'/'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT).'-'.Str::uuid().'.jpg';
 
@@ -614,6 +684,7 @@ class OutgoingSuratJalanService
         User $actor,
         $generatedAt,
         string $documentNumber,
+        string $senderName,
         array $photos,
         string $documentTitle = 'SURAT JALAN PEMINJAMAN',
         string $documentSubject = self::SHIPMENT_SUBJECT,
@@ -665,6 +736,7 @@ class OutgoingSuratJalanService
 
         $this->assertTemplatePlaceholdersAreKnown($spreadsheet, $placeholders);
         $this->replacePlaceholders($spreadsheet, $placeholders);
+        $this->insertSenderRow($mainSheet, $senderName);
         $mainSheet->getCell('B7')->setValueExplicit($documentTitle, DataType::TYPE_STRING);
         $this->applyWrappedRowHeight($mainSheet, 'C10:G10', 10, $recipient, 100, 20, 4);
         $this->applyWrappedRowHeight(
@@ -678,8 +750,8 @@ class OutgoingSuratJalanService
         );
         $this->applyWrappedRowHeight(
             $mainSheet,
-            'C13:G13',
-            13,
+            'C'.self::ROW_JOB.':G'.self::ROW_JOB,
+            self::ROW_JOB,
             (string) $loan->pekerjaan,
             100,
             20,
@@ -703,6 +775,53 @@ class OutgoingSuratJalanService
         $spreadsheet->setActiveSheetIndex(0);
 
         return $spreadsheet;
+    }
+
+    /**
+     * Menyisipkan baris "Nama Pengirim" tepat di bawah baris "Hal".
+     *
+     * Dipakai untuk surat jalan peminjaman maupun pengembalian. Baris di bawahnya
+     * (Pekerjaan, tabel barang, tanda tangan) otomatis digeser oleh PhpSpreadsheet
+     * berikut merge dan tinggi barisnya; gaya serta merge untuk baris baru disalin
+     * dari baris "Hal" agar tampilannya konsisten dengan baris keterangan lain.
+     */
+    private function insertSenderRow(Worksheet $sheet, string $senderName): void
+    {
+        $sheet->insertNewRowBefore(self::ROW_SENDER, 1);
+
+        // Pada baris informasi (Kepada/Dari/Hal/Pekerjaan) sel label dan sel nilai
+        // memakai style berbeda: label berlatar biru dan tebal, nilai berlatar putih.
+        // Keduanya disalin dari sel yang sesuai agar baris ini tampil seragam dengan
+        // baris informasi lainnya.
+        $sheet->duplicateStyle(
+            $sheet->getStyle('B'.self::ROW_SUBJECT),
+            'B'.self::ROW_SENDER
+        );
+        $sheet->duplicateStyle(
+            $sheet->getStyle('C'.self::ROW_SUBJECT),
+            'C'.self::ROW_SENDER.':G'.self::ROW_SENDER
+        );
+
+        $valueMerge = 'C'.self::ROW_SENDER.':G'.self::ROW_SENDER;
+        if (! in_array($valueMerge, $sheet->getMergeCells(), true)) {
+            $sheet->mergeCells($valueMerge);
+        }
+
+        $sheet->getCell('B'.self::ROW_SENDER)->setValueExplicit('Nama Pengirim', DataType::TYPE_STRING);
+        $sheet->getCell('C'.self::ROW_SENDER)->setValueExplicit(
+            $senderName !== '' ? $senderName : '-',
+            DataType::TYPE_STRING
+        );
+
+        $this->applyWrappedRowHeight(
+            $sheet,
+            $valueMerge,
+            self::ROW_SENDER,
+            $senderName,
+            100,
+            $sheet->getRowDimension(self::ROW_SUBJECT)->getRowHeight(),
+            4
+        );
     }
 
     private function replacePlaceholders(Spreadsheet $spreadsheet, array $placeholders): void
@@ -731,10 +850,16 @@ class OutgoingSuratJalanService
         $extraRows = max($itemCount - self::TEMPLATE_ITEM_ROWS, 0);
 
         if ($extraRows > 0) {
-            $sheet->insertNewRowBefore(27, $extraRows);
-            for ($row = 27; $row < 27 + $extraRows; $row++) {
-                $sheet->duplicateStyle($sheet->getStyle('B26:G26'), "B{$row}:G{$row}");
-                $sheet->getRowDimension($row)->setRowHeight($sheet->getRowDimension(26)->getRowHeight());
+            $appendAt = self::ROW_ITEM_LAST + 1;
+            $sheet->insertNewRowBefore($appendAt, $extraRows);
+            for ($row = $appendAt; $row < $appendAt + $extraRows; $row++) {
+                $sheet->duplicateStyle(
+                    $sheet->getStyle('B'.self::ROW_ITEM_LAST.':G'.self::ROW_ITEM_LAST),
+                    "B{$row}:G{$row}"
+                );
+                $sheet->getRowDimension($row)->setRowHeight(
+                    $sheet->getRowDimension(self::ROW_ITEM_LAST)->getRowHeight()
+                );
                 $merge = "C{$row}:D{$row}";
                 if (! in_array($merge, $sheet->getMergeCells(), true)) {
                     $sheet->mergeCells($merge);
@@ -742,8 +867,8 @@ class OutgoingSuratJalanService
             }
         }
 
-        $lastPreparedRow = 26 + $extraRows;
-        for ($row = 17; $row <= $lastPreparedRow; $row++) {
+        $lastPreparedRow = self::ROW_ITEM_LAST + $extraRows;
+        for ($row = self::ROW_ITEM_FIRST; $row <= $lastPreparedRow; $row++) {
             foreach (['B', 'C', 'E', 'F', 'G'] as $column) {
                 $sheet->setCellValue($column.$row, null);
             }
@@ -752,26 +877,18 @@ class OutgoingSuratJalanService
         foreach (array_values($itemRows) as $index => $rowData) {
             $item = $rowData['item'];
             $qty = (int) ($rowData['qty'] ?? $rowData['returned_qty'] ?? 0);
-            $row = 17 + $index;
+            $row = self::ROW_ITEM_FIRST + $index;
             $toolName = trim((string) ($item->alat?->nama ?? '-'));
-            $toolCode = trim((string) ($item->alat?->kode ?? '-'));
 
             $sheet->setCellValue('B'.$row, $index + 1);
-            $sheet->getCell('C'.$row)->setValueExplicit($toolName.' / '.$toolCode, DataType::TYPE_STRING);
+            // Kolom nama barang hanya memuat nama alat; tools ID tidak dicantumkan.
+            $sheet->getCell('C'.$row)->setValueExplicit($toolName, DataType::TYPE_STRING);
             $sheet->setCellValue('E'.$row, $qty);
             $sheet->getCell('F'.$row)->setValueExplicit('Unit', DataType::TYPE_STRING);
-            $sheet->getCell('G'.$row)->setValueExplicit(
-                (string) ($item->alat?->jenis_alat ?? ''),
-                DataType::TYPE_STRING
-            );
+            // Kolom keterangan sengaja dikosongkan.
+            $sheet->getCell('G'.$row)->setValueExplicit('', DataType::TYPE_STRING);
 
-            $toolDescription = $toolName.' / '.$toolCode;
-            $toolType = (string) ($item->alat?->jenis_alat ?? '');
-            $lineCount = max(
-                1,
-                (int) ceil(mb_strlen($toolDescription) / 48),
-                (int) ceil(mb_strlen($toolType) / 28)
-            );
+            $lineCount = max(1, (int) ceil(mb_strlen($toolName) / 48));
             $sheet->getStyle("C{$row}:D{$row}")->getAlignment()->setWrapText(true);
             $sheet->getStyle('G'.$row)->getAlignment()->setWrapText(true);
             $sheet->getRowDimension($row)->setRowHeight(18 + (($lineCount - 1) * 15));
@@ -783,7 +900,7 @@ class OutgoingSuratJalanService
             ->setFitToPage(true)
             ->setFitToWidth(1)
             ->setFitToHeight(0);
-        $sheet->getPageSetup()->setPrintArea('A1:H'.(39 + $extraRows));
+        $sheet->getPageSetup()->setPrintArea('A1:H'.(self::ROW_PRINT_AREA_LAST + $extraRows));
     }
 
     /**
@@ -797,36 +914,37 @@ class OutgoingSuratJalanService
         string $documentNumber,
         Peminjaman $loan
     ): void {
-        $slots = ['C9', 'G9', 'C12', 'G12'];
+        // Baris 5-7 template (label + nilai No. Surat Jalan / ID Transaksi, dan baris
+        // Pekerjaan) dihapus saat generate. Template sendiri tidak diubah, sehingga
+        // seluruh baris di bawahnya bergeser tiga ke atas: slot foto 9 dan 12 menjadi
+        // 6 dan 9, catatan kaki 16 dan 18 menjadi 13 dan 15.
+        $sheet->removeRow(5, 3);
+
+        $slots = ['C6', 'G6', 'C9', 'G9'];
 
         foreach ($slots as $slot) {
             $sheet->setCellValue($slot, null);
         }
 
-        $sheet->getCell('B6')->setValueExplicit($documentNumber, DataType::TYPE_STRING);
-        $sheet->getCell('F6')->setValueExplicit((string) $loan->id, DataType::TYPE_STRING);
-        $annexJob = 'Pekerjaan: '.Str::limit((string) $loan->pekerjaan, 240);
-        $sheet->getCell('B7')->setValueExplicit($annexJob, DataType::TYPE_STRING);
-        $this->applyWrappedRowHeight($sheet, 'B7:H7', 7, $annexJob, 100, 18, 4);
-        $sheet->getCell('B16')->setValueExplicit(
+        $sheet->getCell('B13')->setValueExplicit(
             'Lampiran ini merupakan bagian yang tidak terpisahkan dari Surat Jalan No. '.$documentNumber.'.',
             DataType::TYPE_STRING
         );
-        $sheet->getCell('B18')->setValueExplicit(
+        $sheet->getCell('B15')->setValueExplicit(
             'Dokumen dihasilkan otomatis oleh aplikasi | ID Transaksi: '.$loan->id
             .' | Halaman lampiran '.$page.' dari '.$pageCount,
             DataType::TYPE_STRING
         );
 
+        $sheet->getRowDimension(6)->setRowHeight(210);
         $sheet->getRowDimension(9)->setRowHeight(210);
-        $sheet->getRowDimension(12)->setRowHeight(210);
         $sheet->getPageSetup()
             ->setPaperSize(PageSetup::PAPERSIZE_LETTER)
             ->setOrientation(PageSetup::ORIENTATION_PORTRAIT)
             ->setFitToPage(true)
             ->setFitToWidth(1)
             ->setFitToHeight(1);
-        $sheet->getPageSetup()->setPrintArea('A1:I18');
+        $sheet->getPageSetup()->setPrintArea('A1:I15');
 
         foreach ($photos as $index => $photo) {
             $drawing = new Drawing;

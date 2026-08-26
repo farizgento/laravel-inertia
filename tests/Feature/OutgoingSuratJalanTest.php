@@ -95,11 +95,21 @@ class OutgoingSuratJalanTest extends TestCase
         $this->assertNotNull($main);
         $this->assertSame('SURAT JALAN PEMINJAMAN', $main->getCell('B7')->getValue());
         $this->assertSame('PEMINJAMAN', $main->getCell('C12')->getValue());
-        $this->assertSame(1, $main->getCell('B17')->getValue());
-        $this->assertSame(11, $main->getCell('B27')->getValue());
-        $this->assertSame(11, $main->getCell('E27')->getValue());
+        // Baris "Nama Pengirim" disisipkan di bawah "Hal", sehingga Pekerjaan dan
+        // seluruh tabel barang bergeser satu baris ke bawah.
+        $this->assertSame('Nama Pengirim', $main->getCell('B13')->getValue());
+        $this->assertSame('Kurir Lapangan', $main->getCell('C13')->getValue());
+        $this->assertSame('Pekerjaan', $main->getCell('B14')->getValue());
+        $this->assertSame(1, $main->getCell('B18')->getValue());
+        $this->assertSame(11, $main->getCell('B28')->getValue());
+        $this->assertSame(11, $main->getCell('E28')->getValue());
+        // Nama barang tanpa tools ID, dan kolom keterangan dibiarkan kosong.
+        $this->assertSame('Alat 1', $main->getCell('C18')->getValue());
+        $this->assertSame('Alat 11', $main->getCell('C28')->getValue());
+        $this->assertEmpty($main->getCell('G18')->getValue());
+        $this->assertEmpty($main->getCell('G28')->getValue());
         $this->assertSame($expectedMainDrawingCount, $main->getDrawingCollection()->count());
-        $this->assertSame('A1:H40', $main->getPageSetup()->getPrintArea());
+        $this->assertSame('A1:H41', $main->getPageSetup()->getPrintArea());
         $this->assertSame('portrait', $main->getPageSetup()->getOrientation());
         $this->assertSame(1, $main->getPageSetup()->getFitToWidth());
         $this->assertSame(0, $main->getPageSetup()->getFitToHeight());
@@ -108,10 +118,10 @@ class OutgoingSuratJalanTest extends TestCase
 
         $firstAnnex = $workbook->getSheetByName('LAMPIRAN FOTO');
         $secondAnnex = $workbook->getSheetByName('LAMPIRAN FOTO 2');
-        $this->assertPhotoAnnex($firstAnnex, 4, ['C9', 'G9', 'C12', 'G12']);
-        $this->assertPhotoAnnex($secondAnnex, 1, ['C9']);
-        $this->assertStringContainsString('Halaman lampiran 1 dari 2', $firstAnnex->getCell('B18')->getValue());
-        $this->assertStringContainsString('Halaman lampiran 2 dari 2', $secondAnnex->getCell('B18')->getValue());
+        $this->assertPhotoAnnex($firstAnnex, 4, ['C6', 'G6', 'C9', 'G9']);
+        $this->assertPhotoAnnex($secondAnnex, 1, ['C6']);
+        $this->assertStringContainsString('Halaman lampiran 1 dari 2', $firstAnnex->getCell('B15')->getValue());
+        $this->assertStringContainsString('Halaman lampiran 2 dari 2', $secondAnnex->getCell('B15')->getValue());
         $this->assertWorkbookHasNoPlaceholders($workbook);
         $workbook->disconnectWorksheets();
         $generatedPath = Storage::disk('local')->path($document->path);
@@ -347,12 +357,13 @@ class OutgoingSuratJalanTest extends TestCase
         $main = $workbook->getSheetByName('MASTER SJ UP SLA');
 
         $this->assertNotNull($main);
-        $this->assertSame($formulaLikeJob, $main->getCell('C13')->getValue());
-        $this->assertSame(DataType::TYPE_STRING, $main->getCell('C13')->getDataType());
-        $this->assertStringStartsWith($formulaLikeToolName, (string) $main->getCell('C17')->getValue());
-        $this->assertSame(DataType::TYPE_STRING, $main->getCell('C17')->getDataType());
-        $this->assertSame($formulaLikeToolType, $main->getCell('G17')->getValue());
-        $this->assertSame(DataType::TYPE_STRING, $main->getCell('G17')->getDataType());
+        $this->assertSame($formulaLikeJob, $main->getCell('C14')->getValue());
+        $this->assertSame(DataType::TYPE_STRING, $main->getCell('C14')->getDataType());
+        // Nama barang berisi nama alat saja, tanpa tools ID.
+        $this->assertSame($formulaLikeToolName, $main->getCell('C18')->getValue());
+        $this->assertSame(DataType::TYPE_STRING, $main->getCell('C18')->getDataType());
+        // Kolom keterangan sengaja dikosongkan, jadi jenis alat tidak ikut tercetak.
+        $this->assertEmpty($main->getCell('G18')->getValue());
 
         $workbook->disconnectWorksheets();
     }
@@ -419,8 +430,9 @@ class OutgoingSuratJalanTest extends TestCase
             $main = $workbook->getSheetByName('MASTER SJ UP SLA');
             $this->assertSame('SURAT JALAN PENGEMBALIAN', $main->getCell('B7')->getValue());
             $this->assertSame('PENGEMBALIAN', $main->getCell('C12')->getValue());
-            $this->assertSame(1, $main->getCell('E17')->getValue());
-            $this->assertPhotoAnnex($workbook->getSheetByName('LAMPIRAN FOTO'), 1, ['C9']);
+            $this->assertSame('Nama Pengirim', $main->getCell('B13')->getValue());
+            $this->assertSame(1, $main->getCell('E18')->getValue());
+            $this->assertPhotoAnnex($workbook->getSheetByName('LAMPIRAN FOTO'), 1, ['C6']);
             $workbook->disconnectWorksheets();
 
             $this->get($document->download_url)
@@ -514,15 +526,31 @@ class OutgoingSuratJalanTest extends TestCase
     private function assertPhotoAnnex($sheet, int $drawingCount, array $coordinates): void
     {
         $this->assertNotNull($sheet);
+        // Baris No. Surat Jalan / ID Transaksi / Pekerjaan dihapus, sehingga slot foto
+        // template (9 dan 12) bergeser menjadi 6 dan 9.
+        $this->assertSame(210.0, $sheet->getRowDimension(6)->getRowHeight());
         $this->assertSame(210.0, $sheet->getRowDimension(9)->getRowHeight());
-        $this->assertSame(210.0, $sheet->getRowDimension(12)->getRowHeight());
         $this->assertEqualsWithDelta(42.0, $sheet->getColumnDimension('C')->getWidth(), 1.0);
         $this->assertEqualsWithDelta(42.0, $sheet->getColumnDimension('G')->getWidth(), 1.0);
-        $this->assertSame('A1:I18', $sheet->getPageSetup()->getPrintArea());
+        $this->assertSame('A1:I15', $sheet->getPageSetup()->getPrintArea());
         $this->assertSame('portrait', $sheet->getPageSetup()->getOrientation());
         $this->assertSame(1, $sheet->getPageSetup()->getFitToWidth());
         $this->assertSame(1, $sheet->getPageSetup()->getFitToHeight());
-        $this->assertTrue($sheet->getStyle('B7')->getAlignment()->getWrapText());
+        // Kepala lampiran tetap utuh, tetapi blok No. Surat Jalan / ID Transaksi /
+        // Pekerjaan sudah tidak ada lagi di sheet ini.
+        $this->assertSame('UNIT BISNIS PEMELIHARAAN', $sheet->getCell('B2')->getValue());
+        $this->assertSame('LAMPIRAN FOTO BARANG', $sheet->getCell('B3')->getValue());
+
+        $annexText = '';
+        foreach ($sheet->getRowIterator() as $row) {
+            $cells = $row->getCellIterator();
+            $cells->setIterateOnlyExistingCells(true);
+            foreach ($cells as $cell) {
+                $annexText .= (string) $cell->getValue()."\n";
+            }
+        }
+        $this->assertStringNotContainsString('No. Surat Jalan', $annexText);
+        $this->assertStringNotContainsString('Pekerjaan:', $annexText);
 
         $drawings = $sheet->getDrawingCollection();
         $this->assertCount($drawingCount, $drawings);
