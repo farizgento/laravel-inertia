@@ -78,7 +78,7 @@ class AlatController extends Controller
     {
         $roleKey = strtolower((string) ($request->user()?->role?->key ?? ''));
 
-        return in_array($roleKey, [Role::KEY_PIC_TOOL, Role::KEY_SUPER_ADMIN], true)
+        return in_array($roleKey, [Role::KEY_PIC_TOOL, Role::KEY_ADMIN, Role::KEY_SUPER_ADMIN], true)
             && $request->boolean('inter_area_source');
     }
 
@@ -198,7 +198,12 @@ class AlatController extends Controller
                     "SUM(CASE
                         WHEN pem.status IN ('".Peminjaman::STATUS_PERLU_DISETUJUI."', '".Peminjaman::STATUS_PERLU_DIREVIEW."') THEN items.qty
                         WHEN pem.status IN ('".Peminjaman::STATUS_DISETUJUI."', '".Peminjaman::STATUS_DIKIRIM."') THEN COALESCE(items.approved_qty, 0)
-                        WHEN pem.status IN ('".Peminjaman::STATUS_DITERIMA."', '".Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS."') THEN GREATEST(COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0), 0)
+                        WHEN pem.status IN ('".Peminjaman::STATUS_DITERIMA."', '".Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS."') THEN
+                            CASE
+                                WHEN COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0) > 0
+                                THEN COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0)
+                                ELSE 0
+                            END
                         ELSE 0
                     END) as total"
                 )
@@ -226,7 +231,12 @@ class AlatController extends Controller
                     "SUM(CASE
                         WHEN pem.status IN ('".Peminjaman::STATUS_PERLU_DISETUJUI."', '".Peminjaman::STATUS_PERLU_DIREVIEW."') THEN items.qty
                         WHEN pem.status IN ('".Peminjaman::STATUS_DISETUJUI."', '".Peminjaman::STATUS_DIKIRIM."') THEN COALESCE(items.approved_qty, 0)
-                        WHEN pem.status IN ('".Peminjaman::STATUS_DITERIMA."', '".Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS."') THEN GREATEST(COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0), 0)
+                        WHEN pem.status IN ('".Peminjaman::STATUS_DITERIMA."', '".Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS."') THEN
+                            CASE
+                                WHEN COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0) > 0
+                                THEN COALESCE(items.approved_qty, 0) - COALESCE(items.returned_qty, 0)
+                                ELSE 0
+                            END
                         ELSE 0
                     END) as total"
                 )
@@ -335,6 +345,99 @@ class AlatController extends Controller
 
             return $this->formatAlat($alat, $borrowedQty);
         })->values();
+    }
+
+    public function availability(Request $request)
+    {
+        $data = $request->validate([
+            'area_id' => ['required', 'integer', 'exists:areas,id'],
+            'inter_area_source' => ['nullable', 'boolean'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.id' => ['required', 'integer'],
+            'items.*.qty' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        $areaId = (int) $data['area_id'];
+        $isInterAreaSource = $request->boolean('inter_area_source');
+        abort_if($isInterAreaSource && ! $this->canBrowseInterAreaSource($request), 403, 'Anda tidak memiliki akses membaca stok area sumber.');
+
+        $authorizedAreaId = $this->getAuthorizedAreaId($request);
+        if (! $isInterAreaSource && $authorizedAreaId !== null && $areaId !== $authorizedAreaId) {
+            throw ValidationException::withMessages([
+                'area_id' => ['Anda hanya dapat membaca stok area sendiri.'],
+            ]);
+        }
+
+        $items = collect($data['items'])
+            ->map(fn (array $item) => [
+                'id' => (int) $item['id'],
+                'qty' => (int) ($item['qty'] ?? 1),
+            ])
+            ->keyBy('id');
+        $alatIds = $items->keys()->all();
+        $borrowedMap = $isInterAreaSource
+            ? $this->borrowedMap($alatIds)
+            : $this->borrowedMapForArea($alatIds, $areaId);
+        $areaStockMap = $isInterAreaSource
+            ? []
+            : AreaAlatStock::query()
+                ->where('area_id', $areaId)
+                ->where('active', true)
+                ->where('qty', '>', 0)
+                ->whereIn('alat_id', $alatIds)
+                ->select('alat_id', DB::raw('SUM(qty) as total'))
+                ->groupBy('alat_id')
+                ->pluck('total', 'alat_id')
+                ->map(fn ($value) => (int) $value)
+                ->all();
+
+        $alats = Alat::query()
+            ->with('area:id,name,slug,kode')
+            ->whereIn('id', $alatIds)
+            ->where(function ($query) use ($areaId, $alatIds, $request) {
+                if ($request->boolean('inter_area_source')) {
+                    $query->where('area_id', $areaId);
+
+                    return;
+                }
+
+                $query
+                    ->where('area_id', $areaId)
+                    ->orWhereHas('areaStocks', function ($stockQuery) use ($areaId, $alatIds) {
+                        $stockQuery
+                            ->where('area_id', $areaId)
+                            ->where('active', true)
+                            ->where('qty', '>', 0)
+                            ->whereIn('alat_id', $alatIds);
+                    });
+            })
+            ->get();
+
+        $rows = $alats
+            ->map(function (Alat $alat) use ($areaId, $areaStockMap, $borrowedMap, $items) {
+                $totalAset = (int) $alat->total_aset;
+                $baseStock = (int) $alat->area_id === $areaId
+                    ? $totalAset
+                    : (int) ($areaStockMap[$alat->id] ?? 0);
+                $stokTersedia = max($baseStock - ($borrowedMap[$alat->id] ?? 0), 0);
+                $requestedQty = (int) ($items[$alat->id]['qty'] ?? 1);
+
+                return $this->formatAlat($alat, $borrowedMap[$alat->id] ?? 0, $baseStock, [
+                    'requested_qty' => $requestedQty,
+                    'available_qty' => $stokTersedia,
+                    'usable_qty' => min($requestedQty, $stokTersedia),
+                    'total_aset' => $totalAset,
+                    'is_shared_area_stock' => (int) $alat->area_id !== $areaId,
+                ]);
+            })
+            ->keyBy('id');
+
+        return response()->json([
+            'data' => collect($alatIds)
+                ->map(fn (int $alatId) => $rows->get($alatId))
+                ->filter()
+                ->values(),
+        ]);
     }
 
     private function indexForArea(int $areaId, $ownedQuery, Request $request, bool $shouldPaginate, int $perPageNormalized)

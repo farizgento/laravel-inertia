@@ -7,7 +7,7 @@ return new class extends Migration
 {
     private const LEGACY_TYPE = 'peminjaman_keluar';
 
-    private const SHIPMENT_TYPE = 'pengiriman';
+    private const SHIPMENT_TYPE = 'peminjaman';
 
     public function up(): void
     {

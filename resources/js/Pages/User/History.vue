@@ -435,6 +435,16 @@
                             class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         />
                     </label>
+                    <label class="block space-y-2 text-sm font-medium text-slate-700">
+                        <span>Resi</span>
+                        <input
+                            v-model="editForm.resi"
+                            type="text"
+                            maxlength="255"
+                            placeholder="Opsional"
+                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        />
+                    </label>
                     <div class="grid gap-4 md:grid-cols-2">
                         <label class="block space-y-2 text-sm font-medium text-slate-700">
                             <span>Tanggal pinjam</span>
@@ -574,6 +584,7 @@ const deleteModal = reactive({
 const editError = ref('');
 const editForm = reactive({
     pekerjaan: '',
+    resi: '',
     tanggal_pinjam: '',
     tanggal_kembali: '',
     status: '',
@@ -709,6 +720,7 @@ const repeatPeminjaman = (item) => {
         JSON.stringify({
             source_id: item.id,
             pekerjaan: item.title && item.title !== '-' ? item.title : '',
+            resi: item.resi ?? '',
             tanggal_pinjam: item.borrowDateValue ?? '',
             tanggal_kembali: item.returnDateValue ?? '',
             area_id: item.areaId ?? currentAreaId.value ?? null,
@@ -727,6 +739,7 @@ const openEdit = (item) => {
     editItem.value = item;
     editError.value = '';
     editForm.pekerjaan = item?.title ?? '';
+    editForm.resi = item?.resi ?? '';
     editForm.tanggal_pinjam = item?.borrowDateValue ?? '';
     editForm.tanggal_kembali = item?.returnDateValue ?? '';
     editForm.status = item?.status ?? 'Perlu Disetujui';
@@ -757,6 +770,7 @@ const submitEdit = async () => {
     try {
         await axios.put(`/api/peminjaman/${editItem.value.id}`, {
             pekerjaan: editForm.pekerjaan.trim(),
+            resi: editForm.resi?.trim() || null,
             tanggal_pinjam: editForm.tanggal_pinjam,
             tanggal_kembali: editForm.tanggal_kembali,
             status: editForm.status,
@@ -768,6 +782,7 @@ const submitEdit = async () => {
         const errors = error?.response?.data?.errors ?? {};
         editError.value =
             errors.pekerjaan?.[0] ??
+            errors.resi?.[0] ??
             errors.tanggal_pinjam?.[0] ??
             errors.tanggal_kembali?.[0] ??
             errors.status?.[0] ??
@@ -914,6 +929,7 @@ const normalizeHistory = (item) => {
     return {
         id: item?.id ?? '',
         title: item?.title ?? '-',
+        resi: item?.resi ?? '',
         userName: item?.user_name ?? '-',
         reviewerName: item?.reviewed_by_name ?? '-',
         requesterReviewerName: item?.requester_reviewed_by_name ?? '-',

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Peminjaman;
+use App\Models\PeminjamanItem;
 use App\Models\SuratJalan;
 use App\Models\SuratJalanPhoto;
 use App\Models\User;
@@ -50,9 +51,11 @@ class OutgoingSuratJalanService
 
     private const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
-    private const SHIPMENT_SUBJECT = 'PENGIRIMAN';
+    private const SHIPMENT_SUBJECT = 'PEMINJAMAN';
 
-    private const OUTPUT_VERSION = 'shipment-subject-v1';
+    private const RETURN_SUBJECT = 'PENGEMBALIAN';
+
+    private const OUTPUT_VERSION = 'shipment-subject-peminjaman-v1';
 
     private const DOCUMENT_RELATIONSHIP_NAMESPACE = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 
@@ -167,7 +170,7 @@ class OutgoingSuratJalanService
                         'disk' => 'local',
                         'path' => $photo['path'],
                         'original_name' => $photo['original_name'],
-                        'mime' => 'image/jpeg',
+                        'mime' => $photo['mime'],
                         'size' => $photo['size'],
                         'width' => $photo['width'],
                         'height' => $photo['height'],
@@ -202,6 +205,106 @@ class OutgoingSuratJalanService
             && $photoCount >= 1
             && $photoCount <= self::MAX_PHOTOS
             && Storage::disk($disk)->exists($document->path);
+    }
+
+    /**
+     * @param  array<int, array{item: PeminjamanItem, returned_qty: int}>  $returnItems
+     */
+    public function createReturnDocument(
+        Peminjaman $peminjaman,
+        User $actor,
+        string $senderName,
+        array $returnItems,
+        array $photos
+    ): SuratJalan {
+        $storageDirectory = null;
+
+        try {
+            $lockedLoan = Peminjaman::query()
+                ->whereKey($peminjaman->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($returnItems === []) {
+                throw ValidationException::withMessages([
+                    'items' => ['Tidak ada alat yang dikembalikan.'],
+                ]);
+            }
+
+            $lockedLoan->loadMissing([
+                'user',
+                'area',
+                'requesterArea',
+                'reviewer',
+            ]);
+
+            $sequence = (int) $lockedLoan->suratJalans()
+                ->where('jenis', SuratJalan::TYPE_RETURN)
+                ->max('urutan') + 1;
+            $generatedAt = now();
+            $documentNumber = $this->returnDocumentNumber($lockedLoan, $generatedAt, $sequence);
+            $storageDirectory = 'surat-jalan/'.$lockedLoan->id.'/pengembalian/'.Str::uuid();
+            $storedPhotos = $this->compressAndStorePhotos($photos, $storageDirectory.'/photos');
+            $templatePath = storage_path('templates/Surat-Jalan-Peminjaman.xlsx');
+
+            if (! is_file($templatePath)) {
+                throw new RuntimeException('Template Surat-Jalan-Peminjaman.xlsx tidak ditemukan.');
+            }
+
+            $spreadsheet = $this->buildWorkbook(
+                $templatePath,
+                $lockedLoan,
+                $actor,
+                $generatedAt,
+                $documentNumber,
+                $storedPhotos,
+                'SURAT JALAN PENGEMBALIAN',
+                self::RETURN_SUBJECT,
+                $returnItems
+            );
+
+            $filename = 'Surat-Jalan-Pengembalian-'.$lockedLoan->id.'-'.$sequence.'.xlsx';
+            $documentPath = $storageDirectory.'/'.$filename;
+            $documentSize = $this->storeWorkbook($spreadsheet, $templatePath, $documentPath);
+
+            $document = SuratJalan::query()->create([
+                'peminjaman_id' => $lockedLoan->id,
+                'pengirim_nama' => $senderName,
+                'jenis' => SuratJalan::TYPE_RETURN,
+                'urutan' => $sequence,
+                'nomor' => $documentNumber,
+                'disk' => 'local',
+                'path' => $documentPath,
+                'original_name' => $filename,
+                'mime' => self::XLSX_MIME,
+                'size' => $documentSize,
+                'generated_by' => $actor->id,
+                'generated_at' => $generatedAt,
+                'template_version' => $this->templateVersion($templatePath),
+            ]);
+
+            foreach ($storedPhotos as $index => $photo) {
+                SuratJalanPhoto::query()->create([
+                    'surat_jalan_id' => $document->id,
+                    'urutan' => $index + 1,
+                    'disk' => 'local',
+                    'path' => $photo['path'],
+                    'original_name' => $photo['original_name'],
+                    'mime' => $photo['mime'],
+                    'size' => $photo['size'],
+                    'width' => $photo['width'],
+                    'height' => $photo['height'],
+                ]);
+            }
+
+            return $document->load('photos');
+        } catch (Throwable $exception) {
+            if ($storageDirectory) {
+                $this->cleanupStorageDirectory($storageDirectory);
+            }
+
+            throw $exception;
+        }
     }
 
     public function ensureCurrentShipmentSubject(SuratJalan $document): SuratJalan
@@ -372,7 +475,7 @@ class OutgoingSuratJalanService
 
     /**
      * @param  array<int, UploadedFile>  $photos
-     * @return array<int, array{path: string, original_name: string, size: int, width: int, height: int}>
+     * @return array<int, array{path: string, original_name: string, mime: string, size: int, width: int, height: int}>
      */
     private function compressAndStorePhotos(array $photos, string $directory): array
     {
@@ -387,35 +490,108 @@ class OutgoingSuratJalanService
                 ]);
             }
 
-            $image = $manager->read($file->getRealPath())
-                ->orient()
-                ->scaleDown(self::MAX_IMAGE_DIMENSION, self::MAX_IMAGE_DIMENSION)
-                ->resizeCanvas(
-                    width: null,
-                    height: null,
-                    background: 'ffffff',
-                    position: 'center'
-                );
-            $encoded = $image->toJpeg(quality: 78);
-            $path = $directory.'/'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT).'-'.Str::uuid().'.jpg';
+            if (! $manager) {
+                $stored[] = $this->storeOriginalPhoto($file, $directory, $index);
 
-            if (! $disk->put($path, (string) $encoded)) {
-                throw new RuntimeException('Foto pengiriman gagal disimpan.');
+                continue;
             }
 
-            $stored[] = [
-                'path' => $path,
-                'original_name' => $file->getClientOriginalName(),
-                'size' => (int) $encoded->size(),
-                'width' => $image->width(),
-                'height' => $image->height(),
-            ];
+            try {
+                $image = $manager->read($file->getRealPath())
+                    ->orient()
+                    ->scaleDown(self::MAX_IMAGE_DIMENSION, self::MAX_IMAGE_DIMENSION)
+                    ->resizeCanvas(
+                        width: null,
+                        height: null,
+                        background: 'ffffff',
+                        position: 'center'
+                    );
+                $encoded = $image->toJpeg(quality: 78);
+                $path = $directory.'/'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT).'-'.Str::uuid().'.jpg';
+
+                if (! $disk->put($path, (string) $encoded)) {
+                    throw new RuntimeException('Foto pengiriman gagal disimpan.');
+                }
+
+                $stored[] = [
+                    'path' => $path,
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime' => 'image/jpeg',
+                    'size' => (int) $encoded->size(),
+                    'width' => $image->width(),
+                    'height' => $image->height(),
+                ];
+            } catch (Throwable $exception) {
+                $stored[] = $this->storeOriginalPhoto($file, $directory, $index, $exception);
+            }
         }
 
         return $stored;
     }
 
-    private function imageManager(): ImageManager
+    /**
+     * @return array{path: string, original_name: string, mime: string, size: int, width: int, height: int}
+     */
+    private function storeOriginalPhoto(
+        UploadedFile $file,
+        string $directory,
+        int $index,
+        ?Throwable $previous = null
+    ): array {
+        $imageSize = @getimagesize($file->getRealPath());
+        $imageType = is_array($imageSize) ? ($imageSize[2] ?? null) : null;
+        $extension = match ($imageType) {
+            IMAGETYPE_JPEG => 'jpg',
+            IMAGETYPE_PNG => 'png',
+            default => null,
+        };
+        $mime = match ($imageType) {
+            IMAGETYPE_JPEG => 'image/jpeg',
+            IMAGETYPE_PNG => 'image/png',
+            default => $file->getClientMimeType() ?: 'application/octet-stream',
+        };
+
+        if (! $extension) {
+            throw ValidationException::withMessages([
+                "photos.$index" => [
+                    'Foto pengiriman WebP/GIF/BMP perlu ekstensi GD atau Imagick. Gunakan JPG/PNG atau aktifkan ekstensi gambar PHP.',
+                ],
+            ]);
+        }
+
+        if ($previous) {
+            Log::warning('Foto pengiriman disimpan tanpa kompresi.', [
+                'original_name' => $file->getClientOriginalName(),
+                'mime' => $file->getClientMimeType(),
+                'error' => $previous->getMessage(),
+            ]);
+        }
+
+        $path = $directory.'/'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT).'-'.Str::uuid().'.'.$extension;
+        $stream = fopen($file->getRealPath(), 'rb');
+        if ($stream === false) {
+            throw new RuntimeException('Foto pengiriman tidak dapat dibaca untuk disimpan.');
+        }
+
+        try {
+            if (! Storage::disk('local')->put($path, $stream)) {
+                throw new RuntimeException('Foto pengiriman gagal disimpan.');
+            }
+        } finally {
+            fclose($stream);
+        }
+
+        return [
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime' => $mime,
+            'size' => (int) $file->getSize(),
+            'width' => (int) ($imageSize[0] ?? 0),
+            'height' => (int) ($imageSize[1] ?? 0),
+        ];
+    }
+
+    protected function imageManager(): ?ImageManager
     {
         if (extension_loaded('imagick')) {
             return new ImageManager(new ImagickDriver);
@@ -425,11 +601,12 @@ class OutgoingSuratJalanService
             return new ImageManager(new GdDriver);
         }
 
-        throw new RuntimeException('Ekstensi Imagick atau GD diperlukan untuk memproses foto pengiriman.');
+        return null;
     }
 
     /**
-     * @param  array<int, array{path: string, original_name: string, size: int, width: int, height: int}>  $photos
+     * @param  array<int, array{path: string, original_name: string, mime: string, size: int, width: int, height: int}>  $photos
+     * @param  array<int, array{item: PeminjamanItem, returned_qty: int}>|null  $documentItems
      */
     private function buildWorkbook(
         string $templatePath,
@@ -437,7 +614,10 @@ class OutgoingSuratJalanService
         User $actor,
         $generatedAt,
         string $documentNumber,
-        array $photos
+        array $photos,
+        string $documentTitle = 'SURAT JALAN PEMINJAMAN',
+        string $documentSubject = self::SHIPMENT_SUBJECT,
+        ?array $documentItems = null
     ): Spreadsheet {
         $spreadsheet = IOFactory::load($templatePath);
         $mainSheet = $spreadsheet->getSheetByName('MASTER SJ UP SLA');
@@ -448,7 +628,7 @@ class OutgoingSuratJalanService
             throw new RuntimeException('Struktur sheet template surat jalan tidak sesuai.');
         }
 
-        $pageCount = (int) ceil(count($photos) / self::PHOTOS_PER_PAGE);
+        $pageCount = max((int) ceil(count($photos) / self::PHOTOS_PER_PAGE), 1);
         $annexSheets = [$annexTemplate];
 
         for ($page = 2; $page <= $pageCount; $page++) {
@@ -469,7 +649,7 @@ class OutgoingSuratJalanService
             '{{waktu_cetak}}' => $generatedAt->format('d/m/Y H:i'),
             '{{penerima_atau_keamanan}}' => $recipient,
             '{{area_asal}}' => (string) ($loan->area?->name ?? '-'),
-            '{{izin masuk/keluar}}' => self::SHIPMENT_SUBJECT,
+            '{{izin masuk/keluar}}' => $documentSubject,
             '{{nama_pekerjaan}}' => (string) $loan->pekerjaan,
             '{{nama_user}}' => (string) ($loan->user?->name ?? '-'),
             '{{tanggal_approved_user}}' => $this->formatDateTime($loan->created_at),
@@ -485,7 +665,7 @@ class OutgoingSuratJalanService
 
         $this->assertTemplatePlaceholdersAreKnown($spreadsheet, $placeholders);
         $this->replacePlaceholders($spreadsheet, $placeholders);
-        $mainSheet->getCell('B7')->setValueExplicit('SURAT JALAN PENGIRIMAN', DataType::TYPE_STRING);
+        $mainSheet->getCell('B7')->setValueExplicit($documentTitle, DataType::TYPE_STRING);
         $this->applyWrappedRowHeight($mainSheet, 'C10:G10', 10, $recipient, 100, 20, 4);
         $this->applyWrappedRowHeight(
             $mainSheet,
@@ -505,7 +685,14 @@ class OutgoingSuratJalanService
             20,
             12
         );
-        $this->populateApprovedItems($mainSheet, $loan);
+        $itemRows = $documentItems ?? $loan->items
+            ->values()
+            ->map(fn (PeminjamanItem $item) => [
+                'item' => $item,
+                'qty' => (int) ($item->approved_qty ?? 0),
+            ])
+            ->all();
+        $this->populateDocumentItems($mainSheet, $itemRows);
 
         foreach ($annexSheets as $pageIndex => $sheet) {
             $page = $pageIndex + 1;
@@ -535,9 +722,12 @@ class OutgoingSuratJalanService
         }
     }
 
-    private function populateApprovedItems(Worksheet $sheet, Peminjaman $loan): void
+    /**
+     * @param  array<int, array{item: PeminjamanItem, qty?: int, returned_qty?: int}>  $itemRows
+     */
+    private function populateDocumentItems(Worksheet $sheet, array $itemRows): void
     {
-        $itemCount = $loan->items->count();
+        $itemCount = count($itemRows);
         $extraRows = max($itemCount - self::TEMPLATE_ITEM_ROWS, 0);
 
         if ($extraRows > 0) {
@@ -559,14 +749,16 @@ class OutgoingSuratJalanService
             }
         }
 
-        foreach ($loan->items->values() as $index => $item) {
+        foreach (array_values($itemRows) as $index => $rowData) {
+            $item = $rowData['item'];
+            $qty = (int) ($rowData['qty'] ?? $rowData['returned_qty'] ?? 0);
             $row = 17 + $index;
             $toolName = trim((string) ($item->alat?->nama ?? '-'));
             $toolCode = trim((string) ($item->alat?->kode ?? '-'));
 
             $sheet->setCellValue('B'.$row, $index + 1);
             $sheet->getCell('C'.$row)->setValueExplicit($toolName.' / '.$toolCode, DataType::TYPE_STRING);
-            $sheet->setCellValue('E'.$row, (int) $item->approved_qty);
+            $sheet->setCellValue('E'.$row, $qty);
             $sheet->getCell('F'.$row)->setValueExplicit('Unit', DataType::TYPE_STRING);
             $sheet->getCell('G'.$row)->setValueExplicit(
                 (string) ($item->alat?->jenis_alat ?? ''),
@@ -595,7 +787,7 @@ class OutgoingSuratJalanService
     }
 
     /**
-     * @param  array<int, array{path: string, original_name: string, size: int, width: int, height: int}>  $photos
+     * @param  array<int, array{path: string, original_name: string, mime: string, size: int, width: int, height: int}>  $photos
      */
     private function populatePhotoPage(
         Worksheet $sheet,
@@ -998,7 +1190,16 @@ class OutgoingSuratJalanService
         $areaCode = Str::upper(trim((string) ($loan->area?->kode ?? 'AREA')));
         $areaCode = preg_replace('/[^A-Z0-9_-]+/', '-', $areaCode) ?: 'AREA';
 
-        return 'SJ-PENGIRIMAN/'.$areaCode.'/'.$generatedAt->format('Ym').'/'.str_pad((string) $loan->id, 6, '0', STR_PAD_LEFT);
+        return 'SJ-PEMINJAMAN/'.$areaCode.'/'.$generatedAt->format('Ym').'/'.str_pad((string) $loan->id, 6, '0', STR_PAD_LEFT);
+    }
+
+    private function returnDocumentNumber(Peminjaman $loan, $generatedAt, int $sequence): string
+    {
+        $areaCode = Str::upper(trim((string) ($loan->area?->kode ?? 'AREA')));
+        $areaCode = preg_replace('/[^A-Z0-9_-]+/', '-', $areaCode) ?: 'AREA';
+
+        return 'SJ-PENGEMBALIAN/'.$areaCode.'/'.$generatedAt->format('Ym').'/'
+            .str_pad((string) $loan->id, 6, '0', STR_PAD_LEFT).'/'.str_pad((string) $sequence, 2, '0', STR_PAD_LEFT);
     }
 
     private function formatDateTime($value): string

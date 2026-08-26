@@ -289,6 +289,7 @@ const normalizeHistory = (item) => ({
     requesterAreaName: item?.requester_area_name ?? '-',
     isInterArea: Boolean(item?.is_inter_area),
     title: item?.title ?? '-',
+    resi: item?.resi ?? '',
     userName: item?.user_name ?? '-',
     reviewerName: item?.reviewed_by_name ?? '-',
     requesterReviewerName: item?.requester_reviewed_by_name ?? '-',

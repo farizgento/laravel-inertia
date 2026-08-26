@@ -30,7 +30,7 @@ return new class extends Migration
             ->each(function ($document) use (&$sequenceByLoanAndType) {
                 $type = Str::contains((string) $document->path, '/pengembalian/')
                     ? 'pengembalian'
-                    : 'pengiriman';
+                    : 'peminjaman';
                 $key = $document->peminjaman_id.'|'.$type;
                 $sequenceByLoanAndType[$key] = ($sequenceByLoanAndType[$key] ?? 0) + 1;
 

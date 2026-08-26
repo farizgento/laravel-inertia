@@ -146,7 +146,7 @@ class MutasiAlatController extends Controller
                         'id' => $suratJalan->id,
                         'type' => $suratJalan->jenis,
                         'label' => $isShipment
-                            ? 'Surat Jalan Pengiriman'
+                            ? 'Surat Jalan Peminjaman'
                             : 'Surat Jalan Pengembalian '.$returnDocumentIndex,
                         'pengirim_nama' => $suratJalan->pengirim_nama,
                         'path' => $suratJalan->path,

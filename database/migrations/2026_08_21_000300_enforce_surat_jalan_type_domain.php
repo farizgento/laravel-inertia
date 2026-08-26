@@ -17,7 +17,7 @@ return new class extends Migration
             ->select(['id', 'jenis'])
             ->where(function ($query) {
                 $query->whereNull('jenis')
-                    ->orWhereNotIn('jenis', ['pengiriman', 'pengembalian']);
+                    ->orWhereNotIn('jenis', ['peminjaman', 'pengembalian']);
             })
             ->first();
 
@@ -64,7 +64,7 @@ return new class extends Migration
         DB::statement('ALTER TABLE surat_jalan MODIFY (jenis NOT NULL)');
         DB::statement(
             'ALTER TABLE surat_jalan ADD CONSTRAINT '.self::CHECK_CONSTRAINT.
-            " CHECK (jenis IN ('pengiriman', 'pengembalian'))"
+            " CHECK (jenis IN ('peminjaman', 'pengembalian'))"
         );
     }
 
@@ -78,13 +78,13 @@ return new class extends Migration
     {
         DB::unprepared(
             'CREATE TRIGGER '.self::INSERT_TRIGGER.' BEFORE INSERT ON surat_jalan '.
-            "FOR EACH ROW WHEN NEW.jenis IS NULL OR NEW.jenis NOT IN ('pengiriman', 'pengembalian') ".
-            "BEGIN SELECT RAISE(ABORT, 'Jenis surat jalan harus pengiriman atau pengembalian.'); END"
+            "FOR EACH ROW WHEN NEW.jenis IS NULL OR NEW.jenis NOT IN ('peminjaman', 'pengembalian') ".
+            "BEGIN SELECT RAISE(ABORT, 'Jenis surat jalan harus peminjaman atau pengembalian.'); END"
         );
         DB::unprepared(
             'CREATE TRIGGER '.self::UPDATE_TRIGGER.' BEFORE UPDATE OF jenis ON surat_jalan '.
-            "FOR EACH ROW WHEN NEW.jenis IS NULL OR NEW.jenis NOT IN ('pengiriman', 'pengembalian') ".
-            "BEGIN SELECT RAISE(ABORT, 'Jenis surat jalan harus pengiriman atau pengembalian.'); END"
+            "FOR EACH ROW WHEN NEW.jenis IS NULL OR NEW.jenis NOT IN ('peminjaman', 'pengembalian') ".
+            "BEGIN SELECT RAISE(ABORT, 'Jenis surat jalan harus peminjaman atau pengembalian.'); END"
         );
     }
 
@@ -99,7 +99,7 @@ return new class extends Migration
         DB::statement('ALTER TABLE surat_jalan MODIFY jenis VARCHAR(32) NOT NULL');
         DB::statement(
             'ALTER TABLE surat_jalan ADD CONSTRAINT '.self::CHECK_CONSTRAINT.
-            " CHECK (jenis IN ('pengiriman', 'pengembalian'))"
+            " CHECK (jenis IN ('peminjaman', 'pengembalian'))"
         );
     }
 
@@ -121,7 +121,7 @@ return new class extends Migration
         DB::statement('ALTER TABLE surat_jalan ALTER COLUMN jenis SET NOT NULL');
         DB::statement(
             'ALTER TABLE surat_jalan ADD CONSTRAINT '.self::CHECK_CONSTRAINT.
-            " CHECK (jenis IN ('pengiriman', 'pengembalian'))"
+            " CHECK (jenis IN ('peminjaman', 'pengembalian'))"
         );
     }
 
@@ -136,7 +136,7 @@ return new class extends Migration
         DB::statement('ALTER TABLE surat_jalan ALTER COLUMN jenis NVARCHAR(32) NOT NULL');
         DB::statement(
             'ALTER TABLE surat_jalan ADD CONSTRAINT '.self::CHECK_CONSTRAINT.
-            " CHECK (jenis IN ('pengiriman', 'pengembalian'))"
+            " CHECK (jenis IN ('peminjaman', 'pengembalian'))"
         );
     }
 

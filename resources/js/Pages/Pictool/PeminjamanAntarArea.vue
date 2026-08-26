@@ -13,7 +13,7 @@
     </div>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
-        <div class="grid gap-4 lg:grid-cols-4">
+        <div class="grid gap-4 lg:grid-cols-5">
             <label class="space-y-2 text-sm font-medium text-slate-700">
                 <span>Area Sumber</span>
                 <select
@@ -58,6 +58,56 @@
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
             </label>
+
+            <label class="space-y-2 text-sm font-medium text-slate-700">
+                <span>Resi</span>
+                <input
+                    v-model="form.resi"
+                    type="text"
+                    maxlength="255"
+                    placeholder="Opsional"
+                    class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+            </label>
+        </div>
+
+        <div
+            v-if="templates.length || templatesLoading"
+            class="mt-5 flex flex-col gap-3 rounded-xl border border-blue-100 bg-blue-50/60 p-3 md:flex-row md:items-center"
+        >
+            <label class="min-w-0 flex-1">
+                <span class="sr-only">Template peminjaman antar area</span>
+                <select
+                    v-model="selectedTemplateId"
+                    class="h-11 w-full rounded-xl border border-blue-100 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    :disabled="templatesLoading"
+                >
+                    <option value="">{{ templatesLoading ? 'Memuat template...' : 'Pilih template antar area' }}</option>
+                    <option v-for="template in templates" :key="template.id" :value="String(template.id)">
+                        {{ template.nama }} - {{ template.source_area_name }} - {{ template.items_count }} alat
+                    </option>
+                </select>
+            </label>
+            <button
+                class="h-11 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                type="button"
+                :disabled="!selectedTemplateId"
+                @click="applySelectedTemplate"
+            >
+                Gunakan Template
+            </button>
+        </div>
+
+        <div
+            v-if="templateWarnings.length"
+            class="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+        >
+            <p class="font-semibold">Sebagian alat dari template disesuaikan dengan stok.</p>
+            <ul class="mt-2 space-y-1">
+                <li v-for="warning in templateWarnings" :key="warning.id">
+                    {{ warning.nama }}: template {{ warning.requested_qty }}, stok tersedia {{ warning.available_qty }}, dipilih {{ warning.usable_qty }}.
+                </li>
+            </ul>
         </div>
 
         <div class="mt-5 grid gap-3 lg:grid-cols-[1fr_240px]">
@@ -239,18 +289,23 @@ const activeAreaId = inject('activeAreaId', ref(null));
 const cachedUser = ref(null);
 const areas = ref([]);
 const tools = ref([]);
+const templates = ref([]);
+const templatesLoading = ref(false);
+const selectedTemplateId = ref('');
 const selectedQty = reactive({});
 const sourceAreaId = ref('');
 const search = ref('');
 const classificationFilter = ref('');
 const isLoading = ref(false);
 const isSubmitting = ref(false);
+const isApplyingTemplate = ref(false);
 const loadError = ref('');
 const alertMessage = ref('');
 const alertType = ref('success');
 const alertTitle = ref('');
 let alertTimeout = null;
 let searchTimeout = null;
+const templateWarnings = ref([]);
 
 const classificationOptions = ['General Tools', 'Lifting Tools', 'Measurement Tools'];
 const pagination = reactive({
@@ -264,6 +319,7 @@ const form = reactive({
     tanggal_pinjam: '',
     tanggal_kembali: '',
     pekerjaan: '',
+    resi: '',
 });
 
 const loadCachedUser = () => {
@@ -317,6 +373,79 @@ const toggleTool = (tool) => {
     setQty(tool, 1);
 };
 
+const applySelectedTemplate = async () => {
+    const template = templates.value.find((item) => String(item.id) === String(selectedTemplateId.value));
+    if (!template) {
+        return;
+    }
+
+    isApplyingTemplate.value = true;
+    sourceAreaId.value = template.source_area_id ? String(template.source_area_id) : '';
+    resetSelection();
+    templateWarnings.value = [];
+    const requestedItems = (template.items ?? [])
+        .map((item) => {
+            const id = item?.alat_id ?? item?.id ?? null;
+            const qty = Math.max(1, Math.floor(Number(item?.qty ?? 1)));
+            return id && qty > 0 ? { id, qty } : null;
+        })
+        .filter(Boolean);
+
+    pagination.currentPage = 1;
+    try {
+        if (!sourceAreaId.value || !requestedItems.length) {
+            showAlert('error', 'Template tidak memiliki daftar alat yang dapat digunakan.');
+            return;
+        }
+
+        const response = await axios.post('/api/alats/availability', {
+            area_id: sourceAreaId.value,
+            inter_area_source: true,
+            items: requestedItems,
+        });
+        const availabilityMap = new Map((response.data?.data ?? []).map((item) => [Number(item.id), item]));
+        const warnings = [];
+        requestedItems.forEach((requested) => {
+            const item = availabilityMap.get(Number(requested.id));
+            if (!item) {
+                warnings.push({
+                    id: requested.id,
+                    nama: 'Alat tidak ditemukan',
+                    requested_qty: requested.qty,
+                    available_qty: 0,
+                    usable_qty: 0,
+                });
+                return;
+            }
+
+            const availableQty = Math.max(0, Number(item.available_qty ?? item.stok ?? 0));
+            const usableQty = Math.min(requested.qty, Math.max(0, Number(item.usable_qty ?? availableQty)));
+            if (usableQty < requested.qty) {
+                warnings.push({
+                    id: item.id,
+                    nama: item.nama ?? '-',
+                    requested_qty: requested.qty,
+                    available_qty: availableQty,
+                    usable_qty: usableQty,
+                });
+            }
+            if (usableQty > 0) {
+                selectedQty[item.id] = usableQty;
+            }
+        });
+        templateWarnings.value = warnings;
+        await loadTools();
+        showAlert(
+            warnings.length ? 'error' : 'success',
+            warnings.length
+                ? 'Template dimuat, tetapi sebagian alat disesuaikan dengan stok.'
+                : `Template "${template.nama}" dimuat.`
+        );
+    } finally {
+        isApplyingTemplate.value = false;
+    }
+};
+
 const resetSelection = () => {
     Object.keys(selectedQty).forEach((key) => {
         delete selectedQty[key];
@@ -329,6 +458,7 @@ const normalizeTool = (item) => ({
     nama: item?.nama ?? '-',
     jenis_alat: item?.jenis_alat ?? '-',
     klasifikasi_alat: item?.klasifikasi_alat ?? '-',
+    total_aset: Number(item?.total_aset ?? 0),
     stok_tersedia: Number(item?.stok_tersedia ?? item?.stok ?? 0),
 });
 
@@ -386,6 +516,33 @@ const loadTools = async () => {
     }
 };
 
+const loadTemplates = async () => {
+    if (!requesterAreaId.value) {
+        templates.value = [];
+        selectedTemplateId.value = '';
+        return;
+    }
+
+    templatesLoading.value = true;
+    try {
+        const response = await axios.get('/api/peminjaman-templates', {
+            params: {
+                kategori: 'Antar Area',
+                area_id: requesterAreaId.value,
+            },
+        });
+        templates.value = Array.isArray(response.data) ? response.data : [];
+        if (!templates.value.some((template) => String(template.id) === String(selectedTemplateId.value))) {
+            selectedTemplateId.value = '';
+        }
+    } catch (error) {
+        templates.value = [];
+        selectedTemplateId.value = '';
+    } finally {
+        templatesLoading.value = false;
+    }
+};
+
 const goToPage = (pageNumber) => {
     const next = Math.min(Math.max(1, pageNumber), pagination.lastPage || 1);
     if (next === pagination.currentPage || isLoading.value) {
@@ -410,10 +567,12 @@ const submit = async () => {
             tanggal_pinjam: form.tanggal_pinjam,
             tanggal_kembali: form.tanggal_kembali,
             pekerjaan: form.pekerjaan,
+            resi: form.resi?.trim() || null,
             items: selectedItems.value,
         });
         resetSelection();
         form.pekerjaan = '';
+        form.resi = '';
         await loadTools();
         showAlert('success', 'Peminjaman antar area berhasil diajukan.');
     } catch (error) {
@@ -450,6 +609,9 @@ const closeAlert = () => {
 };
 
 watch(sourceAreaId, () => {
+    if (isApplyingTemplate.value) {
+        return;
+    }
     resetSelection();
     pagination.currentPage = 1;
     loadTools();
@@ -460,6 +622,7 @@ watch(requesterAreaId, () => {
         sourceAreaId.value = '';
     }
     resetSelection();
+    loadTemplates();
 });
 
 watch(search, () => {
@@ -485,5 +648,6 @@ watch(classificationFilter, () => {
 onMounted(async () => {
     cachedUser.value = loadCachedUser();
     await loadAreas();
+    await loadTemplates();
 });
 </script>

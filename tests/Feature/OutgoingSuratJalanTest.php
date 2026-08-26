@@ -9,6 +9,7 @@ use App\Models\PeminjamanItem;
 use App\Models\Role;
 use App\Models\SuratJalan;
 use App\Models\User;
+use App\Services\OutgoingSuratJalanService;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -70,11 +71,11 @@ class OutgoingSuratJalanTest extends TestCase
             ->firstOrFail();
 
         $this->assertSame('local', $document->disk);
-        $this->assertSame('pengiriman', $document->jenis);
+        $this->assertSame('peminjaman', $document->jenis);
         $this->assertSame(1, $document->urutan);
         $expectedTemplateVersion = hash(
             'sha256',
-            'shipment-subject-v1|'.hash_file('sha256', storage_path('templates/Surat-Jalan-Peminjaman.xlsx'))
+            'shipment-subject-peminjaman-v1|'.hash_file('sha256', storage_path('templates/Surat-Jalan-Peminjaman.xlsx'))
         );
         $this->assertSame($expectedTemplateVersion, $document->template_version);
         $this->assertCount(5, $document->photos);
@@ -92,8 +93,8 @@ class OutgoingSuratJalanTest extends TestCase
 
         $main = $workbook->getSheetByName('MASTER SJ UP SLA');
         $this->assertNotNull($main);
-        $this->assertSame('SURAT JALAN PENGIRIMAN', $main->getCell('B7')->getValue());
-        $this->assertSame('PENGIRIMAN', $main->getCell('C12')->getValue());
+        $this->assertSame('SURAT JALAN PEMINJAMAN', $main->getCell('B7')->getValue());
+        $this->assertSame('PEMINJAMAN', $main->getCell('C12')->getValue());
         $this->assertSame(1, $main->getCell('B17')->getValue());
         $this->assertSame(11, $main->getCell('B27')->getValue());
         $this->assertSame(11, $main->getCell('E27')->getValue());
@@ -130,7 +131,7 @@ class OutgoingSuratJalanTest extends TestCase
             ->where('jenis', SuratJalan::TYPE_SHIPMENT)
             ->count());
 
-        $this->replaceShipmentSubjectInWorkbook($generatedPath, 'PENGIRIMAN', 'IZIN KELUAR');
+        $this->replaceShipmentSubjectInWorkbook($generatedPath, 'PEMINJAMAN', 'IZIN KELUAR');
         $document->forceFill([
             'template_version' => hash_file('sha256', storage_path('templates/Surat-Jalan-Peminjaman.xlsx')),
         ])->saveQuietly();
@@ -153,7 +154,7 @@ class OutgoingSuratJalanTest extends TestCase
         $repairedPath = Storage::disk('local')->path($document->path);
         $repairedWorkbook = IOFactory::load($repairedPath);
         $this->assertSame(
-            'PENGIRIMAN',
+            'PEMINJAMAN',
             $repairedWorkbook->getSheetByName('MASTER SJ UP SLA')->getCell('C12')->getValue()
         );
         $repairedWorkbook->disconnectWorksheets();
@@ -177,6 +178,41 @@ class OutgoingSuratJalanTest extends TestCase
         Sanctum::actingAs($otherPic);
         $this->get('/api/pengiriman/'.$loan->id.'/surat-jalan-peminjaman/download')
             ->assertForbidden();
+    }
+
+    public function test_shipping_stores_original_jpg_or_png_when_image_driver_is_unavailable(): void
+    {
+        Storage::fake('local');
+        $this->app->bind(OutgoingSuratJalanService::class, fn () => new class extends OutgoingSuratJalanService
+        {
+            protected function imageManager(): ?\Intervention\Image\ImageManager
+            {
+                return null;
+            }
+        });
+
+        [$loan, $pic] = $this->makeApprovedLoan();
+        Sanctum::actingAs($pic);
+
+        $response = $this->post('/api/pengiriman/'.$loan->id.'/kirim', [
+            'pengirim_nama' => 'Kurir Lapangan',
+            'photos' => [UploadedFile::fake()->image('photo.png', 40, 40)],
+        ], ['Accept' => 'application/json']);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('status', Peminjaman::STATUS_DIKIRIM);
+
+        $document = SuratJalan::query()
+            ->with('photos')
+            ->where('peminjaman_id', $loan->id)
+            ->where('jenis', SuratJalan::TYPE_SHIPMENT)
+            ->firstOrFail();
+
+        $this->assertSame('image/png', $document->photos->first()->mime);
+        $this->assertStringEndsWith('.png', $document->photos->first()->path);
+        Storage::disk('local')->assertExists($document->path);
+        Storage::disk('local')->assertExists($document->photos->first()->path);
     }
 
     public function test_shipping_requires_one_to_eight_images_and_does_not_change_status_on_validation_error(): void
@@ -261,6 +297,7 @@ class OutgoingSuratJalanTest extends TestCase
 
         $this->putJson('/api/peminjaman/'.$loan->id, [
             'pekerjaan' => 'Metadata masih boleh diedit',
+            'resi' => 'JNE-TEST-001',
             'tanggal_pinjam' => $loan->tanggal_pinjam->toDateString(),
             'tanggal_kembali' => $loan->tanggal_kembali->toDateString(),
             'status' => Peminjaman::STATUS_DIKIRIM,
@@ -278,6 +315,7 @@ class OutgoingSuratJalanTest extends TestCase
         $loan->refresh();
         $this->assertSame(Peminjaman::STATUS_DIKIRIM, $loan->status);
         $this->assertSame('Metadata masih boleh diedit', $loan->pekerjaan);
+        $this->assertSame('JNE-TEST-001', $loan->resi);
     }
 
     public function test_generated_text_is_stored_as_plain_text_instead_of_excel_formulas(): void
@@ -321,7 +359,7 @@ class OutgoingSuratJalanTest extends TestCase
 
     public function test_return_flow_reloads_quantities_and_allocates_document_sequence(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
         [$loan] = $this->makeApprovedLoan();
         $item = $loan->items()->firstOrFail();
         $item->update([
@@ -335,11 +373,7 @@ class OutgoingSuratJalanTest extends TestCase
         foreach ([1, 2] as $sequence) {
             $response = $this->post('/api/pengiriman/'.$loan->id.'/kembalikan', [
                 'pengirim_nama' => 'Pengembali Test',
-                'surat_jalan' => UploadedFile::fake()->create(
-                    "pengembalian-{$sequence}.pdf",
-                    10,
-                    'application/pdf'
-                ),
+                'photos' => [UploadedFile::fake()->image("pengembalian-{$sequence}.jpg", 40, 40)],
                 'items' => [[
                     'item_id' => $item->id,
                     'returned_qty' => 1,
@@ -357,6 +391,7 @@ class OutgoingSuratJalanTest extends TestCase
         }
 
         $documents = SuratJalan::query()
+            ->with('photos')
             ->where('peminjaman_id', $loan->id)
             ->where('jenis', SuratJalan::TYPE_RETURN)
             ->orderBy('urutan')
@@ -364,13 +399,37 @@ class OutgoingSuratJalanTest extends TestCase
 
         $this->assertSame([1, 2], $documents->pluck('urutan')->all());
         $this->assertSame(['pengembalian'], $documents->pluck('jenis')->unique()->values()->all());
+        $this->assertSame(['local'], $documents->pluck('disk')->unique()->values()->all());
+        $this->assertSame(
+            ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+            $documents->pluck('mime')->unique()->values()->all()
+        );
         $this->assertSame(2, $item->fresh()->returned_qty);
         foreach ($documents as $document) {
-            Storage::disk('public')->assertExists($document->path);
+            Storage::disk('local')->assertExists($document->path);
+            $this->assertCount(1, $document->photos);
+            Storage::disk('local')->assertExists($document->photos->first()->path);
+            $this->assertStringStartsWith('SJ-PENGEMBALIAN/', $document->nomor);
+            $this->assertSame(
+                '/api/pengiriman/'.$loan->id.'/surat-jalan-pengembalian/'.$document->id.'/download',
+                $document->download_url
+            );
+
+            $workbook = IOFactory::load(Storage::disk('local')->path($document->path));
+            $main = $workbook->getSheetByName('MASTER SJ UP SLA');
+            $this->assertSame('SURAT JALAN PENGEMBALIAN', $main->getCell('B7')->getValue());
+            $this->assertSame('PENGEMBALIAN', $main->getCell('C12')->getValue());
+            $this->assertSame(1, $main->getCell('E17')->getValue());
+            $this->assertPhotoAnnex($workbook->getSheetByName('LAMPIRAN FOTO'), 1, ['C9']);
+            $workbook->disconnectWorksheets();
+
+            $this->get($document->download_url)
+                ->assertOk()
+                ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         }
     }
 
-    public function test_legacy_outgoing_type_is_migrated_to_pengiriman(): void
+    public function test_legacy_outgoing_type_is_migrated_to_peminjaman(): void
     {
         [$loan] = $this->makeApprovedLoan();
         $domainMigration = require database_path(
@@ -400,14 +459,14 @@ class OutgoingSuratJalanTest extends TestCase
 
             $this->assertDatabaseHas('surat_jalan', [
                 'id' => $documentId,
-                'jenis' => 'pengiriman',
+                'jenis' => 'peminjaman',
             ]);
             $this->assertTrue(SuratJalan::query()->findOrFail($documentId)->isShipment());
         } finally {
             if (! $domainRestored) {
                 DB::table('surat_jalan')
                     ->where('jenis', 'peminjaman_keluar')
-                    ->update(['jenis' => 'pengiriman']);
+                    ->update(['jenis' => 'peminjaman']);
                 $domainMigration->up();
             }
         }

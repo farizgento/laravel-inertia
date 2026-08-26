@@ -27,6 +27,17 @@
 
                 <div class="flex flex-1 flex-col overflow-hidden">
                     <div class="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+                        <div
+                            v-if="templateWarnings.length"
+                            class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800"
+                        >
+                            <p class="font-semibold">Sebagian alat dari template disesuaikan dengan stok.</p>
+                            <ul class="mt-2 space-y-1">
+                                <li v-for="warning in templateWarnings" :key="warning.id">
+                                    {{ warning.nama }}: template {{ warning.requested_qty }}, stok tersedia {{ warning.available_qty }}, masuk keranjang {{ warning.usable_qty }}.
+                                </li>
+                            </ul>
+                        </div>
                         <p v-if="!cartItems.length" class="text-sm text-slate-500">
                             Keranjang masih kosong.
                         </p>
@@ -113,6 +124,10 @@ defineProps({
     totalItems: {
         type: Number,
         default: 0,
+    },
+    templateWarnings: {
+        type: Array,
+        default: () => [],
     },
 });
 

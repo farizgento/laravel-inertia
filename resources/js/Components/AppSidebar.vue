@@ -398,7 +398,7 @@ const props = defineProps({
 const emit = defineEmits(['logout', 'navigate']);
 const page = usePage();
 
-const masterDataMenuKeys = new Set(['tambah-pengguna', 'area', 'master-alat']);
+const masterDataMenuKeys = new Set(['tambah-pengguna', 'area', 'master-alat', 'template-peminjaman']);
 const transaksiMenuKeys = new Set([
     'peminjaman',
     'pengiriman',
@@ -506,6 +506,12 @@ const menuItems = computed(() => {
                       icon: 'master-alat',
                   },
                   {
+                      key: 'template-peminjaman',
+                      label: 'Template Peminjaman',
+                      href: '/template-peminjaman',
+                      icon: 'peminjaman',
+                  },
+                  {
                       key: 'mutasi-alat',
                       label: 'Mutasi Alat',
                       href: '/mutasi-alat',
@@ -563,6 +569,12 @@ const menuItems = computed(() => {
                       icon: 'master-alat',
                   },
                   {
+                      key: 'template-peminjaman',
+                      label: 'Template Peminjaman',
+                      href: '/template-peminjaman',
+                      icon: 'peminjaman',
+                  },
+                  {
                       key: 'pengiriman',
                       label: 'Intra Area',
                       href: '/pengiriman-alat',
@@ -618,6 +630,12 @@ const menuItems = computed(() => {
                       label: 'Alat',
                       href: '/master-alat',
                       icon: 'master-alat',
+                  },
+                  {
+                      key: 'template-peminjaman',
+                      label: 'Template Peminjaman',
+                      href: '/template-peminjaman',
+                      icon: 'peminjaman',
                   },
                   {
                       key: 'pengiriman',

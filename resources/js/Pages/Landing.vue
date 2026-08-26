@@ -29,6 +29,9 @@
                 </div>
 
                 <div class="relative">
+                    <div class="py-3 text-center">
+                        <h1 class="font-bold text-red-400 sm:text-xl">Excellent Maintence Support</h1>
+                    </div>
                     <div class="selector-panel rounded-lg border border-white/80 bg-white/80 p-4 shadow-2xl shadow-slate-300/50 backdrop-blur sm:p-5">
                         <div class="mb-4 flex items-center justify-between gap-3 border-b border-slate-200 pb-4">
                             <div>

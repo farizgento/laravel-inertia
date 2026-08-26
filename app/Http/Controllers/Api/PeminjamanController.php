@@ -210,7 +210,7 @@ class PeminjamanController extends Controller
                     'id' => $suratJalan->id,
                     'type' => $suratJalan->jenis,
                     'label' => $isShipment
-                        ? 'Surat Jalan Pengiriman'
+                        ? 'Surat Jalan Peminjaman'
                         : 'Surat Jalan Pengembalian '.$returnDocumentIndex,
                     'pengirim_nama' => $suratJalan->pengirim_nama,
                     'path' => $suratJalan->path,
@@ -231,6 +231,7 @@ class PeminjamanController extends Controller
         return [
             'id' => $peminjaman->id,
             'title' => $peminjaman->pekerjaan,
+            'resi' => $peminjaman->resi,
             'user_name' => $peminjaman->user?->name ?? '-',
             'area_id' => $peminjaman->area_id,
             'area_name' => $peminjaman->area?->name ?? '-',
@@ -319,6 +320,7 @@ class PeminjamanController extends Controller
             $base = [
                 'ID Peminjaman' => $peminjaman->id,
                 'Pekerjaan' => $peminjaman->pekerjaan,
+                'Resi' => $peminjaman->resi ?? '-',
                 'Tanggal Dibuat' => $createdAt,
                 'Periode Pinjaman' => $periode,
                 'Nama Peminjam' => $peminjaman->user?->name ?? '-',
@@ -370,6 +372,7 @@ class PeminjamanController extends Controller
             fputcsv($handle, [
                 'ID Peminjaman',
                 'Pekerjaan',
+                'Resi',
                 'Tanggal Dibuat',
                 'Periode Pinjaman',
                 'Nama Peminjam',
@@ -389,6 +392,7 @@ class PeminjamanController extends Controller
                 fputcsv($handle, [
                     $row['ID Peminjaman'] ?? '',
                     $row['Pekerjaan'] ?? '',
+                    $row['Resi'] ?? '',
                     $row['Tanggal Dibuat'] ?? '',
                     $row['Periode Pinjaman'] ?? '',
                     $row['Nama Peminjam'] ?? '',
@@ -417,6 +421,7 @@ class PeminjamanController extends Controller
             'tanggal_pinjam' => ['required', 'date'],
             'tanggal_kembali' => ['required', 'date', 'after_or_equal:tanggal_pinjam'],
             'pekerjaan' => ['required', 'string', 'max:1000'],
+            'resi' => ['nullable', 'string', 'max:255'],
             'area_id' => ['nullable', 'integer', 'exists:areas,id'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'integer'],
@@ -515,6 +520,7 @@ class PeminjamanController extends Controller
                 'tanggal_pinjam' => $validated['tanggal_pinjam'],
                 'tanggal_kembali' => $validated['tanggal_kembali'],
                 'pekerjaan' => $validated['pekerjaan'],
+                'resi' => $validated['resi'] ?? null,
             ]);
 
             $now = now();
@@ -542,6 +548,7 @@ class PeminjamanController extends Controller
         return response()->json([
             'id' => $peminjaman->id,
             'status' => $peminjaman->status,
+            'resi' => $peminjaman->resi,
             'tanggal_pinjam' => $peminjaman->tanggal_pinjam?->toDateString(),
             'tanggal_kembali' => $peminjaman->tanggal_kembali?->toDateString(),
         ], 201);
@@ -563,6 +570,7 @@ class PeminjamanController extends Controller
 
         $validated = $request->validate([
             'pekerjaan' => ['required', 'string', 'max:1000'],
+            'resi' => ['nullable', 'string', 'max:255'],
             'tanggal_pinjam' => ['required', 'date'],
             'tanggal_kembali' => ['required', 'date', 'after_or_equal:tanggal_pinjam'],
             'status' => ['required', 'in:'.implode(',', [
@@ -609,6 +617,7 @@ class PeminjamanController extends Controller
 
             $lockedPeminjaman->update([
                 'pekerjaan' => $validated['pekerjaan'],
+                'resi' => $validated['resi'] ?? null,
                 'tanggal_pinjam' => $validated['tanggal_pinjam'],
                 'tanggal_kembali' => $validated['tanggal_kembali'],
                 'status' => $validated['status'],
@@ -680,6 +689,7 @@ class PeminjamanController extends Controller
             'tanggal_pinjam' => ['required', 'date'],
             'tanggal_kembali' => ['required', 'date', 'after_or_equal:tanggal_pinjam'],
             'pekerjaan' => ['required', 'string', 'max:1000'],
+            'resi' => ['nullable', 'string', 'max:255'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'integer'],
             'items.*.qty' => ['required', 'integer', 'min:1'],
@@ -754,6 +764,7 @@ class PeminjamanController extends Controller
                 'tanggal_pinjam' => $validated['tanggal_pinjam'],
                 'tanggal_kembali' => $validated['tanggal_kembali'],
                 'pekerjaan' => $validated['pekerjaan'],
+                'resi' => $validated['resi'] ?? null,
             ]);
 
             $now = now();
@@ -932,6 +943,7 @@ class PeminjamanController extends Controller
         return [
             'id' => $peminjaman->id,
             'pekerjaan' => $peminjaman->pekerjaan,
+            'resi' => $peminjaman->resi,
             'status' => $peminjaman->status,
             'kategori' => $peminjaman->kategori,
             'user_id' => $peminjaman->user_id,

@@ -60,6 +60,12 @@
                             {{ approvedItemCount }}
                         </p>
                     </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-xs text-slate-400">Resi</p>
+                        <p class="mt-2 break-words text-sm font-semibold text-slate-800">
+                            {{ item?.resi || '-' }}
+                        </p>
+                    </div>
                     <div v-if="isInterArea" class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                         <p class="text-xs text-slate-400">Area Alat</p>
                         <p class="mt-2 text-sm font-semibold text-slate-800">

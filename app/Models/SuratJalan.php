@@ -11,7 +11,7 @@ class SuratJalan extends Model
 {
     use HasFactory;
 
-    public const TYPE_SHIPMENT = 'pengiriman';
+    public const TYPE_SHIPMENT = 'peminjaman';
 
     public const TYPE_RETURN = 'pengembalian';
 
@@ -77,6 +77,13 @@ class SuratJalan extends Model
         }
 
         if ($this->isReturn()) {
+            if (($this->disk ?: 'public') === 'local') {
+                return route('pengiriman.surat-jalan-pengembalian.download', [
+                    'peminjaman' => $this->peminjaman_id,
+                    'suratJalan' => $this->id,
+                ], false);
+            }
+
             return url('/storage/'.ltrim($this->path, '/'));
         }
 

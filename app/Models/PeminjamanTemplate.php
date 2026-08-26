@@ -7,16 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Alat extends Model
+class PeminjamanTemplate extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'nama',
-        'jenis_alat',
-        'klasifikasi_alat',
-        'total_aset',
         'area_id',
+        'source_area_id',
+        'created_by',
+        'nama',
+        'kategori',
     ];
 
     public function area(): BelongsTo
@@ -24,19 +24,17 @@ class Alat extends Model
         return $this->belongsTo(Area::class);
     }
 
-    public function getKodeAttribute(): string
+    public function sourceArea(): BelongsTo
     {
-        $areaKode = trim((string) ($this->area?->kode ?? ''));
-
-        return ($areaKode !== '' ? $areaKode : 'AREA') . '-' . $this->id;
+        return $this->belongsTo(Area::class, 'source_area_id');
     }
 
-    public function areaStocks(): HasMany
+    public function creator(): BelongsTo
     {
-        return $this->hasMany(AreaAlatStock::class);
+        return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function peminjamanTemplateItems(): HasMany
+    public function items(): HasMany
     {
         return $this->hasMany(PeminjamanTemplateItem::class);
     }

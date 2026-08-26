@@ -46,6 +46,7 @@ class Peminjaman extends Model
         'requester_area_id',
         'is_inter_area',
         'pekerjaan',
+        'resi',
         'catatan',
         'status',
         'kategori',

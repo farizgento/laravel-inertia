@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\LdapUserLookupController;
 use App\Http\Controllers\api\MutasiAlatController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PeminjamanController;
+use App\Http\Controllers\Api\PeminjamanTemplateController;
 use App\Http\Controllers\Api\PengirimanController;
 use App\Http\Controllers\Api\ReviewPeminjamanController;
 use App\Http\Controllers\Api\UserManagementController;
@@ -104,6 +105,8 @@ Route::middleware('auth')->group(function () {
     ]))->group(function () {
         Route::get('/peminjaman', [PeminjamanController::class, 'index']);
         Route::get('/peminjaman/export', [PeminjamanController::class, 'export']);
+        Route::get('/peminjaman-templates', [PeminjamanTemplateController::class, 'index']);
+        Route::get('/peminjaman-templates/{template}', [PeminjamanTemplateController::class, 'show']);
     });
 
     Route::middleware('role:'.implode(',', [
@@ -147,11 +150,28 @@ Route::middleware('auth')->group(function () {
             Role::KEY_SUPER_ADMIN,
         ]));
 
+    Route::get(
+        '/pengiriman/{peminjaman}/surat-jalan-pengembalian/{suratJalan}/download',
+        [PengirimanController::class, 'downloadReturnSuratJalan']
+    )
+        ->name('pengiriman.surat-jalan-pengembalian.download')
+        ->middleware('role:'.implode(',', [
+            Role::KEY_USER,
+            Role::KEY_SP_TOOL,
+            Role::KEY_PIC_TOOL,
+            Role::KEY_MGR_TOOL,
+            Role::KEY_ADMIN,
+            Role::KEY_SUPER_ADMIN,
+        ]));
+
     Route::middleware('role:'.implode(',', [
         Role::KEY_PIC_TOOL,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
     ]))->group(function () {
+        Route::post('/peminjaman-templates', [PeminjamanTemplateController::class, 'store']);
+        Route::put('/peminjaman-templates/{template}', [PeminjamanTemplateController::class, 'update']);
+        Route::delete('/peminjaman-templates/{template}', [PeminjamanTemplateController::class, 'destroy']);
         Route::post('/peminjaman-antar-area', [PeminjamanController::class, 'storeInterArea']);
     });
 
@@ -182,6 +202,13 @@ Route::middleware('auth')->group(function () {
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
+            Role::KEY_ADMIN,
+            Role::KEY_SUPER_ADMIN,
+        ]));
+    Route::post('/alats/availability', [AlatController::class, 'availability'])
+        ->middleware('role:'.implode(',', [
+            Role::KEY_USER,
+            Role::KEY_PIC_TOOL,
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
         ]));

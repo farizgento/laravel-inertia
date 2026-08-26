@@ -543,7 +543,7 @@
                         </p>
                     </div>
 
-                    <div class="mt-4 grid gap-4 md:grid-cols-2">
+                    <div class="mt-4 grid gap-4">
                         <label class="space-y-2 text-sm font-medium text-slate-700">
                             <span>Nama Pengirim</span>
                             <input
@@ -553,23 +553,6 @@
                                 class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
                             />
                         </label>
-                        <div class="space-y-2 text-sm font-medium text-slate-700">
-                            <span>Surat Jalan</span>
-                            <input
-                                type="file"
-                                accept=".pdf,image/*"
-                                class="block w-full text-sm text-slate-600 file:mr-4 file:rounded-xl file:border-0 file:bg-amber-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-amber-700"
-                                @change="handleReturnSuratJalanChange"
-                            />
-                            <div v-if="returnSuratJalanFile" class="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
-                                <span class="truncate text-slate-600">
-                                    {{ returnSuratJalanFile.name }} - {{ formatSize(returnSuratJalanFile.size) }}
-                                </span>
-                                <button class="text-rose-600 hover:text-rose-700" type="button" @click="removeReturnSuratJalan">
-                                    Hapus
-                                </button>
-                            </div>
-                        </div>
                     </div>
 
                     <div class="mt-4 space-y-3">
@@ -603,6 +586,72 @@
                             </div>
                         </div>
                     </div>
+                    <div class="mt-4">
+                        <div class="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                                <label class="text-sm font-semibold text-slate-900" for="foto-pengembalian-pic">
+                                    Foto Pengembalian
+                                </label>
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Unggah 1-{{ MAX_RETURN_PHOTO_COUNT }} foto JPG, PNG, atau WebP. Foto ini akan masuk ke lampiran surat jalan pengembalian.
+                                </p>
+                            </div>
+                            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                                {{ returnPhotoItems.length }}/{{ MAX_RETURN_PHOTO_COUNT }} foto
+                            </span>
+                        </div>
+                        <label
+                            for="foto-pengembalian-pic"
+                            class="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-amber-300 bg-amber-50 px-4 py-4 text-sm font-semibold text-amber-700 transition hover:border-amber-400 hover:bg-amber-100"
+                            :class="returnPhotoItems.length >= MAX_RETURN_PHOTO_COUNT ? 'cursor-not-allowed opacity-60' : ''"
+                        >
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 16l4-4 4 4 3-3 5 5" />
+                                <rect x="3" y="3" width="18" height="18" rx="2" />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                            </svg>
+                            {{ returnPhotoItems.length >= MAX_RETURN_PHOTO_COUNT ? 'Batas foto tercapai' : 'Pilih Foto Pengembalian' }}
+                        </label>
+                        <input
+                            id="foto-pengembalian-pic"
+                            ref="returnPhotoInput"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            class="sr-only"
+                            multiple
+                            :disabled="returnPhotoItems.length >= MAX_RETURN_PHOTO_COUNT"
+                            @change="handleReturnPhotosChange"
+                        />
+                        <div v-if="returnPhotoItems.length" class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            <div
+                                v-for="(photo, index) in returnPhotoItems"
+                                :key="photo.key"
+                                class="group relative overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
+                            >
+                                <div class="aspect-[4/3] overflow-hidden">
+                                    <img :src="photo.previewUrl" :alt="`Pratinjau foto pengembalian ${index + 1}`" class="h-full w-full object-cover" />
+                                </div>
+                                <span class="absolute left-2 top-2 rounded-full bg-slate-900/70 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                    {{ index + 1 }}
+                                </span>
+                                <button
+                                    class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-rose-600 shadow-sm transition hover:bg-rose-50"
+                                    type="button"
+                                    :aria-label="`Hapus foto pengembalian ${index + 1}`"
+                                    @click="removeReturnPhoto(photo.key)"
+                                >
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 6 6 18" />
+                                        <path d="M6 6l12 12" />
+                                    </svg>
+                                </button>
+                                <div class="border-t border-slate-200 bg-white px-2.5 py-2">
+                                    <p class="truncate text-[11px] font-medium text-slate-700" :title="photo.file.name">{{ photo.file.name }}</p>
+                                    <p class="mt-0.5 text-[10px] text-slate-400">{{ formatReturnPhotoSize(photo.file.size) }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <p v-if="returnError" class="mt-3 text-sm font-semibold text-rose-500">{{ returnError }}</p>
                 </div>
 
@@ -630,7 +679,7 @@
 
 <script setup>
 import axios from 'axios';
-import { computed, inject, onMounted, ref } from 'vue';
+import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import PeminjamanDetailModal from '../../Components/PeminjamanDetailModal.vue';
@@ -699,7 +748,14 @@ const periodForm = ref({
 const returnError = ref('');
 const returnRows = ref([]);
 const returnSenderName = ref('');
-const returnSuratJalanFile = ref(null);
+const returnPhotoInput = ref(null);
+const returnPhotoItems = ref([]);
+let returnPhotoSequence = 0;
+
+const MAX_RETURN_PHOTO_COUNT = 8;
+const MAX_RETURN_PHOTO_SIZE = 5 * 1024 * 1024;
+const RETURN_PHOTO_SIZE_LABEL = '5 MB';
+const ACCEPTED_RETURN_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 const tabConfig = [
     { key: 'disetujui', label: 'Disetujui', status: 'Disetujui' },
@@ -841,6 +897,7 @@ const normalizeHistory = (item) => {
         return {
             id: item?.id ?? '',
             title: item?.title ?? '-',
+            resi: item?.resi ?? '',
             userName: item?.user_name ?? '-',
             areaName: item?.area_name ?? fallbackAreaName.value,
             areaId: item?.area_id ?? null,
@@ -1023,7 +1080,7 @@ const openReturnModal = (item) => {
     returnItem.value = item;
     returnError.value = '';
     returnSenderName.value = '';
-    returnSuratJalanFile.value = null;
+    clearReturnPhotos();
     returnRows.value = (Array.isArray(item?.tools) ? item.tools : [])
         .filter((tool) => Number(tool?.remainingQty ?? 0) > 0)
         .map((tool) => ({
@@ -1045,23 +1102,73 @@ const closeReturnModal = () => {
     returnRows.value = [];
     returnError.value = '';
     returnSenderName.value = '';
-    returnSuratJalanFile.value = null;
+    clearReturnPhotos();
 };
 
-const handleReturnSuratJalanChange = (event) => {
-    const [file] = Array.from(event.target?.files ?? []);
-    if (file) {
-        returnSuratJalanFile.value = file;
-        returnError.value = '';
+const returnPhotoKey = (file) => `${file.name}-${file.size}-${file.lastModified}`;
+
+const clearReturnPhotos = () => {
+    returnPhotoItems.value.forEach((photo) => window.URL.revokeObjectURL(photo.previewUrl));
+    returnPhotoItems.value = [];
+    if (returnPhotoInput.value) {
+        returnPhotoInput.value.value = '';
     }
+};
+
+const handleReturnPhotosChange = (event) => {
+    const selectedFiles = Array.from(event.target?.files ?? []);
     event.target.value = '';
+    if (!selectedFiles.length) {
+        return;
+    }
+
+    const errors = [];
+    const existingKeys = new Set(returnPhotoItems.value.map((photo) => photo.sourceKey));
+
+    selectedFiles.forEach((file) => {
+        if (returnPhotoItems.value.length >= MAX_RETURN_PHOTO_COUNT) {
+            errors.push(`Maksimal ${MAX_RETURN_PHOTO_COUNT} foto dapat diunggah.`);
+            return;
+        }
+        if (!ACCEPTED_RETURN_PHOTO_TYPES.has(file.type)) {
+            errors.push(`${file.name} bukan foto JPG, PNG, atau WebP.`);
+            return;
+        }
+        if (file.size > MAX_RETURN_PHOTO_SIZE) {
+            errors.push(`${file.name} melebihi batas ${RETURN_PHOTO_SIZE_LABEL}.`);
+            return;
+        }
+
+        const sourceKey = returnPhotoKey(file);
+        if (existingKeys.has(sourceKey)) {
+            errors.push(`${file.name} sudah dipilih.`);
+            return;
+        }
+
+        existingKeys.add(sourceKey);
+        returnPhotoSequence += 1;
+        returnPhotoItems.value.push({
+            key: `${sourceKey}-${returnPhotoSequence}`,
+            sourceKey,
+            file,
+            previewUrl: window.URL.createObjectURL(file),
+        });
+    });
+
+    returnError.value = errors[0] ?? '';
 };
 
-const removeReturnSuratJalan = () => {
-    returnSuratJalanFile.value = null;
+const removeReturnPhoto = (key) => {
+    const photoIndex = returnPhotoItems.value.findIndex((photo) => photo.key === key);
+    if (photoIndex < 0) {
+        return;
+    }
+    window.URL.revokeObjectURL(returnPhotoItems.value[photoIndex].previewUrl);
+    returnPhotoItems.value.splice(photoIndex, 1);
+    returnError.value = '';
 };
 
-const formatSize = (size) => {
+const formatReturnPhotoSize = (size) => {
     if (!Number.isFinite(size)) {
         return '-';
     }
@@ -1080,14 +1187,14 @@ const validateReturnRows = () => {
         return false;
     }
 
-    if (!returnSuratJalanFile.value) {
-        returnError.value = 'Surat jalan wajib diunggah.';
-        return false;
-    }
-
     const submittedRows = returnRows.value.filter((row) => Number(row.returnQty) > 0);
     if (!submittedRows.length) {
         returnError.value = 'Isi minimal satu jumlah pengembalian alat.';
+        return false;
+    }
+
+    if (!returnPhotoItems.value.length) {
+        returnError.value = 'Minimal satu foto pengembalian wajib diunggah.';
         return false;
     }
 
@@ -1112,7 +1219,9 @@ const confirmReturn = async () => {
     try {
         const formData = new FormData();
         formData.append('pengirim_nama', returnSenderName.value.trim());
-        formData.append('surat_jalan', returnSuratJalanFile.value);
+        returnPhotoItems.value.forEach((photo) => {
+            formData.append('photos[]', photo.file);
+        });
         returnRows.value
             .filter((row) => Number(row.returnQty) > 0)
             .forEach((row, index) => {
@@ -1129,18 +1238,19 @@ const confirmReturn = async () => {
         returnRows.value = [];
         returnError.value = '';
         returnSenderName.value = '';
-        returnSuratJalanFile.value = null;
+        clearReturnPhotos();
         showAlert(
             'success',
             nextStatus === 'Dikembalikan Semuanya'
-                ? 'Semua alat berhasil dikembalikan.'
-                : 'Pengembalian parsial berhasil disimpan.'
+                ? 'Semua alat berhasil dikembalikan dan surat jalan Excel telah dibuat.'
+                : 'Pengembalian parsial berhasil disimpan dan surat jalan Excel telah dibuat.'
         );
     } catch (error) {
         const errors = error?.response?.data?.errors ?? {};
         returnError.value =
             errors.pengirim_nama?.[0] ??
-            errors.surat_jalan?.[0] ??
+            errors.photos?.[0] ??
+            Object.entries(errors).find(([key]) => key.startsWith('photos.'))?.[1]?.[0] ??
             error?.response?.data?.message ??
             'Gagal mengembalikan peminjaman.';
         showAlert('error', returnError.value);
@@ -1328,4 +1438,6 @@ const closeAlert = () => {
 onMounted(() => {
     loadHistory();
 });
+
+onBeforeUnmount(clearReturnPhotos);
 </script>

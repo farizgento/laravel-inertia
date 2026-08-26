@@ -112,6 +112,33 @@
         </div>
 
         <div
+            v-if="templates.length || templatesLoading"
+            class="flex flex-col gap-3 rounded-xl border border-blue-100 bg-blue-50/60 p-3 md:flex-row md:items-center"
+        >
+            <label class="min-w-0 flex-1">
+                <span class="sr-only">Template peminjaman</span>
+                <select
+                    v-model="selectedTemplateId"
+                    class="h-11 w-full rounded-xl border border-blue-100 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    :disabled="templatesLoading || isReadOnlyCatalog"
+                >
+                    <option value="">{{ templatesLoading ? 'Memuat template...' : 'Pilih template peminjaman' }}</option>
+                    <option v-for="template in templates" :key="template.id" :value="String(template.id)">
+                        {{ template.nama }} - {{ template.items_count }} alat
+                    </option>
+                </select>
+            </label>
+            <button
+                class="h-11 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                type="button"
+                :disabled="!selectedTemplateId || isReadOnlyCatalog"
+                @click="applySelectedTemplate"
+            >
+                Gunakan Template
+            </button>
+        </div>
+
+        <div
             v-if="isViewingOtherArea"
             class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700"
         >
@@ -396,6 +423,7 @@
         :cart-items="cartItems"
         :unique-items="uniqueItems"
         :total-items="totalItems"
+        :template-warnings="templateWarnings"
         @remove="removeFromCart"
         @decrease="decreaseCart"
         @increase="increaseCart"
@@ -555,6 +583,10 @@ const pageNumbers = computed(() => {
 });
 
 const cart = ref([]);
+const templates = ref([]);
+const templatesLoading = ref(false);
+const selectedTemplateId = ref('');
+const templateWarnings = ref([]);
 const cartDrafts = reactive({});
 const drawerOpen = ref(false);
 const checkoutOpen = ref(false);
@@ -594,6 +626,7 @@ const normalizeTool = (item) => {
         kode: item?.kode ?? item?.code ?? '-',
         nama: item?.nama ?? '-',
         stok: Number.isFinite(stok) ? stok : 0,
+        totalAset: Number(item?.total_aset ?? stok ?? 0),
         deskripsi: item?.deskripsi ?? '',
         lokasi: item?.lokasi ?? item?.area_name ?? '',
         isSharedAreaStock: Boolean(item?.is_shared_area_stock),
@@ -655,6 +688,7 @@ const applyRepeatDraft = (draft) => {
         tanggal_pinjam: draft.tanggal_pinjam ?? '',
         tanggal_kembali: draft.tanggal_kembali ?? '',
         pekerjaan: draft.pekerjaan ?? '',
+        resi: draft.resi ?? '',
     };
     drawerOpen.value = true;
     showAlert('success', 'Draft peminjaman ulang sudah dimuat. Silakan sesuaikan alat, jumlah, atau periode sebelum checkout.');
@@ -724,6 +758,34 @@ const loadKatalog = async (params = {}) => {
     }
 };
 
+const loadTemplates = async () => {
+    const targetAreaId = areaId.value;
+    if (!targetAreaId || isReadOnlyCatalog.value) {
+        templates.value = [];
+        selectedTemplateId.value = '';
+        return;
+    }
+
+    templatesLoading.value = true;
+    try {
+        const response = await axios.get('/api/peminjaman-templates', {
+            params: {
+                kategori: 'Intra Area',
+                area_id: targetAreaId,
+            },
+        });
+        templates.value = Array.isArray(response.data) ? response.data : [];
+        if (!templates.value.some((template) => String(template.id) === String(selectedTemplateId.value))) {
+            selectedTemplateId.value = '';
+        }
+    } catch (error) {
+        templates.value = [];
+        selectedTemplateId.value = '';
+    } finally {
+        templatesLoading.value = false;
+    }
+};
+
 const goToPage = (page) => {
     const next = Math.min(Math.max(1, page), pagination.lastPage || 1);
     if (next === pagination.currentPage) {
@@ -742,6 +804,7 @@ onMounted(() => {
     }
     loadAreas();
     loadKatalog(buildFilterParams());
+    loadTemplates();
 });
 
 watch(
@@ -779,7 +842,16 @@ watch(
             delete cartDrafts[key];
         });
         cart.value = [];
+        templateWarnings.value = [];
         loadKatalog(buildFilterParams());
+        loadTemplates();
+    },
+);
+
+watch(
+    () => [areaId.value, isReadOnlyCatalog.value],
+    () => {
+        loadTemplates();
     },
 );
 
@@ -961,12 +1033,118 @@ const addToCart = (tool) => {
     cart.value.push({ id: tool.id, qty });
 };
 
+const applySelectedTemplate = async () => {
+    if (isReadOnlyCatalog.value || !selectedTemplateId.value) {
+        return;
+    }
+
+    const template = templates.value.find((item) => String(item.id) === String(selectedTemplateId.value));
+    if (!template) {
+        return;
+    }
+
+    const requestedItems = (template.items ?? [])
+        .map((item) => {
+            const id = item?.alat_id ?? item?.id ?? null;
+            const qty = Math.max(1, Math.floor(Number(item?.qty ?? 1)));
+            if (!id || qty <= 0) {
+                return null;
+            }
+
+            return { id, qty };
+        })
+        .filter(Boolean);
+
+    if (!requestedItems.length) {
+        showAlert('error', 'Template tidak memiliki daftar alat yang dapat digunakan.');
+        return;
+    }
+
+    let availableItems = [];
+    try {
+        const response = await axios.post('/api/alats/availability', {
+            area_id: areaId.value,
+            items: requestedItems,
+        });
+        availableItems = Array.isArray(response.data?.data) ? response.data.data : [];
+    } catch (error) {
+        showAlert('error', 'Gagal memeriksa stok template.');
+        return;
+    }
+
+    const availabilityMap = new Map(availableItems.map((item) => [Number(item.id), item]));
+    const warnings = [];
+    const nextCart = requestedItems
+        .map((requested) => {
+            const item = availabilityMap.get(Number(requested.id));
+            if (!item) {
+                warnings.push({
+                    id: requested.id,
+                    nama: 'Alat tidak ditemukan',
+                    requested_qty: requested.qty,
+                    available_qty: 0,
+                    usable_qty: 0,
+                });
+                return null;
+            }
+
+            const availableQty = Math.max(0, Number(item.available_qty ?? item.stok ?? 0));
+            const usableQty = Math.min(requested.qty, Math.max(0, Number(item.usable_qty ?? availableQty)));
+            if (usableQty < requested.qty) {
+                warnings.push({
+                    id: item.id,
+                    nama: item.nama ?? '-',
+                    requested_qty: requested.qty,
+                    available_qty: availableQty,
+                    usable_qty: usableQty,
+                });
+            }
+            if (usableQty <= 0) {
+                return null;
+            }
+
+            cacheTool({
+                id: item.id,
+                kode: item?.kode ?? '-',
+                nama: item?.nama ?? item?.name ?? '-',
+                stok: availableQty,
+                totalAset: Number(item?.total_aset ?? availableQty),
+                deskripsi: '',
+                lokasi: item?.area_name ?? areaName.value,
+            });
+            cartDrafts[item.id] = usableQty;
+
+            return {
+                id: item.id,
+                qty: usableQty,
+            };
+        })
+        .filter(Boolean);
+
+    templateWarnings.value = warnings;
+    if (!nextCart.length) {
+        drawerOpen.value = true;
+        showAlert('error', 'Tidak ada alat dari template yang memiliki stok cukup.');
+        return;
+    }
+
+    cart.value = nextCart;
+    drawerOpen.value = true;
+    if (warnings.length) {
+        showAlert('error', 'Template dimuat, tetapi sebagian alat disesuaikan dengan stok. Detail ada di keranjang.');
+        return;
+    }
+
+    showAlert('success', `Template "${template.nama}" dimuat ke keranjang.`);
+};
+
 const toggleView = () => {
     viewMode.value = viewMode.value === 'grid' ? 'list' : 'grid';
 };
 
 const removeFromCart = (toolId) => {
     cart.value = cart.value.filter((item) => item.id !== toolId);
+    templateWarnings.value = templateWarnings.value.filter((item) => Number(item.id) !== Number(toolId));
 };
 
 const increaseCart = (toolId) => {
@@ -994,6 +1172,7 @@ const form = ref({
     tanggal_pinjam: '',
     tanggal_kembali: '',
     pekerjaan: '',
+    resi: '',
 });
 
 const openCheckout = () => {
@@ -1019,6 +1198,7 @@ const resetCheckout = () => {
         tanggal_pinjam: '',
         tanggal_kembali: '',
         pekerjaan: '',
+        resi: '',
     };
     cart.value = [];
     Object.keys(cartDrafts).forEach((key) => {
@@ -1027,6 +1207,7 @@ const resetCheckout = () => {
     checkoutOpen.value = false;
     drawerOpen.value = false;
     checkoutError.value = '';
+    templateWarnings.value = [];
 };
 
 const submitCheckout = async () => {
@@ -1057,6 +1238,7 @@ const submitCheckout = async () => {
             tanggal_pinjam: form.value.tanggal_pinjam,
             tanggal_kembali: form.value.tanggal_kembali,
             pekerjaan: form.value.pekerjaan,
+            resi: form.value.resi?.trim() || null,
             ...(roleKey.value === 'super_admin' && areaId.value ? { area_id: areaId.value } : {}),
             items: cartItems.value.map((item) => ({ id: item.id, qty: item.qty })),
         };

@@ -136,6 +136,14 @@ Route::middleware('auth')->group(function () {
         Role::KEY_PIC_TOOL,
     ]))->name('peminjaman-antar-area');
 
+    Route::get('template-peminjaman', function () {
+        return Inertia::render('Pictool/PeminjamanTemplate');
+    })->middleware('role:' . implode(',', [
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+        Role::KEY_PIC_TOOL,
+    ]))->name('template-peminjaman');
+
     Route::get('pengembalian-alat', function () {
         return redirect()->route('pengiriman-alat');
     })->middleware('role:' . implode(',', [
@@ -200,4 +208,3 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('Admin/Area');
     })->middleware('role:' . Role::KEY_SUPER_ADMIN)->name('area.index');
 });
-

@@ -283,6 +283,7 @@ const normalizeHistory = (item) => {
     return {
         id: item?.id ?? '',
         title: item?.title ?? '-',
+        resi: item?.resi ?? '',
         userName: item?.user_name ?? '-',
         createdAt: item?.created_at ?? '-',
         borrowDate: item?.borrow_date ?? '-',
