@@ -4,22 +4,32 @@
         <p class="mt-1 text-sm text-slate-500">Daftar riwayat peminjaman yang tersedia</p>
     </div>
 
+    <!--
+        Total dihitung dari pagination.total (seluruh hasil filter), sedangkan tiga
+        kartu lainnya menghitung baris pada halaman yang sedang dibuka. Perhitungannya
+        tidak diubah, tetapi cakupan tiap angka kini dinyatakan eksplisit supaya
+        "Perlu Review 2" tidak terbaca sebagai jumlah seluruh riwayat.
+    -->
     <section class="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
             <p class="text-sm text-slate-500">Total</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900">{{ totalCount }}</p>
+            <p class="mt-2 text-2xl font-semibold tabular-nums text-slate-900">{{ totalCount }}</p>
+            <p class="mt-1 text-xs text-slate-400">Seluruh riwayat sesuai filter</p>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
             <p class="text-sm text-slate-500">Perlu Review</p>
-            <p class="mt-2 text-2xl font-semibold text-blue-600">{{ reviewCount }}</p>
+            <p class="mt-2 text-2xl font-semibold tabular-nums text-blue-600">{{ reviewCount }}</p>
+            <p class="mt-1 text-xs text-slate-400">Pada halaman ini</p>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
             <p class="text-sm text-slate-500">Disetujui</p>
-            <p class="mt-2 text-2xl font-semibold text-amber-500">{{ processCount }}</p>
+            <p class="mt-2 text-2xl font-semibold tabular-nums text-amber-500">{{ processCount }}</p>
+            <p class="mt-1 text-xs text-slate-400">Pada halaman ini</p>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
             <p class="text-sm text-slate-500">Dikirim</p>
-            <p class="mt-2 text-2xl font-semibold text-emerald-600">{{ deliveredCount }}</p>
+            <p class="mt-2 text-2xl font-semibold tabular-nums text-emerald-600">{{ deliveredCount }}</p>
+            <p class="mt-1 text-xs text-slate-400">Pada halaman ini</p>
         </div>
     </section>
 
@@ -60,7 +70,9 @@
                         <path d="m21 21-4.3-4.3" />
                     </svg>
                 </span>
+                <label for="history-search" class="sr-only">Cari riwayat peminjaman</label>
                 <input
+                    id="history-search"
                     v-model="search"
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                     type="text"
@@ -68,7 +80,9 @@
                 />
             </div>
             <div class="w-full lg:w-56">
+                <label for="history-status" class="sr-only">Filter status</label>
                 <select
+                    id="history-status"
                     v-model="statusFilter"
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 >
@@ -85,7 +99,9 @@
                 </select>
             </div>
             <div class="w-full lg:w-56">
+                <label for="history-kategori" class="sr-only">Filter kategori</label>
                 <select
+                    id="history-kategori"
                     v-model="kategoriFilter"
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 >
@@ -123,26 +139,133 @@
             </button>
         </div>
 
-        <div class="mt-4">
-            <p v-if="isLoading" class="text-sm text-slate-500">Memuat data peminjaman...</p>
-            <p v-else-if="loadError" class="text-sm text-rose-500">{{ loadError }}</p>
-            <p v-else-if="!filteredItems.length" class="text-sm text-slate-500">
-                Belum ada peminjaman.
-            </p>
+        <!-- Tiga filter berjalan bersamaan tanpa penanda; kondisi aktifnya kini terlihat
+             dan bisa dilepas satu per satu. Nilai yang diubah sama persis dengan yang
+             dilakukan pengguna secara manual, sehingga watcher filter existing yang
+             menjalankan pemuatan ulang. -->
+        <div v-if="hasActiveFilters" class="mt-3 flex flex-wrap items-center gap-2">
+            <span class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Filter aktif</span>
+            <span
+                v-for="chip in activeFilterChips"
+                :key="chip.key"
+                class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 py-1 pl-3 pr-1.5 text-xs font-semibold text-blue-700"
+            >
+                <span class="truncate">{{ chip.label }}</span>
+                <button
+                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition hover:bg-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                    type="button"
+                    :title="`Hapus filter ${chip.name}`"
+                    :aria-label="`Hapus filter ${chip.name}`"
+                    @click="chip.clear()"
+                >
+                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                        <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </span>
+            <button
+                class="rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 underline underline-offset-2 transition hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                type="button"
+                @click="resetFilters"
+            >
+                Reset semua
+            </button>
+        </div>
+
+        <div class="mt-4" aria-live="polite" :aria-busy="isLoading">
+            <!-- Sebelumnya tabel hilang total dan diganti satu baris teks setiap kali
+                 filter diketik, sehingga halaman terasa berkedip. -->
+            <div v-if="isLoading" class="overflow-hidden rounded-2xl border border-slate-200">
+                <div class="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    <svg class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" class="opacity-25" />
+                        <path d="M21 12a9 9 0 0 1-9 9" class="opacity-75" />
+                    </svg>
+                    Memuat data peminjaman...
+                </div>
+                <div class="divide-y divide-slate-100 bg-white">
+                    <div v-for="row in 5" :key="`skeleton-${row}`" class="flex items-center gap-4 px-4 py-4">
+                        <div class="h-9 w-24 shrink-0 animate-pulse rounded-lg bg-slate-100"></div>
+                        <div class="h-9 flex-1 animate-pulse rounded-lg bg-slate-100"></div>
+                        <div class="h-6 w-24 shrink-0 animate-pulse rounded-full bg-slate-100"></div>
+                        <div class="h-9 w-28 shrink-0 animate-pulse rounded-lg bg-slate-100"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                v-else-if="loadError"
+                class="flex flex-col items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-5 sm:flex-row sm:items-center sm:justify-between"
+                role="alert"
+            >
+                <div class="flex items-start gap-3">
+                    <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M10.3 4.3 2.9 17.1a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z" />
+                            <path d="M12 9v4M12 17h.01" />
+                        </svg>
+                    </span>
+                    <div>
+                        <p class="text-sm font-semibold text-rose-800">Gagal memuat data</p>
+                        <p class="mt-0.5 text-sm text-rose-700">{{ loadError }}</p>
+                    </div>
+                </div>
+                <button
+                    class="h-10 shrink-0 rounded-xl border border-rose-300 bg-white px-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300"
+                    type="button"
+                    @click="loadHistory()"
+                >
+                    Coba lagi
+                </button>
+            </div>
+
+            <!-- Membedakan "memang belum ada data" dari "hasil filter kosong". -->
+            <div
+                v-else-if="!filteredItems.length"
+                class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-6 py-12 text-center"
+            >
+                <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm">
+                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
+                    </svg>
+                </span>
+                <p class="mt-3 text-sm font-semibold text-slate-700">
+                    {{ hasActiveFilters ? 'Tidak ada peminjaman yang cocok' : 'Belum ada peminjaman' }}
+                </p>
+                <p class="mx-auto mt-1 max-w-md text-sm text-slate-500">
+                    {{
+                        hasActiveFilters
+                            ? 'Coba ubah kata kunci, status, atau kategori untuk memperluas hasil pencarian.'
+                            : 'Riwayat peminjaman pada area ini akan muncul di sini setelah ada pengajuan.'
+                    }}
+                </p>
+                <button
+                    v-if="hasActiveFilters"
+                    class="mt-4 h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                    type="button"
+                    @click="resetFilters"
+                >
+                    Reset filter
+                </button>
+            </div>
+
             <div v-else class="overflow-hidden rounded-2xl border border-slate-200">
                 <div class="overflow-x-auto">
-                    <table class="min-w-[1320px] w-full text-sm">
+                    <table class="min-w-[1240px] w-full text-sm">
+                        <caption class="sr-only">
+                            Riwayat peminjaman beserta status, periode, dan aksi yang tersedia
+                        </caption>
                         <thead class="bg-slate-50">
                             <tr class="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                                <th class="px-4 py-3">Dibuat</th>
-                                <th class="px-4 py-3">Pekerjaan</th>
-                                <th class="px-4 py-3">Peminjam</th>
-                                <th class="px-4 py-3">Direview/Disetujui</th>
-                                <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3">Kategori</th>
-                                <th class="px-4 py-3">Periode</th>
-                                <th class="px-4 py-3">Item</th>
-                                <th class="px-4 py-3 text-right">Aksi</th>
+                                <th scope="col" class="px-4 py-3">Dibuat</th>
+                                <th scope="col" class="px-4 py-3">Pekerjaan</th>
+                                <th scope="col" class="px-4 py-3">Peminjam</th>
+                                <th scope="col" class="px-4 py-3">Direview/Disetujui</th>
+                                <th scope="col" class="px-4 py-3">Status</th>
+                                <th scope="col" class="px-4 py-3">Kategori</th>
+                                <th scope="col" class="px-4 py-3">Periode</th>
+                                <th scope="col" class="px-4 py-3 text-center">Item</th>
+                                <th scope="col" class="px-4 py-3 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white">
@@ -151,8 +274,11 @@
                             :key="item.id"
                             class="align-top transition hover:bg-slate-50"
                             >
-                            <td class="px-4 py-4 text-slate-600">
-                                {{ item.createdAt }}
+                            <td class="whitespace-nowrap px-4 py-4 text-slate-600">
+                                <p class="font-medium text-slate-700">{{ splitDateTime(item.createdAt).date }}</p>
+                                <p v-if="splitDateTime(item.createdAt).time" class="mt-0.5 text-xs tabular-nums text-slate-500">
+                                    {{ splitDateTime(item.createdAt).time }}
+                                </p>
                             </td>
                             <td class="px-4 py-4">
                                 <p class="font-semibold text-slate-900">{{ item.title }}</p>
@@ -185,15 +311,18 @@
                                         {{ item.kategori }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-4 text-slate-600">
+                                <td class="whitespace-nowrap px-4 py-4 text-slate-600">
                                     <p>{{ item.borrowDate }}</p>
                                     <p class="mt-1 text-xs text-slate-500">Kembali: {{ item.returnDate }}</p>
                                 </td>
-                                <td class="px-4 py-4 text-center font-semibold text-slate-700">
+                                <td class="px-4 py-4 text-center font-semibold tabular-nums text-slate-700">
                                     {{ item.itemCount }}
                                 </td>
-                                <td class="px-4 py-4">
-                                    <div class="flex flex-wrap justify-end gap-2">
+                                <td class="whitespace-nowrap px-4 py-4">
+                                    <!-- Dijaga satu baris: membungkus membuat tinggi baris membengkak
+                                         sampai tiga kali lipat. Bila ruang kurang, tabel yang menggeser
+                                         mendatar di dalam wadah scroll-nya. -->
+                                    <div class="flex flex-nowrap items-center justify-end gap-2">
                                         <button
                                             v-if="hasSuratJalan(item)"
                                             class="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
@@ -236,45 +365,59 @@
                                             </svg>
                                             Detail
                                         </button>
+                                        <!-- Aksi sekunder dipadatkan menjadi ikon bertooltip supaya kolom
+                                             Aksi tidak lagi mendominasi tabel. Kondisi tampil, handler,
+                                             dan status disabled-nya tetap sama persis. -->
                                         <button
                                             v-if="canRepeatPeminjaman(item)"
-                                            class="inline-flex items-center gap-2 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-700 transition hover:border-cyan-300"
+                                            class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 text-cyan-700 transition hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
                                             type="button"
+                                            title="Ajukan ulang peminjaman ini"
+                                            aria-label="Ajukan ulang peminjaman ini"
                                             @click="repeatPeminjaman(item)"
                                         >
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                                 <path d="M17 1l4 4-4 4" />
                                                 <path d="M3 11V9a4 4 0 0 1 4-4h14" />
                                                 <path d="M7 23l-4-4 4-4" />
                                                 <path d="M21 13v2a4 4 0 0 1-4 4H3" />
                                             </svg>
-                                            Ajukan Ulang
                                         </button>
                                         <button
                                             v-if="canManagePeminjaman"
-                                            class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-300"
+                                            class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-700 transition hover:border-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
                                             type="button"
+                                            title="Edit data peminjaman"
+                                            aria-label="Edit data peminjaman"
                                             @click="openEdit(item)"
                                         >
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                                 <path d="M12 20h9" />
                                                 <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
                                             </svg>
-                                            Edit
                                         </button>
                                         <button
                                             v-if="canManagePeminjaman"
-                                            class="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-60"
+                                            class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-700 transition hover:border-rose-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 disabled:cursor-not-allowed disabled:opacity-60"
                                             type="button"
                                             :disabled="deletingId === item.id"
+                                            :title="deletingId === item.id ? 'Sedang menghapus...' : 'Hapus peminjaman'"
+                                            :aria-label="deletingId === item.id ? 'Sedang menghapus' : 'Hapus peminjaman'"
                                             @click="deletePeminjaman(item)"
                                         >
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <svg
+                                                v-if="deletingId === item.id"
+                                                class="h-4 w-4 animate-spin"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"
+                                            >
+                                                <circle cx="12" cy="12" r="9" class="opacity-25" />
+                                                <path d="M21 12a9 9 0 0 1-9 9" class="opacity-75" />
+                                            </svg>
+                                            <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                                 <path d="M3 6h18" />
                                                 <path d="M8 6V4h8v2" />
                                                 <path d="M19 6l-1 14H6L5 6" />
                                             </svg>
-                                            {{ deletingId === item.id ? 'Menghapus...' : 'Hapus' }}
                                         </button>
                                     </div>
                                 </td>
@@ -284,14 +427,19 @@
                 </div>
             </div>
         </div>
+        <!-- Footer sebelumnya hanya tampil bila lebih dari satu halaman, sehingga jumlah
+             total ikut hilang saat hasil filter muat dalam satu halaman. -->
         <div
-            v-if="pagination.lastPage > 1"
+            v-if="!isLoading && !loadError && filteredItems.length"
             class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
         >
             <span>
-                Halaman {{ pagination.currentPage }} dari {{ pagination.lastPage }} - Total {{ pagination.total }} peminjaman
+                Menampilkan
+                <span class="font-semibold tabular-nums text-slate-800">{{ rangeStart }}&ndash;{{ rangeEnd }}</span>
+                dari <span class="font-semibold tabular-nums text-slate-800">{{ pagination.total }}</span> peminjaman
+                <span class="text-slate-400">&middot; halaman {{ pagination.currentPage }} dari {{ pagination.lastPage }}</span>
             </span>
-            <div class="flex flex-wrap items-center gap-2">
+            <div v-if="pagination.lastPage > 1" class="flex flex-wrap items-center gap-2">
                 <button
                     class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:text-slate-300"
                     type="button"
@@ -616,6 +764,84 @@ const reviewCount = computed(() =>
 );
 const processCount = computed(() => items.value.filter((item) => item.status === 'Disetujui').length);
 const deliveredCount = computed(() => items.value.filter((item) => item.status === 'Dikirim').length);
+
+const hasActiveFilters = computed(
+    () => search.value.trim() !== '' || statusFilter.value !== 'Semua' || kategoriFilter.value !== 'Semua'
+);
+
+// Mengubah nilai filter persis seperti saat pengguna mengubahnya sendiri; watcher
+// filter existing yang tetap menjalankan pemuatan ulang data.
+const activeFilterChips = computed(() => {
+    const chips = [];
+
+    if (search.value.trim()) {
+        chips.push({
+            key: 'search',
+            name: 'pencarian',
+            label: `Pencarian: "${search.value.trim()}"`,
+            clear: () => {
+                search.value = '';
+            },
+        });
+    }
+    if (statusFilter.value !== 'Semua') {
+        chips.push({
+            key: 'status',
+            name: 'status',
+            label: `Status: ${statusFilter.value}`,
+            clear: () => {
+                statusFilter.value = 'Semua';
+            },
+        });
+    }
+    if (kategoriFilter.value !== 'Semua') {
+        chips.push({
+            key: 'kategori',
+            name: 'kategori',
+            label: `Kategori: ${kategoriFilter.value}`,
+            clear: () => {
+                kategoriFilter.value = 'Semua';
+            },
+        });
+    }
+
+    return chips;
+});
+
+const resetFilters = () => {
+    search.value = '';
+    statusFilter.value = 'Semua';
+    kategoriFilter.value = 'Semua';
+};
+
+const rangeStart = computed(() =>
+    pagination.total === 0 ? 0 : (pagination.currentPage - 1) * pagination.perPage + 1
+);
+
+const rangeEnd = computed(() =>
+    Math.min(pagination.currentPage * pagination.perPage, pagination.total)
+);
+
+// createdAt dikirim backend sebagai satu string; pemisahan hanya untuk tampilan dan
+// otomatis menampilkan nilai apa adanya bila formatnya tidak memuat jam.
+const splitDateTime = (value) => {
+    const raw = String(value ?? '').trim();
+    if (!raw) {
+        return { date: '-', time: '' };
+    }
+
+    const separatorIndex = raw.lastIndexOf(' ');
+    if (separatorIndex === -1) {
+        return { date: raw, time: '' };
+    }
+
+    const time = raw.slice(separatorIndex + 1);
+    if (!/^\d{1,2}:\d{2}(:\d{2})?$/.test(time)) {
+        return { date: raw, time: '' };
+    }
+
+    return { date: raw.slice(0, separatorIndex), time };
+};
 
 const pageNumbers = computed(() => {
     const total = pagination.lastPage;
