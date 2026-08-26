@@ -22,6 +22,8 @@ use Intervention\Image\ImageManager;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -68,6 +70,14 @@ class OutgoingSuratJalanService
     private const PHOTO_BOX_WIDTH = 270;
 
     private const PHOTO_BOX_HEIGHT = 240;
+
+    private const PHOTO_FULL_SLOT_WIDTH = 688;
+
+    private const PHOTO_FULL_SLOT_HEIGHT = 592;
+
+    private const PHOTO_FULL_BOX_WIDTH = 620;
+
+    private const PHOTO_FULL_BOX_HEIGHT = 520;
 
     private const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -738,6 +748,7 @@ class OutgoingSuratJalanService
         $this->replacePlaceholders($spreadsheet, $placeholders);
         $this->insertSenderRow($mainSheet, $senderName);
         $mainSheet->getCell('B7')->setValueExplicit($documentTitle, DataType::TYPE_STRING);
+        $this->formatMainSheetLayout($mainSheet);
         $this->applyWrappedRowHeight($mainSheet, 'C10:G10', 10, $recipient, 100, 20, 4);
         $this->applyWrappedRowHeight(
             $mainSheet,
@@ -813,15 +824,40 @@ class OutgoingSuratJalanService
             DataType::TYPE_STRING
         );
 
+        $sheet->getStyle('B'.self::ROW_SENDER)
+            ->getAlignment()
+            ->setWrapText(true)
+            ->setVertical('center');
+        $sheet->getStyle($valueMerge)->getAlignment()->setVertical('center');
+
         $this->applyWrappedRowHeight(
             $sheet,
             $valueMerge,
             self::ROW_SENDER,
             $senderName,
             100,
-            $sheet->getRowDimension(self::ROW_SUBJECT)->getRowHeight(),
+            max((float) $sheet->getRowDimension(self::ROW_SUBJECT)->getRowHeight(), 30),
             4
         );
+    }
+
+    private function formatMainSheetLayout(Worksheet $sheet): void
+    {
+        $sheet->setShowGridlines(false);
+        $sheet->getRowDimension(7)->setRowHeight(28);
+        $sheet->getRowDimension(8)->setRowHeight(22);
+        $sheet->getRowDimension(9)->setRowHeight(16);
+        $sheet->getStyle('B7:G9')->getAlignment()->setVertical('center');
+        $sheet->getStyle('B9:G9')->getFont()->setSize(9);
+
+        // Area persetujuan dan catatan kaki pada template terlalu kecil saat
+        // dicetak. Format diterapkan sebelum tabel barang dipadatkan agar seluruh
+        // blok ini ikut bergeser secara konsisten bersama barisnya.
+        $sheet->getStyle('B31:G31')->getFont()->setSize(10);
+        $sheet->getStyle('B32:G35')->getFont()->setSize(9);
+        $sheet->getStyle('B36:G36')->getFont()->setSize(8);
+        $sheet->getStyle('B40:G40')->getFont()->setSize(8);
+        $sheet->getRowDimension(40)->setRowHeight(20);
     }
 
     private function replacePlaceholders(Spreadsheet $spreadsheet, array $placeholders): void
@@ -847,12 +883,13 @@ class OutgoingSuratJalanService
     private function populateDocumentItems(Worksheet $sheet, array $itemRows): void
     {
         $itemCount = count($itemRows);
-        $extraRows = max($itemCount - self::TEMPLATE_ITEM_ROWS, 0);
+        $preparedRowCount = max($itemCount, 1);
+        $rowDelta = $preparedRowCount - self::TEMPLATE_ITEM_ROWS;
 
-        if ($extraRows > 0) {
+        if ($rowDelta > 0) {
             $appendAt = self::ROW_ITEM_LAST + 1;
-            $sheet->insertNewRowBefore($appendAt, $extraRows);
-            for ($row = $appendAt; $row < $appendAt + $extraRows; $row++) {
+            $sheet->insertNewRowBefore($appendAt, $rowDelta);
+            for ($row = $appendAt; $row < $appendAt + $rowDelta; $row++) {
                 $sheet->duplicateStyle(
                     $sheet->getStyle('B'.self::ROW_ITEM_LAST.':G'.self::ROW_ITEM_LAST),
                     "B{$row}:G{$row}"
@@ -865,9 +902,13 @@ class OutgoingSuratJalanService
                     $sheet->mergeCells($merge);
                 }
             }
+        } elseif ($rowDelta < 0) {
+            // Hilangkan slot kosong sehingga surat dengan sedikit barang tidak
+            // menyisakan tabel besar berisi baris kosong.
+            $sheet->removeRow(self::ROW_ITEM_FIRST + $preparedRowCount, abs($rowDelta));
         }
 
-        $lastPreparedRow = self::ROW_ITEM_LAST + $extraRows;
+        $lastPreparedRow = self::ROW_ITEM_FIRST + $preparedRowCount - 1;
         for ($row = self::ROW_ITEM_FIRST; $row <= $lastPreparedRow; $row++) {
             foreach (['B', 'C', 'E', 'F', 'G'] as $column) {
                 $sheet->setCellValue($column.$row, null);
@@ -891,16 +932,12 @@ class OutgoingSuratJalanService
             $lineCount = max(1, (int) ceil(mb_strlen($toolName) / 48));
             $sheet->getStyle("C{$row}:D{$row}")->getAlignment()->setWrapText(true);
             $sheet->getStyle('G'.$row)->getAlignment()->setWrapText(true);
+            $sheet->getStyle("B{$row}:G{$row}")->getAlignment()->setVertical('center');
             $sheet->getRowDimension($row)->setRowHeight(18 + (($lineCount - 1) * 15));
         }
 
-        $sheet->getPageSetup()
-            ->setPaperSize(PageSetup::PAPERSIZE_LETTER)
-            ->setOrientation(PageSetup::ORIENTATION_PORTRAIT)
-            ->setFitToPage(true)
-            ->setFitToWidth(1)
-            ->setFitToHeight(0);
-        $sheet->getPageSetup()->setPrintArea('A1:H'.(self::ROW_PRINT_AREA_LAST + $extraRows));
+        $this->configurePrintLayout($sheet, 0);
+        $sheet->getPageSetup()->setPrintArea('A1:H'.(self::ROW_PRINT_AREA_LAST + $rowDelta));
     }
 
     /**
@@ -938,30 +975,135 @@ class OutgoingSuratJalanService
 
         $sheet->getRowDimension(6)->setRowHeight(210);
         $sheet->getRowDimension(9)->setRowHeight(210);
-        $sheet->getPageSetup()
-            ->setPaperSize(PageSetup::PAPERSIZE_LETTER)
-            ->setOrientation(PageSetup::ORIENTATION_PORTRAIT)
-            ->setFitToPage(true)
-            ->setFitToWidth(1)
-            ->setFitToHeight(1);
+        $sheet->setShowGridlines(false);
+        $sheet->getStyle('B13:H15')->getFont()->setSize(8);
+        $this->configurePrintLayout($sheet, 1);
         $sheet->getPageSetup()->setPrintArea('A1:I15');
 
+        $this->formatPhotoFrames($sheet, count($photos));
+        $layout = $this->photoLayout(count($photos));
+
         foreach ($photos as $index => $photo) {
+            $slot = $layout[$index];
             $drawing = new Drawing;
             $drawing->setName('Foto Pengiriman '.(($page - 1) * self::PHOTOS_PER_PAGE + $index + 1));
             $drawing->setDescription($photo['original_name']);
             $drawing->setPath(Storage::disk('local')->path($photo['path']));
-            $drawing->setCoordinates($slots[$index]);
+            $drawing->setCoordinates($slot['coordinate']);
             $drawing->setResizeProportional(true);
-            $drawing->setWidthAndHeight(self::PHOTO_BOX_WIDTH, self::PHOTO_BOX_HEIGHT);
+            $drawing->setWidthAndHeight($slot['box_width'], $slot['box_height']);
             $drawing->setOffsetX(
-                max((int) floor((self::PHOTO_SLOT_WIDTH - $drawing->getWidth()) / 2), 0)
+                max((int) floor(($slot['slot_width'] - $drawing->getWidth()) / 2), 0)
             );
             $drawing->setOffsetY(
-                max((int) floor((self::PHOTO_SLOT_HEIGHT - $drawing->getHeight()) / 2), 0)
+                max((int) floor(($slot['slot_height'] - $drawing->getHeight()) / 2), 0)
             );
             $drawing->setWorksheet($sheet);
         }
+    }
+
+    private function formatPhotoFrames(Worksheet $sheet, int $photoCount): void
+    {
+        if ($photoCount >= self::PHOTOS_PER_PAGE) {
+            return;
+        }
+
+        // Template menyediakan empat bingkai 2x2. Untuk halaman yang fotonya lebih
+        // sedikit, bentuk ulang bingkai agar mengikuti komposisi gambar dan tidak
+        // menyisakan kotak kosong di belakang foto.
+        $photoArea = $sheet->getStyle('C6:G9');
+        $photoArea->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()
+            ->setARGB('FFFFFFFF');
+        $photoArea->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_NONE);
+
+        $frameRanges = match ($photoCount) {
+            1 => ['C6:G9'],
+            2 => ['C6:C9', 'G6:G9'],
+            3 => ['C6', 'G6', 'C9:G9'],
+            default => [],
+        };
+
+        foreach ($frameRanges as $range) {
+            $style = $sheet->getStyle($range);
+            $style->getFill()
+                ->setFillType(Fill::FILL_SOLID)
+                ->getStartColor()
+                ->setARGB('FFF3F4F6');
+            $outline = $style->getBorders()->getOutline();
+            $outline->setBorderStyle(Border::BORDER_MEDIUM);
+            $outline->getColor()->setARGB('FF6B7280');
+        }
+    }
+
+    /**
+     * @return array<int, array{coordinate: string, slot_width: int, slot_height: int, box_width: int, box_height: int}>
+     */
+    private function photoLayout(int $photoCount): array
+    {
+        $gridSlot = fn (string $coordinate) => [
+            'coordinate' => $coordinate,
+            'slot_width' => self::PHOTO_SLOT_WIDTH,
+            'slot_height' => self::PHOTO_SLOT_HEIGHT,
+            'box_width' => self::PHOTO_BOX_WIDTH,
+            'box_height' => self::PHOTO_BOX_HEIGHT,
+        ];
+        $fullHeightSlot = fn (string $coordinate) => [
+            'coordinate' => $coordinate,
+            'slot_width' => self::PHOTO_SLOT_WIDTH,
+            'slot_height' => self::PHOTO_FULL_SLOT_HEIGHT,
+            'box_width' => self::PHOTO_BOX_WIDTH,
+            'box_height' => self::PHOTO_FULL_BOX_HEIGHT,
+        ];
+
+        return match ($photoCount) {
+            1 => [[
+                'coordinate' => 'C6',
+                'slot_width' => self::PHOTO_FULL_SLOT_WIDTH,
+                'slot_height' => self::PHOTO_FULL_SLOT_HEIGHT,
+                'box_width' => self::PHOTO_FULL_BOX_WIDTH,
+                'box_height' => self::PHOTO_FULL_BOX_HEIGHT,
+            ]],
+            2 => [$fullHeightSlot('C6'), $fullHeightSlot('G6')],
+            3 => [
+                $gridSlot('C6'),
+                $gridSlot('G6'),
+                [
+                    'coordinate' => 'C9',
+                    'slot_width' => self::PHOTO_FULL_SLOT_WIDTH,
+                    'slot_height' => self::PHOTO_SLOT_HEIGHT,
+                    'box_width' => self::PHOTO_FULL_BOX_WIDTH,
+                    'box_height' => self::PHOTO_BOX_HEIGHT,
+                ],
+            ],
+            default => [
+                $gridSlot('C6'),
+                $gridSlot('G6'),
+                $gridSlot('C9'),
+                $gridSlot('G9'),
+            ],
+        };
+    }
+
+    private function configurePrintLayout(Worksheet $sheet, int $fitToHeight): void
+    {
+        $sheet->getPageSetup()
+            ->setPaperSize(PageSetup::PAPERSIZE_A4)
+            ->setOrientation(PageSetup::ORIENTATION_PORTRAIT)
+            ->setScale(null, false)
+            ->setFitToPage(true)
+            ->setFitToWidth(1)
+            ->setFitToHeight($fitToHeight)
+            ->setHorizontalCentered(true);
+
+        $sheet->getPageMargins()
+            ->setLeft(0.35)
+            ->setRight(0.35)
+            ->setTop(0.4)
+            ->setBottom(0.4)
+            ->setHeader(0.2)
+            ->setFooter(0.2);
     }
 
     private function assertTemplatePlaceholdersAreKnown(Spreadsheet $spreadsheet, array $placeholders): void

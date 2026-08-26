@@ -19,6 +19,8 @@ use Laravel\Sanctum\Sanctum;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use Tests\TestCase;
 use ZipArchive;
 
@@ -110,11 +112,28 @@ class OutgoingSuratJalanTest extends TestCase
         $this->assertEmpty($main->getCell('G28')->getValue());
         $this->assertSame($expectedMainDrawingCount, $main->getDrawingCollection()->count());
         $this->assertSame('A1:H41', $main->getPageSetup()->getPrintArea());
-        $this->assertSame('portrait', $main->getPageSetup()->getOrientation());
-        $this->assertSame(1, $main->getPageSetup()->getFitToWidth());
-        $this->assertSame(0, $main->getPageSetup()->getFitToHeight());
+        $this->assertA4PrintLayout($main, 0);
+        $this->assertSame(28.0, $main->getRowDimension(7)->getRowHeight());
+        $this->assertSame(22.0, $main->getRowDimension(8)->getRowHeight());
+        $this->assertSame(16.0, $main->getRowDimension(9)->getRowHeight());
+        $this->assertSame(9.0, $main->getStyle('B9')->getFont()->getSize());
+        $this->assertGreaterThanOrEqual(30, $main->getRowDimension(13)->getRowHeight());
+        $this->assertTrue($main->getStyle('B13')->getAlignment()->getWrapText());
         $this->assertTrue($main->getStyle('C13')->getAlignment()->getWrapText());
         $this->assertTrue($main->getStyle('C27')->getAlignment()->getWrapText());
+        $this->assertSame(
+            $main->getStyle('C12')->getFill()->getFillType(),
+            $main->getStyle('C13')->getFill()->getFillType()
+        );
+        $this->assertSame(
+            $main->getStyle('C12')->getFill()->getStartColor()->getARGB(),
+            $main->getStyle('C13')->getFill()->getStartColor()->getARGB()
+        );
+        $this->assertSame(
+            $main->getStyle('C12')->getFont()->getBold(),
+            $main->getStyle('C13')->getFont()->getBold()
+        );
+        $this->assertSame(8.0, $main->getStyle('B41')->getFont()->getSize());
 
         $firstAnnex = $workbook->getSheetByName('LAMPIRAN FOTO');
         $secondAnnex = $workbook->getSheetByName('LAMPIRAN FOTO 2');
@@ -328,6 +347,75 @@ class OutgoingSuratJalanTest extends TestCase
         $this->assertSame('JNE-TEST-001', $loan->resi);
     }
 
+    public function test_two_photo_annex_uses_full_height_columns_and_ten_item_table_stays_balanced(): void
+    {
+        Storage::fake('local');
+        [$loan, $pic] = $this->makeApprovedLoan(itemCount: 10);
+        Sanctum::actingAs($pic);
+
+        $photos = [
+            UploadedFile::fake()->image('portrait-1.jpg', 600, 1000),
+            UploadedFile::fake()->image('portrait-2.jpg', 600, 1000),
+        ];
+
+        $this->post('/api/pengiriman/'.$loan->id.'/kirim', [
+            'pengirim_nama' => 'Kurir Dua Foto',
+            'photos' => $photos,
+        ], ['Accept' => 'application/json'])->assertOk();
+
+        $document = SuratJalan::query()
+            ->where('peminjaman_id', $loan->id)
+            ->where('jenis', SuratJalan::TYPE_SHIPMENT)
+            ->firstOrFail();
+        $workbook = IOFactory::load(Storage::disk('local')->path($document->path));
+        $main = $workbook->getSheetByName('MASTER SJ UP SLA');
+
+        $this->assertSame('A1:H40', $main->getPageSetup()->getPrintArea());
+        $this->assertSame(10, $main->getCell('B27')->getValue());
+        $this->assertStringStartsWith('Demikian surat jalan', (string) $main->getCell('B29')->getValue());
+        $this->assertStringStartsWith('Dokumen ini dihasilkan', (string) $main->getCell('B40')->getValue());
+        $this->assertA4PrintLayout($main, 0);
+        $this->assertPhotoAnnex($workbook->getSheetByName('LAMPIRAN FOTO'), 2, ['C6', 'G6']);
+        $this->assertWorkbookHasNoPlaceholders($workbook);
+
+        $workbook->disconnectWorksheets();
+    }
+
+    public function test_three_photo_annex_centers_the_last_photo_and_compacts_unused_item_rows(): void
+    {
+        Storage::fake('local');
+        [$loan, $pic] = $this->makeApprovedLoan();
+        Sanctum::actingAs($pic);
+
+        $photos = [
+            UploadedFile::fake()->image('landscape-1.jpg', 1000, 600),
+            UploadedFile::fake()->image('landscape-2.jpg', 1000, 600),
+            UploadedFile::fake()->image('landscape-3.jpg', 1000, 600),
+        ];
+
+        $this->post('/api/pengiriman/'.$loan->id.'/kirim', [
+            'pengirim_nama' => 'Kurir Tiga Foto',
+            'photos' => $photos,
+        ], ['Accept' => 'application/json'])->assertOk();
+
+        $document = SuratJalan::query()
+            ->where('peminjaman_id', $loan->id)
+            ->where('jenis', SuratJalan::TYPE_SHIPMENT)
+            ->firstOrFail();
+        $workbook = IOFactory::load(Storage::disk('local')->path($document->path));
+        $main = $workbook->getSheetByName('MASTER SJ UP SLA');
+
+        $this->assertSame('A1:H31', $main->getPageSetup()->getPrintArea());
+        $this->assertSame(1, $main->getCell('B18')->getValue());
+        $this->assertStringStartsWith('Demikian surat jalan', (string) $main->getCell('B20')->getValue());
+        $this->assertStringStartsWith('Dokumen ini dihasilkan', (string) $main->getCell('B31')->getValue());
+        $this->assertA4PrintLayout($main, 0);
+        $this->assertPhotoAnnex($workbook->getSheetByName('LAMPIRAN FOTO'), 3, ['C6', 'G6', 'C9']);
+        $this->assertWorkbookHasNoPlaceholders($workbook);
+
+        $workbook->disconnectWorksheets();
+    }
+
     public function test_generated_text_is_stored_as_plain_text_instead_of_excel_formulas(): void
     {
         Storage::fake('local');
@@ -432,6 +520,8 @@ class OutgoingSuratJalanTest extends TestCase
             $this->assertSame('PENGEMBALIAN', $main->getCell('C12')->getValue());
             $this->assertSame('Nama Pengirim', $main->getCell('B13')->getValue());
             $this->assertSame(1, $main->getCell('E18')->getValue());
+            $this->assertSame('A1:H31', $main->getPageSetup()->getPrintArea());
+            $this->assertA4PrintLayout($main, 0);
             $this->assertPhotoAnnex($workbook->getSheetByName('LAMPIRAN FOTO'), 1, ['C6']);
             $workbook->disconnectWorksheets();
 
@@ -533,9 +623,7 @@ class OutgoingSuratJalanTest extends TestCase
         $this->assertEqualsWithDelta(42.0, $sheet->getColumnDimension('C')->getWidth(), 1.0);
         $this->assertEqualsWithDelta(42.0, $sheet->getColumnDimension('G')->getWidth(), 1.0);
         $this->assertSame('A1:I15', $sheet->getPageSetup()->getPrintArea());
-        $this->assertSame('portrait', $sheet->getPageSetup()->getOrientation());
-        $this->assertSame(1, $sheet->getPageSetup()->getFitToWidth());
-        $this->assertSame(1, $sheet->getPageSetup()->getFitToHeight());
+        $this->assertA4PrintLayout($sheet, 1);
         // Kepala lampiran tetap utuh, tetapi blok No. Surat Jalan / ID Transaksi /
         // Pekerjaan sudah tidak ada lagi di sheet ini.
         $this->assertSame('UNIT BISNIS PEMELIHARAAN', $sheet->getCell('B2')->getValue());
@@ -556,14 +644,63 @@ class OutgoingSuratJalanTest extends TestCase
         $this->assertCount($drawingCount, $drawings);
         $this->assertSame($coordinates, collect($drawings)->map->getCoordinates()->all());
 
-        foreach ($drawings as $drawing) {
+        if ($drawingCount === 1) {
+            $this->assertSame('FFF3F4F6', $sheet->getStyle('D6')->getFill()->getStartColor()->getARGB());
+            $this->assertSame(Border::BORDER_MEDIUM, $sheet->getStyle('D6')->getBorders()->getTop()->getBorderStyle());
+            $this->assertSame(Border::BORDER_NONE, $sheet->getStyle('D6')->getBorders()->getBottom()->getBorderStyle());
+            $this->assertSame(Border::BORDER_MEDIUM, $sheet->getStyle('D9')->getBorders()->getBottom()->getBorderStyle());
+        } elseif ($drawingCount === 2) {
+            $this->assertSame('FFFFFFFF', $sheet->getStyle('D6')->getFill()->getStartColor()->getARGB());
+            $this->assertSame(Border::BORDER_NONE, $sheet->getStyle('C6')->getBorders()->getBottom()->getBorderStyle());
+            $this->assertSame(Border::BORDER_MEDIUM, $sheet->getStyle('C9')->getBorders()->getBottom()->getBorderStyle());
+        } elseif ($drawingCount === 3) {
+            $this->assertSame('FFFFFFFF', $sheet->getStyle('D6')->getFill()->getStartColor()->getARGB());
+            $this->assertSame(Border::BORDER_MEDIUM, $sheet->getStyle('C6')->getBorders()->getBottom()->getBorderStyle());
+            $this->assertSame(Border::BORDER_MEDIUM, $sheet->getStyle('D9')->getBorders()->getTop()->getBorderStyle());
+            $this->assertSame(Border::BORDER_MEDIUM, $sheet->getStyle('D9')->getBorders()->getBottom()->getBorderStyle());
+        }
+
+        $slots = match ($drawingCount) {
+            1 => [[688, 592, 620, 520]],
+            2 => [[302, 592, 270, 520], [302, 592, 270, 520]],
+            3 => [[302, 280, 270, 240], [302, 280, 270, 240], [688, 280, 620, 240]],
+            default => array_fill(0, 4, [302, 280, 270, 240]),
+        };
+
+        foreach ($drawings as $index => $drawing) {
+            [$slotWidth, $slotHeight, $boxWidth, $boxHeight] = $slots[$index];
             $this->assertGreaterThan(0, $drawing->getWidth());
             $this->assertGreaterThan(0, $drawing->getHeight());
-            $this->assertLessThanOrEqual(270, $drawing->getWidth());
-            $this->assertLessThanOrEqual(240, $drawing->getHeight());
-            $this->assertGreaterThanOrEqual(16, $drawing->getOffsetX());
-            $this->assertGreaterThanOrEqual(20, $drawing->getOffsetY());
+            $this->assertLessThanOrEqual($boxWidth, $drawing->getWidth());
+            $this->assertLessThanOrEqual($boxHeight, $drawing->getHeight());
+            $this->assertEqualsWithDelta(
+                $slotWidth / 2,
+                $drawing->getOffsetX() + ($drawing->getWidth() / 2),
+                1.0
+            );
+            $this->assertEqualsWithDelta(
+                $slotHeight / 2,
+                $drawing->getOffsetY() + ($drawing->getHeight() / 2),
+                1.0
+            );
         }
+    }
+
+    private function assertA4PrintLayout($sheet, int $fitToHeight): void
+    {
+        $this->assertSame(PageSetup::PAPERSIZE_A4, $sheet->getPageSetup()->getPaperSize());
+        $this->assertSame(PageSetup::ORIENTATION_PORTRAIT, $sheet->getPageSetup()->getOrientation());
+        $this->assertSame(1, $sheet->getPageSetup()->getFitToWidth());
+        $this->assertSame($fitToHeight, $sheet->getPageSetup()->getFitToHeight());
+        // Scale 78/82 dari template sudah dihapus. Saat atribut scale tidak ditulis,
+        // reader PhpSpreadsheet mengembalikannya sebagai default Excel (100).
+        $this->assertSame(100, $sheet->getPageSetup()->getScale());
+        $this->assertTrue($sheet->getPageSetup()->getFitToPage());
+        $this->assertTrue($sheet->getPageSetup()->getHorizontalCentered());
+        $this->assertEqualsWithDelta(0.35, $sheet->getPageMargins()->getLeft(), 0.001);
+        $this->assertEqualsWithDelta(0.35, $sheet->getPageMargins()->getRight(), 0.001);
+        $this->assertEqualsWithDelta(0.4, $sheet->getPageMargins()->getTop(), 0.001);
+        $this->assertEqualsWithDelta(0.4, $sheet->getPageMargins()->getBottom(), 0.001);
     }
 
     private function replaceShipmentSubjectInWorkbook(string $path, string $from, string $to): void
