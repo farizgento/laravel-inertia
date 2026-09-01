@@ -380,6 +380,17 @@
                             <p class="mt-1 text-xs text-slate-500">{{ deleteModal.description }}</p>
                         </div>
                     </div>
+                    <label v-if="deleteModal.type === 'area'" class="mt-4 block space-y-2 text-sm font-medium text-slate-700">
+                        <span>Masukkan password Anda untuk konfirmasi</span>
+                        <input
+                            v-model="deletePassword"
+                            type="password"
+                            autocomplete="current-password"
+                            placeholder="Password"
+                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            @keyup.enter="confirmDelete"
+                        />
+                    </label>
                     <p v-if="deleteError" class="mt-3 text-sm font-semibold text-rose-500">{{ deleteError }}</p>
                 </div>
 
@@ -394,7 +405,7 @@
                     <button
                         class="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-300"
                         type="button"
-                        :disabled="isDeleteSubmitting"
+                        :disabled="isDeleteSubmitting || (deleteModal.type === 'area' && !deletePassword)"
                         @click="confirmDelete"
                     >
                         {{ isDeleteSubmitting ? 'Menghapus...' : 'Ya, hapus' }}
@@ -573,6 +584,7 @@ const editItem = ref(null);
 const isSavingEdit = ref(false);
 const deletingId = ref(null);
 const deleteError = ref('');
+const deletePassword = ref('');
 const deleteModal = reactive({
     open: false,
     type: '',
@@ -817,6 +829,7 @@ const deleteActiveAreaPeminjaman = async () => {
     deleteModal.heading = `Hapus semua data pada ${areaName.value}?`;
     deleteModal.description = 'Semua data peminjaman pada area aktif akan dihapus beserta data terkaitnya.';
     deleteError.value = '';
+    deletePassword.value = '';
 };
 
 const isDeleteSubmitting = computed(() =>
@@ -833,6 +846,7 @@ const closeDeleteModal = () => {
     deleteModal.type = '';
     deleteModal.item = null;
     deleteError.value = '';
+    deletePassword.value = '';
 };
 
 const confirmDelete = async () => {
@@ -873,11 +887,16 @@ const confirmDeleteArea = async () => {
         closeDeleteModal();
         return;
     }
+    if (!deletePassword.value) {
+        deleteError.value = 'Masukkan password Anda untuk konfirmasi.';
+        return;
+    }
 
     isBulkDeleting.value = true;
+    deleteError.value = '';
     try {
         await axios.delete('/api/peminjaman/area', {
-            data: { area_id: currentAreaId.value },
+            data: { area_id: currentAreaId.value, password: deletePassword.value },
         });
         pagination.currentPage = 1;
         isBulkDeleting.value = false;

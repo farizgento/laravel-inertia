@@ -11,6 +11,7 @@ use App\Models\PeminjamanItem;
 use App\Models\Role;
 use App\Models\SuratJalan;
 use App\Services\OutgoingSuratJalanService;
+use App\Services\PeminjamanNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -632,6 +633,9 @@ class PengirimanController extends Controller
             $validated['photos']
         );
 
+        $peminjaman->refresh();
+        PeminjamanNotifier::notifyShipped($peminjaman);
+
         return response()->json([
             'id' => $peminjaman->id,
             'status' => Peminjaman::STATUS_DIKIRIM,
@@ -1028,6 +1032,7 @@ class PengirimanController extends Controller
         }
 
         $peminjaman->refresh();
+        PeminjamanNotifier::notifyReturned($peminjaman);
 
         return response()->json([
             'id' => $peminjaman->id,
@@ -1108,6 +1113,8 @@ class PengirimanController extends Controller
         $peminjaman->update([
             'status' => Peminjaman::STATUS_SELESAI,
         ]);
+
+        PeminjamanNotifier::notifyCompleted($peminjaman);
 
         return response()->json([
             'id' => $peminjaman->id,

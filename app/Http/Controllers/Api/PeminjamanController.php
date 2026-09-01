@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\LdapLoginException;
 use App\Http\Controllers\Controller;
 use App\Models\Alat;
 use App\Models\AreaAlatStock;
@@ -11,6 +12,8 @@ use App\Models\PeminjamanItem;
 use App\Models\Role;
 use App\Models\SuratJalan;
 use App\Services\ActivityLogger;
+use App\Services\LdapLoginService;
+use App\Services\PeminjamanNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -545,6 +548,8 @@ class PeminjamanController extends Controller
             return $peminjaman;
         });
 
+        PeminjamanNotifier::notifyReviewNeeded($peminjaman);
+
         return response()->json([
             'id' => $peminjaman->id,
             'status' => $peminjaman->status,
@@ -650,7 +655,7 @@ class PeminjamanController extends Controller
         return response()->json(['message' => 'Peminjaman berhasil dihapus.']);
     }
 
-    public function destroyArea(Request $request)
+    public function destroyArea(Request $request, LdapLoginService $ldapLoginService)
     {
         $user = $request->user();
         if (! $user) {
@@ -665,7 +670,16 @@ class PeminjamanController extends Controller
 
         $validated = $request->validate([
             'area_id' => ['required', 'integer', 'exists:areas,id'],
+            'password' => ['required', 'string'],
         ]);
+
+        try {
+            $ldapLoginService->attempt($user->username, $validated['password']);
+        } catch (LdapLoginException) {
+            return response()->json([
+                'message' => 'Password yang Anda masukkan salah.',
+            ], 422);
+        }
 
         $peminjamans = Peminjaman::query()
             ->with(['suratJalans.photos'])
@@ -783,6 +797,8 @@ class PeminjamanController extends Controller
             return $peminjaman;
         });
 
+        PeminjamanNotifier::notifyReviewNeeded($peminjaman);
+
         return response()->json([
             'id' => $peminjaman->id,
             'status' => $peminjaman->status,
@@ -871,7 +887,6 @@ class PeminjamanController extends Controller
             $ids = $peminjamans->pluck('id')->map(fn ($id) => (int) $id)->all();
             $logPeminjamans = Peminjaman::query()
                 ->whereIn('id', $ids)
-                ->orderBy('id')
                 ->lockForUpdate()
                 ->get();
             $logPeminjamans->load(['items', 'suratJalans.photos']);

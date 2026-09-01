@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanItem;
 use App\Models\Role;
+use App\Services\PeminjamanNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -281,6 +282,10 @@ class ReviewPeminjamanController extends Controller
                 ]);
             }
         });
+
+        if (! $isRequesterReviewStage) {
+            PeminjamanNotifier::notifyReadyForShipment($peminjaman);
+        }
 
         return response()->json([
             'id' => $peminjaman->id,
