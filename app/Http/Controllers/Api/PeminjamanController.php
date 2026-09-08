@@ -81,7 +81,15 @@ class PeminjamanController extends Controller
             });
         } elseif ($isSuperAdmin) {
             if (! empty($areaIdParam)) {
-                $query->where('area_id', $areaIdParam);
+                // Peminjaman antar area menyimpan area pemilik alat pada area_id
+                // dan area peminjam pada requester_area_id. Keduanya harus ikut
+                // terbaca, sama seperti peran lain, supaya riwayat tetap terlihat
+                // dari sisi area peminjam.
+                $areaId = (int) $areaIdParam;
+                $query->where(function ($sub) use ($areaId) {
+                    $sub->where('area_id', $areaId)
+                        ->orWhere('requester_area_id', $areaId);
+                });
             }
         } elseif ($isAdmin) {
             $areaId = $user->area_id;
