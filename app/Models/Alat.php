@@ -16,6 +16,7 @@ class Alat extends Model
         'nama',
         'jenis_alat',
         'klasifikasi_alat',
+        'lokasi',
         'total_aset',
         'area_id',
     ];

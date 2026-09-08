@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\ImportAlatJob;
 use App\Models\Alat;
 use App\Models\AlatImport;
+use App\Models\Area;
 use App\Models\AreaAlatStock;
 use App\Models\Peminjaman;
 use App\Models\Role;
@@ -13,7 +14,9 @@ use App\Services\AlatImportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -155,7 +158,9 @@ class AlatController extends Controller
             'total_aset' => $totalAset,
             'stok_tersedia' => $stokTersedia,
             'deskripsi' => '',
-            'lokasi' => $alat->area?->name ?? 'Area tidak diketahui',
+            // Lokasi fisik alat di dalam area (rak/gudang). Nama area tetap
+            // dikirim terpisah lewat area_name.
+            'lokasi' => $alat->lokasi,
             'area_name' => $alat->area?->name ?? 'Area tidak diketahui',
             'area_slug' => $alat->area?->slug,
             'area_kode' => $alat->area?->kode,
@@ -252,10 +257,10 @@ class AlatController extends Controller
         $classification = trim((string) ($request->query('klasifikasi_alat', $request->query('classification', ''))));
         $areaId = $this->resolveReadableAreaId($request);
 
-        // Accessor "kode" pada Alat membaca relasi area, jadi relasi tersebut tetap
-        // harus di-eager-load walau pada mode ringan agar tidak memicu N+1.
+        // Kolom "kode" wajib ikut diambil walau pada mode ringan, karena kode alat
+        // kini tersimpan di tabel (bukan lagi accessor turunan dari id).
         $query = $this->wantsSelectPayload($request)
-            ? Alat::query()->select(['id', 'nama', 'area_id'])->with('area:id,kode')
+            ? Alat::query()->select(['id', 'kode', 'nama', 'area_id'])->with('area:id,kode')
             : Alat::query()->with('area:id,name,slug,kode');
 
         if ($search !== '') {
@@ -451,9 +456,9 @@ class AlatController extends Controller
         $ownedAlats = $ownedQuery->orderBy('nama')->get();
         $sharedStocks = AreaAlatStock::query()
             ->with($forSelect
-                ? ['alat:id,nama,area_id', 'alat.area:id,kode']
+                ? ['alat:id,kode,nama,area_id', 'alat.area:id,kode']
                 : [
-                    'alat:id,nama,jenis_alat,klasifikasi_alat,total_aset,area_id',
+                    'alat:id,kode,nama,jenis_alat,klasifikasi_alat,lokasi,total_aset,area_id',
                     'alat.area:id,name,slug,kode',
                     'sourcePeminjaman:id,tanggal_pinjam,tanggal_kembali',
                 ])
@@ -574,7 +579,7 @@ class AlatController extends Controller
         $sharedStocks = $sharedStockIds
             ? AreaAlatStock::query()
                 ->with([
-                    'alat:id,nama,jenis_alat,klasifikasi_alat,total_aset,area_id',
+                    'alat:id,kode,nama,jenis_alat,klasifikasi_alat,lokasi,total_aset,area_id',
                     'alat.area:id,name,slug,kode',
                     'sourcePeminjaman:id,tanggal_pinjam,tanggal_kembali',
                 ])
@@ -693,7 +698,7 @@ class AlatController extends Controller
             $handle = fopen('php://output', 'wb');
             fwrite($handle, "\xEF\xBB\xBF");
             fwrite($handle, "sep={$delimiter}\r\n");
-            fputcsv($handle, ['Kode', 'Nama', 'Jenis Alat', 'Klasifikasi Alat', 'Area', 'Total Aset', 'Stok Tersedia'], $delimiter);
+            fputcsv($handle, ['Kode', 'Nama', 'Jenis Alat', 'Klasifikasi Alat', 'Area', 'Lokasi', 'Total Aset', 'Stok Tersedia'], $delimiter);
 
             $query->chunk(500, function ($alats) use ($handle, $delimiter) {
                 $borrowedMap = $this->borrowedMap($alats->pluck('id')->all());
@@ -707,6 +712,7 @@ class AlatController extends Controller
                         $formatted['jenis_alat'],
                         $formatted['klasifikasi_alat'],
                         $formatted['area_name'],
+                        $formatted['lokasi'] ?? '',
                         $formatted['total_aset'],
                         $formatted['stok_tersedia'],
                     ], $delimiter);
@@ -745,10 +751,13 @@ class AlatController extends Controller
             'nama' => ['required', 'string', 'max:255'],
             'jenis_alat' => ['required', 'string', 'max:255'],
             'klasifikasi_alat' => ['required', 'string', 'max:255'],
+            'lokasi' => ['nullable', 'string', 'max:255'],
             'total_aset' => ['required', 'integer', 'min:0'],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
         ]);
         $data['klasifikasi_alat'] = trim($data['klasifikasi_alat']);
+        // Lokasi kosong disimpan sebagai null agar mudah dibedakan dari yang diisi.
+        $data['lokasi'] = trim((string) ($data['lokasi'] ?? '')) ?: null;
         if ($data['klasifikasi_alat'] === '') {
             throw ValidationException::withMessages([
                 'klasifikasi_alat' => ['Klasifikasi alat wajib diisi.'],
@@ -782,10 +791,13 @@ class AlatController extends Controller
             'nama' => ['required', 'string', 'max:255'],
             'jenis_alat' => ['required', 'string', 'max:255'],
             'klasifikasi_alat' => ['required', 'string', 'max:255'],
+            'lokasi' => ['nullable', 'string', 'max:255'],
             'total_aset' => ['required', 'integer', 'min:0'],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
         ]);
         $data['klasifikasi_alat'] = trim($data['klasifikasi_alat']);
+        // Lokasi kosong disimpan sebagai null agar mudah dibedakan dari yang diisi.
+        $data['lokasi'] = trim((string) ($data['lokasi'] ?? '')) ?: null;
         if ($data['klasifikasi_alat'] === '') {
             throw ValidationException::withMessages([
                 'klasifikasi_alat' => ['Klasifikasi alat wajib diisi.'],
@@ -837,14 +849,55 @@ class AlatController extends Controller
         ], 202);
     }
 
-    public function downloadImportTemplate(): BinaryFileResponse
+    public function downloadImportTemplate(Request $request): BinaryFileResponse
     {
         $path = public_path('storage/templates/TEMPLATE-IMPORT-ALAT.xlsx');
         abort_unless(file_exists($path), 404, 'Template import alat belum tersedia. Pastikan file berada di storage/app/public/templates dan jalankan php artisan storage:link.');
 
-        return response()->download($path, basename($path), [
+        $area = $this->resolveTemplateArea($request);
+        if (! $area) {
+            return response()->download($path, basename($path), [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ]);
+        }
+
+        // Kolom area diisi lebih dulu dengan area pengunduh supaya pengguna tidak
+        // perlu mengetik ulang kode area dan tidak salah tulis.
+        $nilaiArea = trim((string) ($area->kode ?: $area->slug ?: $area->name));
+        $spreadsheet = IOFactory::load($path);
+        $sheet = $spreadsheet->getSheet(0);
+
+        for ($baris = 2; $baris <= $sheet->getHighestRow(); $baris++) {
+            if (trim((string) $sheet->getCell('A'.$baris)->getValue()) === '') {
+                continue;
+            }
+
+            $sheet->setCellValue('E'.$baris, $nilaiArea);
+        }
+
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'tpl-alat-').'.xlsx';
+        IOFactory::createWriter($spreadsheet, 'Xlsx')->save($temporaryPath);
+        $spreadsheet->disconnectWorksheets();
+
+        $namaBerkas = 'TEMPLATE-IMPORT-ALAT-'.Str::slug($nilaiArea).'.xlsx';
+
+        return response()->download($temporaryPath, $namaBerkas, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ]);
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Area yang dipakai untuk mengisi template. Pengguna yang terkunci pada satu
+     * area memakai areanya sendiri; super admin boleh memilih lewat area_id, dan
+     * bila tidak memilih memakai area miliknya.
+     */
+    private function resolveTemplateArea(Request $request): ?Area
+    {
+        $areaId = $this->getAuthorizedAreaId($request)
+            ?: ($request->filled('area_id') ? (int) $request->query('area_id') : null)
+            ?: $request->user()?->area_id;
+
+        return $areaId ? Area::query()->find($areaId) : null;
     }
 
     public function importStatus(Request $request, AlatImport $import, AlatImportService $alatImportService)

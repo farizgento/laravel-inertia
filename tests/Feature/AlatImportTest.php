@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AlatImport;
 use App\Models\Area;
 use App\Models\Role;
 use App\Models\User;
@@ -35,8 +36,8 @@ class AlatImportTest extends TestCase
         Sanctum::actingAs($user);
 
         $csvContent = implode("\n", [
-            'nama alat,jenis alat,klasifikasi alat,total aset,area',
-            'Megger,Alat Ukur,Elektrikal,12,uphk',
+            'nama alat,jenis alat,klasifikasi alat,total aset,area,lokasi',
+            'Megger,Alat Ukur,Elektrikal,12,uphk,Gudang A - Rak 3',
         ]);
 
         $file = UploadedFile::fake()->createWithContent('alat.csv', $csvContent);
@@ -45,19 +46,35 @@ class AlatImportTest extends TestCase
             'file' => $file,
         ]);
 
+        // Import diproses lewat antrean, jadi endpoint langsung membalas 202
+        // beserta catatan importnya, bukan hasil akhirnya.
         $response
-            ->assertOk()
-            ->assertJsonFragment([
-                'created' => 1,
-                'updated' => 0,
-            ]);
+            ->assertStatus(202)
+            ->assertJsonPath('message', 'Import sedang diproses.')
+            ->assertJsonPath('import.file_name', 'alat.csv');
+
+        // Pada pengujian QUEUE_CONNECTION bernilai sync, sehingga ImportAlatJob
+        // sudah selesai dijalankan saat respons diterima.
+        $this->assertDatabaseHas('alat_imports', [
+            'id' => $response->json('import.id'),
+            'status' => AlatImport::STATUS_COMPLETED,
+            'created_count' => 1,
+            'updated_count' => 0,
+        ]);
 
         $this->assertDatabaseHas('alats', [
             'nama' => 'Megger',
             'jenis_alat' => 'Alat Ukur',
             'klasifikasi_alat' => 'Elektrikal',
+            'lokasi' => 'Gudang A - Rak 3',
             'total_aset' => 12,
             'area_id' => $area->id,
+        ]);
+
+        // Kode alat dibuat otomatis dengan nomor urut pertama di area tersebut.
+        $this->assertDatabaseHas('alats', [
+            'nama' => 'Megger',
+            'kode' => 'UPHK-1',
         ]);
     }
 

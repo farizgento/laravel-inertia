@@ -276,7 +276,16 @@
                                             </span>
                                         </p>
                                     </td>
-                                    <td class="px-4 py-4 text-slate-600">{{ tool.area_name }}</td>
+                                    <td class="px-4 py-4 text-slate-600">
+                                        <p>{{ tool.area_name }}</p>
+                                        <p v-if="tool.lokasi" class="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
+                                            <svg class="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <path d="M12 22s7-4.5 7-11a7 7 0 1 0-14 0c0 6.5 7 11 7 11Z" />
+                                                <circle cx="12" cy="11" r="2.5" />
+                                            </svg>
+                                            {{ tool.lokasi }}
+                                        </p>
+                                    </td>
                                     <td class="px-4 py-4">
                                         <div class="flex items-center gap-2">
                                             <span
@@ -380,6 +389,10 @@
                                         Antar Area
                                     </span>
                                 </dd>
+                            </div>
+                            <div v-if="tool.lokasi" class="flex gap-2">
+                                <dt class="w-24 shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Lokasi</dt>
+                                <dd class="min-w-0 text-slate-600">{{ tool.lokasi }}</dd>
                             </div>
                         </dl>
 
@@ -529,6 +542,19 @@
                                 class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                             />
                         </label>
+                        <label class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+                            <span>Lokasi</span>
+                            <input
+                                v-model="form.lokasi"
+                                type="text"
+                                maxlength="255"
+                                placeholder="Contoh: Gudang A - Rak 3"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            />
+                            <span class="block text-xs font-normal text-slate-500">
+                                Tempat penyimpanan fisik alat di dalam area. Boleh dikosongkan.
+                            </span>
+                        </label>
                         <label class="space-y-2 text-sm font-medium text-slate-700">
                             <span>Jenis Alat *</span>
                             <input
@@ -633,7 +659,7 @@
                         <div>
                             <h3 class="text-lg font-semibold text-slate-900">Import Data Alat</h3>
                             <p class="mt-1 text-sm text-slate-500">
-                                Upload file CSV atau XLSX dengan urutan kolom: nama alat, jenis alat, klasifikasi alat, total aset, area.
+                                Upload file CSV atau XLSX dengan urutan kolom: nama alat, jenis alat, klasifikasi alat, total aset, area, lokasi.
                             </p>
                         </div>
                         <button
@@ -675,11 +701,16 @@
                         <p>Kolom 3: klasifikasi alat</p>
                         <p>Kolom 4: total aset</p>
                         <p>Kolom 5: area</p>
+                        <p>Kolom 6: lokasi <span class="text-xs text-slate-500">(opsional)</span></p>
                         <p class="mt-3 text-xs text-slate-500">
                             Nilai klasifikasi alat harus salah satu dari `General Tools`, `Lifting Tools`, atau `Measurement Tools`.
                         </p>
                         <p class="mt-2 text-xs text-slate-500">
                             Nilai pada kolom area harus sama dengan `slug` area, misalnya `uphk`, `I.1`, atau `kstubun`.
+                        </p>
+                        <p class="mt-2 text-xs text-slate-500">
+                            Kolom lokasi diisi tempat penyimpanan alat, misalnya `Gudang A - Rak 3`. Dikosongkan berarti
+                            lokasi yang sudah tercatat dibiarkan apa adanya.
                         </p>
                     </div>
 
@@ -868,6 +899,7 @@ const perPageChoice = ref(10);
 const form = reactive({
     id: null,
     kode: '',
+    lokasi: '',
     nama: '',
     jenis_alat: '',
     klasifikasi_alat: '',
@@ -1073,6 +1105,7 @@ const closeAlert = () => {
 const resetForm = () => {
     form.id = null;
     form.kode = '';
+    form.lokasi = '';
     form.nama = '';
     form.jenis_alat = '';
     form.klasifikasi_alat = '';
@@ -1097,6 +1130,7 @@ const openEdit = (tool) => {
     }
     form.id = tool.id;
     form.kode = tool.kode && tool.kode !== '-' ? tool.kode : '';
+    form.lokasi = tool.lokasi ?? '';
     form.nama = tool.nama ?? '';
     form.jenis_alat = tool.jenis_alat ?? '';
     form.klasifikasi_alat = tool.klasifikasi_alat ?? '';
@@ -1271,9 +1305,12 @@ const loadTools = async (options = {}) => {
             nama: item.nama ?? '-',
             jenis_alat: item.jenis_alat ?? '-',
             klasifikasi_alat: item.klasifikasi_alat ?? '-',
+            lokasi: item.lokasi ?? '',
             total_aset: Number(item.total_aset ?? item.stok ?? 0),
             stok_tersedia: Number(item.stok_tersedia ?? item.stok ?? 0),
-            area_name: item.area_name ?? item.lokasi ?? '-',
+            // lokasi tidak lagi dipakai sebagai cadangan nama area karena kini
+            // berisi posisi rak/gudang, bukan nama area.
+            area_name: item.area_name ?? '-',
             area_id: item.area_id ?? '',
             is_shared_area_stock: Boolean(item.is_shared_area_stock),
         }));
@@ -1331,6 +1368,7 @@ const submitForm = async () => {
         const payload = {
             // Dikirim kosong berarti minta kode default nomor urut area.
             kode: form.kode.trim(),
+            lokasi: form.lokasi.trim(),
             nama: form.nama.trim(),
             jenis_alat: form.jenis_alat.trim(),
             klasifikasi_alat: form.klasifikasi_alat.trim(),

@@ -94,34 +94,45 @@ class AlatImportService
                     $lookup = $row['lookup'];
                     $lookupKey = $row['lookup_key'];
                     $totalAset = $row['total_aset'];
+                    $lokasi = trim((string) ($row['lokasi'] ?? ''));
                     $alat = $alatMap[$lookupKey] ?? null;
 
                     if ($alat instanceof Alat) {
                         $updated += 1;
                         $oldTotalAset = (int) $alat->total_aset;
+                        $oldLokasi = $alat->lokasi;
+                        // Kolom lokasi yang dikosongkan diartikan "biarkan apa adanya",
+                        // supaya berkas import lama tanpa kolom ini tidak menghapus
+                        // lokasi yang sudah tercatat.
+                        $lokasiBaru = $lokasi !== '' ? $lokasi : $oldLokasi;
 
-                        if ($oldTotalAset !== $totalAset) {
-                            Alat::withoutEvents(function () use ($alat, $totalAset) {
+                        if ($oldTotalAset !== $totalAset || $oldLokasi !== $lokasiBaru) {
+                            Alat::withoutEvents(function () use ($alat, $totalAset, $lokasiBaru) {
                                 $alat->forceFill([
                                     'total_aset' => $totalAset,
+                                    'lokasi' => $lokasiBaru,
                                 ]);
                                 $alat->save();
                             });
 
                             $activityPayloads[] = $this->buildImportedAlatActivityPayload('update', $alat, [
                                 'total_aset' => $oldTotalAset,
+                                'lokasi' => $oldLokasi,
                             ], [
                                 'total_aset' => $totalAset,
+                                'lokasi' => $lokasiBaru,
                             ], $import);
                         }
 
                         $alat->total_aset = $totalAset;
+                        $alat->lokasi = $lokasiBaru;
                     } else {
                         // Alat::withoutEvents() melewati hook creating pada model,
                         // jadi kode default nomor urut area dibuat eksplisit di sini.
                         $alat = Alat::withoutEvents(fn () => Alat::create([
                             ...$lookup,
                             'kode' => Alat::generateKode((int) ($lookup['area_id'] ?? 0)),
+                            'lokasi' => $lokasi !== '' ? $lokasi : null,
                             'total_aset' => $totalAset,
                         ]));
 
@@ -131,6 +142,7 @@ class AlatImportService
                             'nama' => $alat->nama,
                             'jenis_alat' => $alat->jenis_alat,
                             'klasifikasi_alat' => $alat->klasifikasi_alat,
+                            'lokasi' => $alat->lokasi,
                             'total_aset' => (int) $alat->total_aset,
                             'area_id' => (int) $alat->area_id,
                         ], $import);
@@ -188,6 +200,9 @@ class AlatImportService
             $klasifikasiAlat = $this->normalizeImportedText($cells[2] ?? null);
             $totalAset = $this->normalizeImportedNumber($cells[3] ?? null);
             $areaSlug = mb_strtolower($this->normalizeImportedText($cells[4] ?? null));
+            // Kolom keenam bersifat opsional supaya berkas import lama yang hanya
+            // punya lima kolom tetap bisa diproses.
+            $lokasi = $this->normalizeImportedText($cells[5] ?? null);
 
             if ($nama === '' && $jenisAlat === '' && $klasifikasiAlat === '' && $totalAset === null && $areaSlug === '') {
                 continue;
@@ -205,6 +220,9 @@ class AlatImportService
                 $rowErrors[] = 'klasifikasi alat wajib diisi';
             } elseif (mb_strlen($klasifikasiAlat) > 255) {
                 $rowErrors[] = 'klasifikasi alat maksimal 255 karakter';
+            }
+            if (mb_strlen($lokasi) > 255) {
+                $rowErrors[] = 'lokasi maksimal 255 karakter';
             }
             if ($totalAset === null) {
                 $rowErrors[] = 'total aset harus berupa angka bulat >= 0';
@@ -233,6 +251,7 @@ class AlatImportService
             $validatedRows[] = [
                 'lookup' => $lookup,
                 'lookup_key' => $this->makeAlatLookupKey($nama, $jenisAlat, $klasifikasiAlat, (int) $lookup['area_id']),
+                'lokasi' => $lokasi,
                 'total_aset' => (int) $totalAset,
             ];
         }
@@ -268,7 +287,7 @@ class AlatImportService
         Alat::query()
             ->whereIn('area_id', $areaIds)
             ->whereIn('nama', $names)
-            ->get(['id', 'nama', 'jenis_alat', 'klasifikasi_alat', 'total_aset', 'area_id'])
+            ->get(['id', 'nama', 'jenis_alat', 'klasifikasi_alat', 'lokasi', 'total_aset', 'area_id'])
             ->each(function (Alat $alat) use (&$alatMap) {
                 $alatMap[$this->makeAlatLookupKey(
                     (string) $alat->nama,
