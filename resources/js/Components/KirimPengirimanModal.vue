@@ -63,6 +63,20 @@
                     </div>
 
                     <div>
+                        <label class="text-sm font-semibold text-slate-900" for="resi-pengiriman">
+                            Nomor Resi
+                        </label>
+                        <input
+                            id="resi-pengiriman"
+                            v-model="resi"
+                            class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                            type="text"
+                            maxlength="255"
+                            placeholder="Nomor resi (opsional)"
+                        />
+                    </div>
+
+                    <div>
                         <div class="flex flex-wrap items-start justify-between gap-2">
                             <div>
                                 <label class="text-sm font-semibold text-slate-900" for="foto-pengiriman">
@@ -197,6 +211,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'submit']);
 
 const senderName = ref('');
+const resi = ref('');
 const photoInput = ref(null);
 const photoItems = ref([]);
 const validationError = ref('');
@@ -295,6 +310,7 @@ const submitShipping = () => {
     emit('submit', {
         peminjamanId: props.item?.id ?? null,
         pengirimNama: name,
+        resi: resi.value.trim() || null,
         photos: photoItems.value.map((photo) => photo.file),
     });
 };
@@ -303,6 +319,7 @@ watch(
     () => props.item,
     (next) => {
         senderName.value = next?.pengirimNama ?? '';
+        resi.value = next?.resi ?? '';
         clearPhotos();
         validationError.value = '';
     },

@@ -31,10 +31,10 @@
                             v-if="templateWarnings.length"
                             class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800"
                         >
-                            <p class="font-semibold">Sebagian alat dari template disesuaikan dengan stok.</p>
+                            <p class="font-semibold">Sebagian alat disesuaikan dengan stok yang tersedia.</p>
                             <ul class="mt-2 space-y-1">
                                 <li v-for="warning in templateWarnings" :key="warning.id">
-                                    {{ warning.nama }}: template {{ warning.requested_qty }}, stok tersedia {{ warning.available_qty }}, masuk keranjang {{ warning.usable_qty }}.
+                                    {{ warning.nama }}: diminta {{ warning.requested_qty }}, stok tersedia {{ warning.available_qty }}, masuk keranjang {{ warning.usable_qty }}.
                                 </li>
                             </ul>
                         </div>
@@ -92,14 +92,27 @@
                     </div>
 
                     <div class="border-t border-slate-100 px-5 py-4">
-                        <button
-                            class="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-                            type="button"
-                            :disabled="!cartItems.length"
-                        @click="emit('checkout')"
-                    >
-                            Checkout ({{ totalItems }} item)
-                        </button>
+                        <div class="flex gap-2">
+                            <button
+                                class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                                type="button"
+                                title="Tutup keranjang dan pilih alat lain dari katalog"
+                                @click="emit('add-more')"
+                            >
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                                Tambah Lagi
+                            </button>
+                            <button
+                                class="flex-1 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+                                type="button"
+                                :disabled="!cartItems.length"
+                                @click="emit('checkout')"
+                            >
+                                Checkout ({{ totalItems }} item)
+                            </button>
+                        </div>
                     </div>
                 </div>
             </aside>
@@ -137,5 +150,6 @@ const emit = defineEmits([
     'increase',
     'decrease',
     'checkout',
+    'add-more',
 ]);
 </script>

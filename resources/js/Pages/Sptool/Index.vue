@@ -12,21 +12,21 @@
     </div>
 
     <section class="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
-            <p class="text-sm text-slate-500">Total Perlu Aksi</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900">{{ totalCount }}</p>
-        </div>
-        <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
-            <p class="text-sm text-slate-500">Perlu Direview</p>
-            <p class="mt-2 text-2xl font-semibold text-blue-600">{{ reviewCount }}</p>
-        </div>
-        <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
-            <p class="text-sm text-slate-500">Perlu Disetujui</p>
-            <p class="mt-2 text-2xl font-semibold text-amber-500">{{ approvalCount }}</p>
-        </div>
-        <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
-            <p class="text-sm text-slate-500">Antar Area</p>
-            <p class="mt-2 text-2xl font-semibold text-emerald-600">{{ interAreaCount }}</p>
+        <div
+            v-for="card in summaryCards"
+            :key="card.label"
+            class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50"
+        >
+            <div class="flex items-start justify-between gap-3">
+                <p class="text-sm text-slate-500">{{ card.label }}</p>
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" :class="card.iconClass">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path :d="card.icon" />
+                    </svg>
+                </span>
+            </div>
+            <p class="mt-2 text-2xl font-semibold tabular-nums" :class="card.valueClass">{{ card.value }}</p>
+            <p class="mt-1 text-xs text-slate-400">{{ card.hint }}</p>
         </div>
     </section>
 
@@ -52,7 +52,7 @@
         </div>
 
         <div class="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div class="relative flex-1">
+            <div class="relative min-w-0 flex-1">
                 <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
                     <svg
                         class="h-4 w-4"
@@ -69,10 +69,22 @@
                 </span>
                 <input
                     v-model="search"
-                    class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-10 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                     type="text"
                     placeholder="Cari pekerjaan atau ID..."
                 />
+                <button
+                    v-if="search"
+                    class="absolute inset-y-0 right-2 my-auto flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                    type="button"
+                    title="Kosongkan pencarian"
+                    aria-label="Kosongkan pencarian"
+                    @click="search = ''"
+                >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
             <div class="w-full lg:w-56">
                 <select
@@ -86,87 +98,296 @@
             </div>
         </div>
 
-        <div class="mt-4">
-            <p v-if="isLoading" class="text-sm text-slate-500">Memuat data peminjaman...</p>
-            <p v-else-if="loadError" class="text-sm text-rose-500">{{ loadError }}</p>
-            <p v-else-if="!filteredItems.length" class="text-sm text-slate-500">
-                Belum ada peminjaman yang memerlukan aksi.
-            </p>
-            <div v-else class="overflow-hidden rounded-2xl border border-slate-200">
-                <div class="overflow-x-auto">
-                    <table class="min-w-[1040px] w-full text-sm">
-                        <thead class="bg-slate-50">
-                            <tr class="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                                <th class="px-4 py-3">Dibuat</th>
-                                <th class="px-4 py-3">Pekerjaan</th>
-                                <th class="px-4 py-3">Peminjam</th>
-                                <th class="px-4 py-3">Kategori</th>
-                                <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3">Direview/Disetujui</th>
-                                <th class="px-4 py-3">Periode</th>
-                                <th class="px-4 py-3 text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 bg-white">
-                            <tr
-                                v-for="item in filteredItems"
-                                :key="item.id"
-                                class="transition hover:bg-slate-50"
+        <div v-if="hasActiveFilters" class="mt-3 flex flex-wrap items-center gap-2">
+            <span class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Filter aktif</span>
+            <span
+                v-if="search.trim()"
+                class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 py-1 pl-3 pr-1.5 text-xs font-semibold text-blue-700"
+            >
+                <span class="truncate">Pencarian: "{{ search.trim() }}"</span>
+                <button
+                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition hover:bg-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                    type="button"
+                    title="Hapus filter pencarian"
+                    aria-label="Hapus filter pencarian"
+                    @click="search = ''"
+                >
+                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                        <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </span>
+            <span
+                v-if="statusFilter !== 'Semua'"
+                class="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 py-1 pl-3 pr-1.5 text-xs font-semibold text-blue-700"
+            >
+                Status: {{ statusFilter }}
+                <button
+                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition hover:bg-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                    type="button"
+                    title="Hapus filter status"
+                    aria-label="Hapus filter status"
+                    @click="statusFilter = 'Semua'"
+                >
+                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                        <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </span>
+            <button
+                class="text-xs font-semibold text-slate-500 underline underline-offset-2 transition hover:text-slate-700"
+                type="button"
+                @click="resetFilters"
+            >
+                Reset semua
+            </button>
+        </div>
+
+        <div class="mt-5" aria-live="polite" :aria-busy="isLoading">
+            <!-- Loading -->
+            <div v-if="isLoading" class="overflow-hidden rounded-2xl border border-slate-200">
+                <div class="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    <svg class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" class="opacity-25" />
+                        <path d="M21 12a9 9 0 0 1-9 9" class="opacity-75" />
+                    </svg>
+                    Memuat data peminjaman...
+                </div>
+                <div class="divide-y divide-slate-100 bg-white">
+                    <div v-for="row in 4" :key="`skeleton-${row}`" class="flex items-center gap-4 px-4 py-4">
+                        <div class="h-9 w-24 shrink-0 animate-pulse rounded-lg bg-slate-100"></div>
+                        <div class="h-9 flex-1 animate-pulse rounded-lg bg-slate-100"></div>
+                        <div class="h-9 w-32 shrink-0 animate-pulse rounded-lg bg-slate-100"></div>
+                        <div class="h-6 w-28 shrink-0 animate-pulse rounded-full bg-slate-100"></div>
+                        <div class="h-9 w-24 shrink-0 animate-pulse rounded-lg bg-slate-100"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error -->
+            <div
+                v-else-if="loadError"
+                class="flex flex-col items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-5 sm:flex-row sm:items-center sm:justify-between"
+                role="alert"
+            >
+                <div class="flex items-start gap-3">
+                    <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M10.3 4.3 2.9 17.1a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z" />
+                            <path d="M12 9v4M12 17h.01" />
+                        </svg>
+                    </span>
+                    <div>
+                        <p class="text-sm font-semibold text-rose-800">Gagal memuat data</p>
+                        <p class="mt-0.5 text-sm text-rose-700">{{ loadError }}</p>
+                    </div>
+                </div>
+                <button
+                    class="h-10 shrink-0 rounded-xl border border-rose-300 bg-white px-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300"
+                    type="button"
+                    @click="loadHistory"
+                >
+                    Coba lagi
+                </button>
+            </div>
+
+            <!-- Empty -->
+            <div v-else-if="!filteredItems.length" class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-6 py-12 text-center">
+                <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm">
+                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m9 12 2 2 4-4" />
+                        <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z" />
+                    </svg>
+                </span>
+                <p class="mt-3 text-sm font-semibold text-slate-700">
+                    {{ hasActiveFilters ? 'Tidak ada peminjaman yang cocok' : 'Tidak ada yang perlu ditindak' }}
+                </p>
+                <p class="mx-auto mt-1 max-w-md text-sm text-slate-500">
+                    {{
+                        hasActiveFilters
+                            ? 'Coba ubah kata kunci atau pilih status lain untuk memperluas hasil pencarian.'
+                            : 'Semua pengajuan peminjaman sudah direview. Pengajuan baru akan muncul di sini.'
+                    }}
+                </p>
+                <button
+                    v-if="hasActiveFilters"
+                    class="mt-4 h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                    type="button"
+                    @click="resetFilters"
+                >
+                    Reset filter
+                </button>
+            </div>
+
+            <!-- Tabel (md ke atas) -->
+            <div v-else>
+                <div class="hidden overflow-hidden rounded-2xl border border-slate-200 md:block">
+                    <div class="max-h-[68vh] overflow-auto">
+                        <table class="w-full min-w-[900px] text-sm">
+                            <caption class="sr-only">
+                                Daftar peminjaman yang menunggu review atau persetujuan
+                            </caption>
+                            <thead class="sticky top-0 z-10 bg-slate-50">
+                                <tr class="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                    <th scope="col" class="border-b border-slate-200 px-4 py-3">Dibuat</th>
+                                    <th scope="col" class="border-b border-slate-200 px-4 py-3">Pekerjaan</th>
+                                    <th scope="col" class="border-b border-slate-200 px-4 py-3">Peminjam</th>
+                                    <th scope="col" class="border-b border-slate-200 px-4 py-3">Status</th>
+                                    <th scope="col" class="border-b border-slate-200 px-4 py-3">Periode</th>
+                                    <th scope="col" class="border-b border-slate-200 px-4 py-3 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 bg-white">
+                                <tr
+                                    v-for="item in filteredItems"
+                                    :key="item.id"
+                                    class="align-top transition hover:bg-slate-50/70"
                                 >
-                                <td class="px-4 py-4 align-top text-slate-600">
-                                    {{ item.createdAt }}
-                                </td>
-                                <td class="px-4 py-4 align-top">
-                                    <p class="font-semibold text-slate-900">{{ item.title }}</p>
-                                    <p class="mt-1 text-xs text-slate-500">ID #{{ item.id }}</p>
-                                </td>
-                                <td class="px-4 py-4 align-top text-slate-700">
-                                    {{ item.userName }}
-                                </td>
-                                <td class="px-4 py-4 align-top">
+                                    <td class="whitespace-nowrap px-4 py-4">
+                                        <p class="font-medium text-slate-700">{{ splitDateTime(item.createdAt).date }}</p>
+                                        <p class="mt-0.5 text-xs tabular-nums text-slate-500">
+                                            {{ splitDateTime(item.createdAt).time }}
+                                        </p>
+                                    </td>
+                                    <td class="max-w-[22rem] px-4 py-4">
+                                        <p class="line-clamp-2 font-semibold text-slate-900" :title="item.title">{{ item.title }}</p>
+                                        <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                                            <span class="font-mono">#{{ item.id }}</span>
+                                            <span aria-hidden="true">&middot;</span>
+                                            <span>{{ item.itemCount }} item</span>
+                                            <span
+                                                class="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                                                :class="kategoriClass(item.kategori)"
+                                            >
+                                                {{ item.kategori }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <p class="font-semibold text-slate-900">{{ item.userName }}</p>
+                                        <p class="mt-0.5 text-xs text-slate-500">
+                                            Direview: {{ reviewApprovalLabel(item) }}
+                                        </p>
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-semibold"
+                                            :class="statusClass(item.status)"
+                                        >
+                                            <span class="h-1.5 w-1.5 rounded-full" :class="statusDotClass(item.status)" aria-hidden="true"></span>
+                                            {{ item.status }}
+                                        </span>
+                                        <p v-if="isReviewableItem(item)" class="mt-1 text-[11px] font-semibold text-blue-600">
+                                            Menunggu aksi Anda
+                                        </p>
+                                    </td>
+                                    <td class="whitespace-nowrap px-4 py-4 text-slate-600">
+                                        <p class="text-xs">{{ item.borrowDate }}</p>
+                                        <p class="mt-0.5 text-xs text-slate-500">s/d {{ item.returnDate }}</p>
+                                    </td>
+                                    <td class="px-4 py-4 text-right">
+                                        <button
+                                            class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2"
+                                            :class="
+                                                isReviewableItem(item)
+                                                    ? 'bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-300'
+                                                    : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700 focus-visible:ring-blue-200'
+                                            "
+                                            type="button"
+                                            @click="openDetail(item)"
+                                        >
+                                            <svg
+                                                v-if="isReviewableItem(item)"
+                                                class="h-4 w-4"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                                            >
+                                                <path d="M9 11l3 3L22 4" />
+                                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                                            </svg>
+                                            <svg
+                                                v-else
+                                                class="h-4 w-4"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                                            >
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                                                <circle cx="12" cy="12" r="3" />
+                                            </svg>
+                                            {{ isReviewableItem(item) ? 'Review' : 'Detail' }}
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Kartu (di bawah md) -->
+                <ul class="space-y-3 md:hidden">
+                    <li
+                        v-for="item in filteredItems"
+                        :key="`card-${item.id}`"
+                        class="rounded-2xl border bg-white p-4"
+                        :class="isReviewableItem(item) ? 'border-blue-200 ring-1 ring-blue-100' : 'border-slate-200'"
+                    >
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="font-semibold text-slate-900">{{ item.title }}</p>
+                                <p class="mt-0.5 font-mono text-xs text-slate-500">#{{ item.id }}</p>
+                            </div>
+                            <span
+                                class="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold"
+                                :class="statusClass(item.status)"
+                            >
+                                <span class="h-1.5 w-1.5 rounded-full" :class="statusDotClass(item.status)" aria-hidden="true"></span>
+                                {{ item.status }}
+                            </span>
+                        </div>
+
+                        <dl class="mt-3 space-y-1.5 text-sm">
+                            <div class="flex gap-2">
+                                <dt class="w-24 shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Peminjam</dt>
+                                <dd class="min-w-0 text-slate-600">
+                                    <span class="font-semibold text-slate-900">{{ item.userName }}</span>
+                                    <span class="block text-xs text-slate-500">Direview: {{ reviewApprovalLabel(item) }}</span>
+                                </dd>
+                            </div>
+                            <div class="flex gap-2">
+                                <dt class="w-24 shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Periode</dt>
+                                <dd class="min-w-0 text-slate-600">{{ item.borrowDate }} s/d {{ item.returnDate }}</dd>
+                            </div>
+                            <div class="flex gap-2">
+                                <dt class="w-24 shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Item</dt>
+                                <dd class="min-w-0 text-slate-600">
+                                    {{ item.itemCount }} item
                                     <span
-                                        class="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold"
+                                        class="ml-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
                                         :class="kategoriClass(item.kategori)"
                                     >
                                         {{ item.kategori }}
                                     </span>
-                                </td>
-                                <td class="px-4 py-4 align-top">
-                                    <span class="inline-flex rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold text-blue-600">
-                                        {{ item.status }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-4 align-top text-slate-700">
-                                    {{ reviewApprovalLabel(item) }}
-                                </td>
-                                <td class="px-4 py-4 align-top text-slate-600">
-                                    {{ item.borrowDate }} - {{ item.returnDate }}
-                                </td>
-                                <td class="px-4 py-4 text-center align-top">
-                                    <button
-                                        class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700"
-                                        type="button"
-                                        @click="openDetail(item)"
-                                    >
-                                        <svg
-                                            class="h-4 w-4"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                        >
-                                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
-                                            <circle cx="12" cy="12" r="3" />
-                                        </svg>
-                                        {{ isReviewableItem(item) ? 'Review' : 'Detail' }}
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <button
+                            class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition"
+                            :class="
+                                isReviewableItem(item)
+                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                    : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700'
+                            "
+                            type="button"
+                            @click="openDetail(item)"
+                        >
+                            {{ isReviewableItem(item) ? 'Review sekarang' : 'Lihat detail' }}
+                        </button>
+                    </li>
+                </ul>
+
+                <p class="mt-4 border-t border-slate-200 pt-4 text-sm text-slate-500">
+                    Menampilkan <span class="font-semibold text-slate-700">{{ filteredItems.length }}</span>
+                    dari <span class="font-semibold text-slate-700">{{ totalCount }}</span> peminjaman
+                </p>
             </div>
         </div>
     </section>
@@ -269,6 +490,78 @@ const totalCount = computed(() => items.value.length);
 const reviewCount = computed(() => items.value.filter((item) => item.status === 'Perlu Direview').length);
 const approvalCount = computed(() => items.value.filter((item) => item.status === 'Perlu Disetujui').length);
 const interAreaCount = computed(() => items.value.filter((item) => item.kategori === 'Antar Area').length);
+const actionableCount = computed(() => items.value.filter((item) => isReviewableItem(item)).length);
+
+const summaryCards = computed(() => [
+    {
+        label: 'Total Perlu Aksi',
+        value: totalCount.value,
+        hint: actionableCount.value
+            ? `${actionableCount.value} menunggu aksi Anda`
+            : 'Tidak ada yang menunggu Anda',
+        icon: 'M3 4h18l-7 8v6l-4 2v-8L3 4z',
+        iconClass: 'bg-slate-100 text-slate-500',
+        valueClass: 'text-slate-900',
+    },
+    {
+        label: 'Perlu Direview',
+        value: reviewCount.value,
+        hint: 'Menunggu review area peminjam',
+        icon: 'M12 8v4l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z',
+        iconClass: 'bg-blue-50 text-blue-600',
+        valueClass: 'text-blue-600',
+    },
+    {
+        label: 'Perlu Disetujui',
+        value: approvalCount.value,
+        hint: 'Menunggu persetujuan area pemilik',
+        icon: 'm9 12 2 2 4-4M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z',
+        iconClass: 'bg-amber-50 text-amber-600',
+        valueClass: 'text-amber-500',
+    },
+    {
+        label: 'Antar Area',
+        value: interAreaCount.value,
+        hint: 'Pengajuan lintas area',
+        icon: 'M4 7h11M4 7l3-3M4 7l3 3M20 17H9m11 0-3-3m3 3-3 3',
+        iconClass: 'bg-emerald-50 text-emerald-600',
+        valueClass: 'text-emerald-600',
+    },
+]);
+
+const hasActiveFilters = computed(() => search.value.trim() !== '' || statusFilter.value !== 'Semua');
+
+const resetFilters = () => {
+    search.value = '';
+    statusFilter.value = 'Semua';
+};
+
+const statusClass = (status) =>
+    status === 'Perlu Direview' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700';
+
+// Titik warna hanya penegas; label teks status tetap menjadi pembeda utamanya.
+const statusDotClass = (status) => (status === 'Perlu Direview' ? 'bg-blue-500' : 'bg-amber-500');
+
+// createdAt dikirim backend sebagai "d M Y H:i", dipisah hanya untuk tampilan dan
+// otomatis kembali menampilkan nilai apa adanya bila formatnya berbeda.
+const splitDateTime = (value) => {
+    const raw = String(value ?? '').trim();
+    if (!raw) {
+        return { date: '-', time: '' };
+    }
+
+    const separatorIndex = raw.lastIndexOf(' ');
+    if (separatorIndex === -1) {
+        return { date: raw, time: '' };
+    }
+
+    const time = raw.slice(separatorIndex + 1);
+    if (!/^\d{1,2}:\d{2}(:\d{2})?$/.test(time)) {
+        return { date: raw, time: '' };
+    }
+
+    return { date: raw.slice(0, separatorIndex), time };
+};
 
 const openDetail = (item) => {
     selectedItem.value = {

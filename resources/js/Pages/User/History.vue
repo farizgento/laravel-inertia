@@ -5,21 +5,21 @@
     </div>
 
     <section class="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
-            <p class="text-sm text-slate-500">Total</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900">{{ totalCount }}</p>
-        </div>
-        <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
-            <p class="text-sm text-slate-500">Perlu Review</p>
-            <p class="mt-2 text-2xl font-semibold text-blue-600">{{ reviewCount }}</p>
-        </div>
-        <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
-            <p class="text-sm text-slate-500">Disetujui</p>
-            <p class="mt-2 text-2xl font-semibold text-amber-500">{{ processCount }}</p>
-        </div>
-        <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50">
-            <p class="text-sm text-slate-500">Dikirim</p>
-            <p class="mt-2 text-2xl font-semibold text-emerald-600">{{ deliveredCount }}</p>
+        <div
+            v-for="card in summaryCards"
+            :key="card.label"
+            class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-xl shadow-slate-200/50"
+        >
+            <div class="flex items-start justify-between gap-3">
+                <p class="text-sm text-slate-500">{{ card.label }}</p>
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" :class="card.iconClass">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path :d="card.icon" />
+                    </svg>
+                </span>
+            </div>
+            <p class="mt-2 text-2xl font-semibold tabular-nums" :class="card.valueClass">{{ card.value }}</p>
+            <p class="mt-1 text-xs text-slate-400">{{ card.hint }}</p>
         </div>
     </section>
 
@@ -45,7 +45,7 @@
         </div>
 
         <div class="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div class="relative flex-1">
+            <div class="relative min-w-0 flex-1">
                 <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
                     <svg
                         class="h-4 w-4"
@@ -62,10 +62,22 @@
                 </span>
                 <input
                     v-model="search"
-                    class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-10 text-sm text-slate-700 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                     type="text"
                     placeholder="Cari pekerjaan atau ID..."
                 />
+                <button
+                    v-if="search"
+                    class="absolute inset-y-0 right-2 my-auto flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                    type="button"
+                    title="Kosongkan pencarian"
+                    aria-label="Kosongkan pencarian"
+                    @click="search = ''"
+                >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
             <div class="w-full lg:w-56">
                 <select
@@ -123,204 +135,457 @@
             </button>
         </div>
 
-        <div class="mt-4">
-            <p v-if="isLoading" class="text-sm text-slate-500">Memuat data peminjaman...</p>
-            <p v-else-if="loadError" class="text-sm text-rose-500">{{ loadError }}</p>
-            <p v-else-if="!filteredItems.length" class="text-sm text-slate-500">
-                Belum ada peminjaman.
-            </p>
-            <div v-else class="overflow-hidden rounded-2xl border border-slate-200">
-                <div class="overflow-x-auto">
-                    <table class="min-w-[1320px] w-full text-sm">
-                        <thead class="bg-slate-50">
-                            <tr class="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                                <th class="px-4 py-3">Dibuat</th>
-                                <th class="px-4 py-3">Pekerjaan</th>
-                                <th class="px-4 py-3">Peminjam</th>
-                                <th class="px-4 py-3">Direview/Disetujui</th>
-                                <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3">Kategori</th>
-                                <th class="px-4 py-3">Periode</th>
-                                <th class="px-4 py-3">Item</th>
-                                <th class="px-4 py-3 text-right">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 bg-white">
-                            <tr
-                            v-for="item in filteredItems"
-                            :key="item.id"
-                            class="align-top transition hover:bg-slate-50"
-                            >
-                            <td class="px-4 py-4 text-slate-600">
-                                {{ item.createdAt }}
-                            </td>
-                            <td class="px-4 py-4">
+        <div v-if="hasActiveFilters" class="mt-3 flex flex-wrap items-center gap-2">
+            <span class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Filter aktif</span>
+            <span
+                v-if="search.trim()"
+                class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 py-1 pl-3 pr-1.5 text-xs font-semibold text-blue-700"
+            >
+                <span class="truncate">Pencarian: "{{ search.trim() }}"</span>
+                <button
+                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition hover:bg-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                    type="button"
+                    title="Hapus filter pencarian"
+                    aria-label="Hapus filter pencarian"
+                    @click="search = ''"
+                >
+                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                        <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </span>
+            <span
+                v-if="statusFilter !== 'Semua'"
+                class="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 py-1 pl-3 pr-1.5 text-xs font-semibold text-blue-700"
+            >
+                Status: {{ statusFilter }}
+                <button
+                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition hover:bg-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                    type="button"
+                    title="Hapus filter status"
+                    aria-label="Hapus filter status"
+                    @click="statusFilter = 'Semua'"
+                >
+                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                        <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </span>
+            <span
+                v-if="kategoriFilter !== 'Semua'"
+                class="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 py-1 pl-3 pr-1.5 text-xs font-semibold text-blue-700"
+            >
+                Kategori: {{ kategoriFilter }}
+                <button
+                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition hover:bg-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                    type="button"
+                    title="Hapus filter kategori"
+                    aria-label="Hapus filter kategori"
+                    @click="kategoriFilter = 'Semua'"
+                >
+                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                        <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </span>
+            <button
+                class="text-xs font-semibold text-slate-500 underline underline-offset-2 transition hover:text-slate-700"
+                type="button"
+                @click="resetFilters"
+            >
+                Reset semua
+            </button>
+        </div>
+
+        <div class="mt-5" aria-live="polite" :aria-busy="isLoading">
+            <!-- Loading -->
+            <div v-if="isLoading" class="overflow-hidden rounded-2xl border border-slate-200">
+                <div class="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    <svg class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" class="opacity-25" />
+                        <path d="M21 12a9 9 0 0 1-9 9" class="opacity-75" />
+                    </svg>
+                    Memuat data peminjaman...
+                </div>
+                <div class="divide-y divide-slate-100 bg-white">
+                    <div v-for="row in 5" :key="`skeleton-${row}`" class="flex items-center gap-4 px-4 py-4">
+                        <div class="h-9 w-24 shrink-0 animate-pulse rounded-lg bg-slate-100"></div>
+                        <div class="h-9 flex-1 animate-pulse rounded-lg bg-slate-100"></div>
+                        <div class="h-9 w-32 shrink-0 animate-pulse rounded-lg bg-slate-100"></div>
+                        <div class="h-6 w-24 shrink-0 animate-pulse rounded-full bg-slate-100"></div>
+                        <div class="h-9 w-28 shrink-0 animate-pulse rounded-lg bg-slate-100"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error -->
+            <div
+                v-else-if="loadError"
+                class="flex flex-col items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-5 sm:flex-row sm:items-center sm:justify-between"
+                role="alert"
+            >
+                <div class="flex items-start gap-3">
+                    <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M10.3 4.3 2.9 17.1a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z" />
+                            <path d="M12 9v4M12 17h.01" />
+                        </svg>
+                    </span>
+                    <div>
+                        <p class="text-sm font-semibold text-rose-800">Gagal memuat data</p>
+                        <p class="mt-0.5 text-sm text-rose-700">{{ loadError }}</p>
+                    </div>
+                </div>
+                <button
+                    class="h-10 shrink-0 rounded-xl border border-rose-300 bg-white px-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300"
+                    type="button"
+                    @click="loadHistory"
+                >
+                    Coba lagi
+                </button>
+            </div>
+
+            <!-- Empty -->
+            <div v-else-if="!filteredItems.length" class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-6 py-12 text-center">
+                <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm">
+                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
+                    </svg>
+                </span>
+                <p class="mt-3 text-sm font-semibold text-slate-700">
+                    {{ hasActiveFilters ? 'Tidak ada peminjaman yang cocok' : 'Belum ada peminjaman' }}
+                </p>
+                <p class="mx-auto mt-1 max-w-md text-sm text-slate-500">
+                    {{
+                        hasActiveFilters
+                            ? 'Coba ubah kata kunci, status, atau kategori untuk memperluas hasil pencarian.'
+                            : 'Riwayat peminjaman akan muncul di sini setelah ada pengajuan peminjaman alat.'
+                    }}
+                </p>
+                <button
+                    v-if="hasActiveFilters"
+                    class="mt-4 h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                    type="button"
+                    @click="resetFilters"
+                >
+                    Reset filter
+                </button>
+            </div>
+
+            <!-- Tabel (md ke atas) -->
+            <div v-else>
+                <div class="hidden overflow-hidden rounded-2xl border border-slate-200 md:block">
+                    <div class="max-h-[68vh] overflow-auto">
+                        <table class="w-full min-w-[960px] text-sm">
+                            <caption class="sr-only">
+                                Daftar riwayat peminjaman beserta status dan periode pinjamnya
+                            </caption>
+                            <thead class="sticky top-0 z-10 bg-slate-50">
+                                <tr class="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                    <th scope="col" class="border-b border-slate-200 px-4 py-3">Dibuat</th>
+                                    <th scope="col" class="border-b border-slate-200 px-4 py-3">Pekerjaan</th>
+                                    <th scope="col" class="border-b border-slate-200 px-4 py-3">Peminjam</th>
+                                    <th scope="col" class="border-b border-slate-200 px-4 py-3">Status</th>
+                                    <th scope="col" class="border-b border-slate-200 px-4 py-3">Periode</th>
+                                    <th scope="col" class="border-b border-slate-200 px-4 py-3 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 bg-white">
+                                <tr
+                                    v-for="item in filteredItems"
+                                    :key="item.id"
+                                    class="align-top transition hover:bg-slate-50/70"
+                                >
+                                    <td class="whitespace-nowrap px-4 py-4">
+                                        <p class="font-medium text-slate-700">{{ splitDateTime(item.createdAt).date }}</p>
+                                        <p class="mt-0.5 text-xs tabular-nums text-slate-500">
+                                            {{ splitDateTime(item.createdAt).time }}
+                                        </p>
+                                    </td>
+                                    <td class="max-w-[22rem] px-4 py-4">
+                                        <p class="line-clamp-2 font-semibold text-slate-900" :title="item.title">{{ item.title }}</p>
+                                        <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                                            <span class="font-mono">#{{ item.id }}</span>
+                                            <span aria-hidden="true">&middot;</span>
+                                            <span>{{ item.itemCount }} item</span>
+                                            <span
+                                                class="inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                                                :class="kategoriClass(item.kategori)"
+                                            >
+                                                {{ item.kategori }}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <p class="font-semibold text-slate-900">{{ item.userName }}</p>
+                                        <p class="mt-0.5 text-xs text-slate-500">
+                                            Disetujui: {{ reviewApprovalLabel(item) }}
+                                        </p>
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-semibold"
+                                            :class="statusClass(item.status)"
+                                        >
+                                            <span class="h-1.5 w-1.5 rounded-full" :class="statusDotClass(item.status)" aria-hidden="true"></span>
+                                            {{ item.status }}
+                                        </span>
+                                    </td>
+                                    <td class="whitespace-nowrap px-4 py-4 text-slate-600">
+                                        <p class="text-xs">{{ item.borrowDate }}</p>
+                                        <p class="mt-0.5 text-xs text-slate-500">s/d {{ item.returnDate }}</p>
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <div class="flex items-center justify-end gap-1">
+                                            <button
+                                                v-if="hasSuratJalan(item)"
+                                                class="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200"
+                                                type="button"
+                                                title="Lihat surat jalan"
+                                                aria-label="Lihat surat jalan"
+                                                @click="openSuratJalan(item)"
+                                            >
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                                    <path d="M14 2v6h6" />
+                                                    <path d="M16 13H8" />
+                                                    <path d="M16 17H8" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                                                type="button"
+                                                title="Lihat detail peminjaman"
+                                                aria-label="Lihat detail peminjaman"
+                                                @click="openDetail(item)"
+                                            >
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                                                    <circle cx="12" cy="12" r="3" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                v-if="canRepeatPeminjaman(item)"
+                                                class="flex h-8 w-8 items-center justify-center rounded-lg border border-cyan-200 bg-cyan-50 text-cyan-700 transition hover:border-cyan-300 hover:bg-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
+                                                type="button"
+                                                title="Ajukan ulang peminjaman ini"
+                                                aria-label="Ajukan ulang peminjaman ini"
+                                                @click="repeatPeminjaman(item)"
+                                            >
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M17 1l4 4-4 4" />
+                                                    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                                                    <path d="M7 23l-4-4 4-4" />
+                                                    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                v-if="canManagePeminjaman"
+                                                class="flex h-8 w-8 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-700 transition hover:border-blue-300 hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                                                type="button"
+                                                title="Edit peminjaman"
+                                                aria-label="Edit peminjaman"
+                                                @click="openEdit(item)"
+                                            >
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M12 20h9" />
+                                                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                v-if="canManagePeminjaman"
+                                                class="flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 disabled:cursor-not-allowed disabled:opacity-60"
+                                                type="button"
+                                                :disabled="deletingId === item.id"
+                                                :title="deletingId === item.id ? 'Menghapus...' : 'Hapus peminjaman'"
+                                                :aria-label="deletingId === item.id ? 'Menghapus peminjaman' : 'Hapus peminjaman'"
+                                                @click="deletePeminjaman(item)"
+                                            >
+                                                <svg v-if="deletingId === item.id" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                    <circle cx="12" cy="12" r="9" class="opacity-25" />
+                                                    <path d="M21 12a9 9 0 0 1-9 9" class="opacity-75" />
+                                                </svg>
+                                                <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M3 6h18" />
+                                                    <path d="M8 6V4h8v2" />
+                                                    <path d="M19 6l-1 14H6L5 6" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Kartu (di bawah md) -->
+                <ul class="space-y-3 md:hidden">
+                    <li
+                        v-for="item in filteredItems"
+                        :key="`card-${item.id}`"
+                        class="rounded-2xl border border-slate-200 bg-white p-4"
+                    >
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
                                 <p class="font-semibold text-slate-900">{{ item.title }}</p>
-                                <p class="mt-1 text-xs text-slate-500">ID #{{ item.id }}</p>
-                            </td>
-                            <td class="px-4 py-4">
-                                    <p class="font-semibold text-slate-900">{{ item.userName }}</p>
-                                </td>
-                                <td class="px-4 py-4">
+                                <p class="mt-0.5 font-mono text-xs text-slate-500">#{{ item.id }}</p>
+                            </div>
+                            <span
+                                class="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold"
+                                :class="statusClass(item.status)"
+                            >
+                                <span class="h-1.5 w-1.5 rounded-full" :class="statusDotClass(item.status)" aria-hidden="true"></span>
+                                {{ item.status }}
+                            </span>
+                        </div>
+
+                        <dl class="mt-3 space-y-1.5 text-sm">
+                            <div class="flex gap-2">
+                                <dt class="w-24 shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Peminjam</dt>
+                                <dd class="min-w-0 text-slate-600">
+                                    <span class="font-semibold text-slate-900">{{ item.userName }}</span>
+                                    <span class="block text-xs text-slate-500">Disetujui: {{ reviewApprovalLabel(item) }}</span>
+                                </dd>
+                            </div>
+                            <div class="flex gap-2">
+                                <dt class="w-24 shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Periode</dt>
+                                <dd class="min-w-0 text-slate-600">{{ item.borrowDate }} s/d {{ item.returnDate }}</dd>
+                            </div>
+                            <div class="flex gap-2">
+                                <dt class="w-24 shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Dibuat</dt>
+                                <dd class="min-w-0 text-slate-600">{{ item.createdAt }}</dd>
+                            </div>
+                            <div class="flex gap-2">
+                                <dt class="w-24 shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Item</dt>
+                                <dd class="min-w-0 text-slate-600">
+                                    {{ item.itemCount }} item
                                     <span
-                                        class="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold"
-                                        :class="reviewApprovalLabel(item) === '-' || reviewApprovalLabel(item).endsWith('/-') ? 'bg-slate-100 text-slate-500' : 'bg-blue-50 text-blue-700'"
-                                    >
-                                        {{ reviewApprovalLabel(item) }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-4">
-                                    <span
-                                        class="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold"
-                                        :class="statusClass(item.status)"
-                                    >
-                                        {{ item.status }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-4">
-                                    <span
-                                        class="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold"
+                                        class="ml-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
                                         :class="kategoriClass(item.kategori)"
                                     >
                                         {{ item.kategori }}
                                     </span>
-                                </td>
-                                <td class="px-4 py-4 text-slate-600">
-                                    <p>{{ item.borrowDate }}</p>
-                                    <p class="mt-1 text-xs text-slate-500">Kembali: {{ item.returnDate }}</p>
-                                </td>
-                                <td class="px-4 py-4 text-center font-semibold text-slate-700">
-                                    {{ item.itemCount }}
-                                </td>
-                                <td class="px-4 py-4">
-                                    <div class="flex flex-wrap justify-end gap-2">
-                                        <button
-                                            v-if="hasSuratJalan(item)"
-                                            class="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
-                                            type="button"
-                                            @click="openSuratJalan(item)"
-                                        >
-                                            <svg
-                                                class="h-4 w-4"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                            >
-                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                                <path d="M14 2v6h6" />
-                                                <path d="M16 13H8" />
-                                                <path d="M16 17H8" />
-                                                <path d="M10 9H8" />
-                                            </svg>
-                                            Surat Jalan
-                                        </button>
-                                        <button
-                                            class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700"
-                                            type="button"
-                                            @click="openDetail(item)"
-                                        >
-                                            <svg
-                                                class="h-4 w-4"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                            >
-                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
-                                                <circle cx="12" cy="12" r="3" />
-                                            </svg>
-                                            Detail
-                                        </button>
-                                        <button
-                                            v-if="canRepeatPeminjaman(item)"
-                                            class="inline-flex items-center gap-2 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-700 transition hover:border-cyan-300"
-                                            type="button"
-                                            @click="repeatPeminjaman(item)"
-                                        >
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M17 1l4 4-4 4" />
-                                                <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-                                                <path d="M7 23l-4-4 4-4" />
-                                                <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-                                            </svg>
-                                            Ajukan Ulang
-                                        </button>
-                                        <button
-                                            v-if="canManagePeminjaman"
-                                            class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-300"
-                                            type="button"
-                                            @click="openEdit(item)"
-                                        >
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M12 20h9" />
-                                                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                                            </svg>
-                                            Edit
-                                        </button>
-                                        <button
-                                            v-if="canManagePeminjaman"
-                                            class="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-60"
-                                            type="button"
-                                            :disabled="deletingId === item.id"
-                                            @click="deletePeminjaman(item)"
-                                        >
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M3 6h18" />
-                                                <path d="M8 6V4h8v2" />
-                                                <path d="M19 6l-1 14H6L5 6" />
-                                            </svg>
-                                            {{ deletingId === item.id ? 'Menghapus...' : 'Hapus' }}
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <button
+                                class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700"
+                                type="button"
+                                @click="openDetail(item)"
+                            >
+                                Detail
+                            </button>
+                            <button
+                                v-if="hasSuratJalan(item)"
+                                class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
+                                type="button"
+                                @click="openSuratJalan(item)"
+                            >
+                                Surat Jalan
+                            </button>
+                            <button
+                                v-if="canRepeatPeminjaman(item)"
+                                class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-700 transition hover:border-cyan-300"
+                                type="button"
+                                @click="repeatPeminjaman(item)"
+                            >
+                                Ajukan Ulang
+                            </button>
+                            <button
+                                v-if="canManagePeminjaman"
+                                class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-300"
+                                type="button"
+                                @click="openEdit(item)"
+                            >
+                                Edit
+                            </button>
+                            <button
+                                v-if="canManagePeminjaman"
+                                class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-60"
+                                type="button"
+                                :disabled="deletingId === item.id"
+                                @click="deletePeminjaman(item)"
+                            >
+                                {{ deletingId === item.id ? 'Menghapus...' : 'Hapus' }}
+                            </button>
+                        </div>
+                    </li>
+                </ul>
             </div>
         </div>
-        <div
-            v-if="pagination.lastPage > 1"
-            class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
-        >
-            <span>
-                Halaman {{ pagination.currentPage }} dari {{ pagination.lastPage }} - Total {{ pagination.total }} peminjaman
-            </span>
-            <div class="flex flex-wrap items-center gap-2">
+        <div class="mt-4 flex flex-col gap-3 border-t border-slate-200 pt-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <p class="text-sm text-slate-500">
+                    <template v-if="pagination.total">
+                        Menampilkan <span class="font-semibold text-slate-700">{{ rangeStart }}&ndash;{{ rangeEnd }}</span>
+                        dari <span class="font-semibold text-slate-700">{{ pagination.total }}</span> peminjaman
+                    </template>
+                    <template v-else>Total {{ pagination.total }} peminjaman</template>
+                </p>
+                <div class="flex items-center gap-2">
+                    <label for="history-per-page" class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+                        Baris
+                    </label>
+                    <select
+                        id="history-per-page"
+                        v-model.number="perPageChoice"
+                        class="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                        :disabled="isLoading"
+                        @change="changePerPage"
+                    >
+                        <option v-for="size in perPageOptions" :key="size" :value="size">{{ size }}</option>
+                    </select>
+                </div>
+            </div>
+
+            <nav v-if="pagination.lastPage > 1" class="flex items-center gap-1" aria-label="Navigasi halaman riwayat peminjaman">
                 <button
-                    class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:text-slate-300"
+                    class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
                     type="button"
-                    :disabled="pagination.currentPage === 1"
+                    :disabled="pagination.currentPage <= 1 || isLoading"
+                    title="Halaman sebelumnya"
                     @click="goToPage(pagination.currentPage - 1)"
                 >
-                    Sebelumnya
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m15 18-6-6 6-6" />
+                    </svg>
+                    <span class="hidden sm:inline">Sebelumnya</span>
                 </button>
+
                 <button
                     v-for="page in pageNumbers"
-                    :key="page"
-                    class="h-9 min-w-[36px] rounded-lg border px-3 text-sm font-semibold transition"
-                    :class="page === pagination.currentPage
-                        ? 'border-blue-600 bg-blue-600 text-white'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'"
+                    :key="`page-${page}`"
+                    class="min-w-[2.25rem] rounded-lg border px-2 py-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed"
+                    :class="
+                        page === pagination.currentPage
+                            ? 'border-blue-600 bg-blue-600 text-white'
+                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                    "
                     type="button"
+                    :disabled="isLoading"
+                    :aria-current="page === pagination.currentPage ? 'page' : undefined"
+                    :title="`Halaman ${page}`"
                     @click="goToPage(page)"
                 >
                     {{ page }}
                 </button>
+
                 <button
-                    class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:text-slate-300"
+                    class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
                     type="button"
-                    :disabled="pagination.currentPage === pagination.lastPage"
+                    :disabled="pagination.currentPage >= pagination.lastPage || isLoading"
+                    title="Halaman berikutnya"
                     @click="goToPage(pagination.currentPage + 1)"
                 >
-                    Selanjutnya
+                    <span class="hidden sm:inline">Berikutnya</span>
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m9 6 6 6-6 6" />
+                    </svg>
                 </button>
-            </div>
+            </nav>
         </div>
     </section>
 
@@ -568,12 +833,15 @@ const isLoading = ref(false);
 const isExporting = ref(false);
 const isBulkDeleting = ref(false);
 const loadError = ref('');
+const statusCounts = ref({});
 const pagination = reactive({
     currentPage: 1,
     lastPage: 1,
     total: 0,
     perPage: 8,
 });
+const perPageOptions = [8, 16, 32, 64];
+const perPageChoice = ref(8);
 
 const search = ref('');
 const statusFilter = ref('Semua');
@@ -623,11 +891,97 @@ const REPEAT_DRAFT_STORAGE_KEY = 'peminjaman_repeat_draft_v1';
 const filteredItems = computed(() => items.value);
 
 const totalCount = computed(() => (pagination.total ? pagination.total : items.value.length));
-const reviewCount = computed(() =>
-    items.value.filter((item) => ['Perlu Direview', 'Perlu Disetujui'].includes(item.status)).length
+
+// Rekap status datang dari backend (status_counts) sehingga mencakup seluruh data
+// yang lolos filter, bukan hanya baris yang kebetulan tampil di halaman ini.
+const countByStatus = (...statuses) =>
+    statuses.reduce((total, status) => total + Number(statusCounts.value[status] ?? 0), 0);
+
+const reviewCount = computed(() => countByStatus('Perlu Direview', 'Perlu Disetujui'));
+const processCount = computed(() => countByStatus('Disetujui'));
+const deliveredCount = computed(() => countByStatus('Dikirim'));
+
+const summaryHint = computed(() => (hasActiveFilters.value ? 'Sesuai filter aktif' : 'Seluruh riwayat'));
+
+const summaryCards = computed(() => [
+    {
+        label: 'Total',
+        value: totalCount.value,
+        hint: summaryHint.value,
+        icon: 'M3 4h18l-7 8v6l-4 2v-8L3 4z',
+        iconClass: 'bg-slate-100 text-slate-500',
+        valueClass: 'text-slate-900',
+    },
+    {
+        label: 'Perlu Review',
+        value: reviewCount.value,
+        hint: 'Menunggu review/persetujuan',
+        icon: 'M12 8v4l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z',
+        iconClass: 'bg-blue-50 text-blue-600',
+        valueClass: 'text-blue-600',
+    },
+    {
+        label: 'Disetujui',
+        value: processCount.value,
+        hint: 'Siap dikirim',
+        icon: 'm9 12 2 2 4-4M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z',
+        iconClass: 'bg-amber-50 text-amber-600',
+        valueClass: 'text-amber-500',
+    },
+    {
+        label: 'Dikirim',
+        value: deliveredCount.value,
+        hint: 'Menunggu diterima',
+        icon: 'M3 7h11v8H3zM14 10h4l3 3v2h-7zM7.5 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM17.5 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z',
+        iconClass: 'bg-emerald-50 text-emerald-600',
+        valueClass: 'text-emerald-600',
+    },
+]);
+
+const hasActiveFilters = computed(
+    () => search.value.trim() !== '' || statusFilter.value !== 'Semua' || kategoriFilter.value !== 'Semua'
 );
-const processCount = computed(() => items.value.filter((item) => item.status === 'Disetujui').length);
-const deliveredCount = computed(() => items.value.filter((item) => item.status === 'Dikirim').length);
+
+const resetFilters = () => {
+    search.value = '';
+    statusFilter.value = 'Semua';
+    kategoriFilter.value = 'Semua';
+};
+
+const changePerPage = () => {
+    pagination.perPage = Number(perPageChoice.value) || 8;
+    pagination.currentPage = 1;
+    loadHistory();
+};
+
+const rangeStart = computed(() =>
+    pagination.total === 0 ? 0 : (pagination.currentPage - 1) * pagination.perPage + 1
+);
+
+const rangeEnd = computed(() =>
+    Math.min(pagination.currentPage * pagination.perPage, pagination.total)
+);
+
+// createdAt dikirim backend sebagai "d M Y H:i", dipisah hanya untuk tampilan dan
+// otomatis kembali menampilkan nilai apa adanya bila formatnya berbeda.
+const splitDateTime = (value) => {
+    const raw = String(value ?? '').trim();
+    if (!raw) {
+        return { date: '-', time: '' };
+    }
+
+    const separatorIndex = raw.lastIndexOf(' ');
+    if (separatorIndex === -1) {
+        return { date: raw, time: '' };
+    }
+
+    const time = raw.slice(separatorIndex + 1);
+    if (!/^\d{1,2}:\d{2}(:\d{2})?$/.test(time)) {
+        return { date: raw, time: '' };
+    }
+
+    return { date: raw.slice(0, separatorIndex), time };
+};
 
 const pageNumbers = computed(() => {
     const total = pagination.lastPage;
@@ -732,7 +1086,6 @@ const repeatPeminjaman = (item) => {
         JSON.stringify({
             source_id: item.id,
             pekerjaan: item.title && item.title !== '-' ? item.title : '',
-            resi: item.resi ?? '',
             tanggal_pinjam: item.borrowDateValue ?? '',
             tanggal_kembali: item.returnDateValue ?? '',
             area_id: item.areaId ?? currentAreaId.value ?? null,
@@ -1048,6 +1401,32 @@ const statusClass = (status) => {
     }
 };
 
+// Titik warna hanya penegas; label teks status tetap menjadi pembeda utamanya.
+const statusDotClass = (status) => {
+    switch (status) {
+        case 'Perlu Direview':
+        case 'Perlu Disetujui':
+            return 'bg-blue-500';
+        case 'Disetujui':
+            return 'bg-cyan-500';
+        case 'Dikirim':
+            return 'bg-emerald-500';
+        case 'Diterima':
+            return 'bg-teal-500';
+        case 'Dikembalikan Partials':
+            return 'bg-violet-500';
+        case 'Dikembalikan Semuanya':
+        case 'Dikembalikan':
+            return 'bg-indigo-500';
+        case 'Selesai':
+            return 'bg-slate-500';
+        case 'Ditolak':
+            return 'bg-rose-500';
+        default:
+            return 'bg-slate-400';
+    }
+};
+
 const kategoriClass = (kategori) => {
     switch (kategori) {
         case 'Antar Area':
@@ -1091,6 +1470,13 @@ const goToPage = (page) => {
     loadHistory();
 };
 
+const buildStatusCountsFromItems = (rows) =>
+    rows.reduce((counts, row) => {
+        counts[row.status] = (counts[row.status] ?? 0) + 1;
+
+        return counts;
+    }, {});
+
 const loadHistory = async () => {
     isLoading.value = true;
     loadError.value = '';
@@ -1104,6 +1490,7 @@ const loadHistory = async () => {
             pagination.total = items.value.length;
             pagination.lastPage = 1;
             pagination.currentPage = 1;
+            statusCounts.value = buildStatusCountsFromItems(items.value);
             return;
         }
         const data = Array.isArray(payload?.data) ? payload.data : [];
@@ -1113,8 +1500,13 @@ const loadHistory = async () => {
         pagination.lastPage = Number(meta.last_page ?? pagination.lastPage) || 1;
         pagination.perPage = Number(meta.per_page ?? pagination.perPage) || pagination.perPage;
         pagination.total = Number(meta.total ?? pagination.total) || items.value.length;
+        perPageChoice.value = pagination.perPage;
+        // Backend lama belum mengirim status_counts; jatuh kembali ke hitungan
+        // halaman aktif supaya kartu tetap terisi alih-alih menampilkan nol.
+        statusCounts.value = payload?.status_counts ?? buildStatusCountsFromItems(items.value);
     } catch (error) {
         items.value = [];
+        statusCounts.value = {};
         loadError.value = 'Gagal memuat data peminjaman.';
     } finally {
         isLoading.value = false;

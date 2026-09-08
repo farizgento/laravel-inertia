@@ -1391,6 +1391,9 @@ const submitShipping = async (payload) => {
     try {
         const formData = new FormData();
         formData.append('pengirim_nama', payload.pengirimNama ?? '');
+        if (payload.resi) {
+            formData.append('resi', payload.resi);
+        }
         (Array.isArray(payload.photos) ? payload.photos : []).forEach((photo) => {
             formData.append('photos[]', photo);
         });

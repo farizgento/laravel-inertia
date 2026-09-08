@@ -103,11 +103,24 @@
                     </svg>
                 </span>
                 <input
+                    ref="searchInput"
                     v-model="filters.search"
                     type="text"
                     placeholder="Cari nama atau kode alat..."
-                    class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-11 pr-11 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
+                <button
+                    v-if="filters.search"
+                    class="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+                    type="button"
+                    title="Kosongkan pencarian"
+                    aria-label="Kosongkan pencarian"
+                    @click="filters.search = ''"
+                >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                </button>
             </label>
         </div>
 
@@ -145,29 +158,138 @@
             Anda sedang melihat katalog area lain. Data hanya dapat dilihat, peminjaman tetap hanya bisa dibuat dari area akun Anda.
         </div>
 
-        <div class="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73Z" />
-                    <path d="m3.3 7 8.7 5 8.7-5" />
-                    <path d="M12 12v9" />
-                </svg>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73Z" />
+                        <path d="m3.3 7 8.7 5 8.7-5" />
+                        <path d="M12 12v9" />
+                    </svg>
+                </span>
+                <span v-if="isLoading">Memuat data alat...</span>
+                <span v-else-if="pagination.total">
+                    Menampilkan <span class="font-semibold text-slate-700">{{ rangeStart }}&ndash;{{ rangeEnd }}</span>
+                    dari <span class="font-semibold text-slate-700">{{ pagination.total }}</span> alat
+                </span>
+                <span v-else>{{ filteredTools.length }} alat tersedia</span>
+
+                <span class="flex items-center gap-2">
+                    <label for="katalog-per-page" class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+                        Tampilkan
+                    </label>
+                    <select
+                        id="katalog-per-page"
+                        v-model.number="perPageChoice"
+                        class="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        :disabled="isLoading"
+                        @change="changePerPage"
+                    >
+                        <option v-for="size in perPageOptions" :key="size" :value="size">{{ size }}</option>
+                    </select>
+                </span>
+            </div>
+
+            <span
+                v-if="filters.search.trim()"
+                class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 py-1 pl-3 pr-1.5 text-xs font-semibold text-blue-700"
+            >
+                <span class="truncate">Pencarian: "{{ filters.search.trim() }}"</span>
+                <button
+                    class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition hover:bg-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                    type="button"
+                    title="Hapus filter pencarian"
+                    aria-label="Hapus filter pencarian"
+                    @click="filters.search = ''"
+                >
+                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                        <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                </button>
             </span>
-            <span v-if="isLoading">Memuat data alat...</span>
-            <span v-else>{{ filteredTools.length }} alat tersedia</span>
-            <span v-if="loadError" class="text-rose-500">{{ loadError }}</span>
         </div>
 
-        <div v-if="viewMode === 'list'" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
+        <!-- Loading -->
+        <div v-if="isLoading" class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div
+                v-for="row in 6"
+                :key="`skeleton-${row}`"
+                class="rounded-2xl border border-slate-200 bg-white p-5"
+            >
+                <div class="h-3 w-20 animate-pulse rounded bg-slate-100"></div>
+                <div class="mt-2 h-5 w-3/4 animate-pulse rounded bg-slate-100"></div>
+                <div class="mt-4 h-6 w-24 animate-pulse rounded-full bg-slate-100"></div>
+                <div class="mt-5 flex items-center gap-3">
+                    <div class="h-9 w-28 animate-pulse rounded-full bg-slate-100"></div>
+                    <div class="h-10 flex-1 animate-pulse rounded-xl bg-slate-100"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error -->
+        <div
+            v-else-if="loadError"
+            class="flex flex-col items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-5 sm:flex-row sm:items-center sm:justify-between"
+            role="alert"
+        >
+            <div class="flex items-start gap-3">
+                <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M10.3 4.3 2.9 17.1a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.3a2 2 0 0 0-3.4 0Z" />
+                        <path d="M12 9v4M12 17h.01" />
+                    </svg>
+                </span>
+                <div>
+                    <p class="text-sm font-semibold text-rose-800">Gagal memuat katalog</p>
+                    <p class="mt-0.5 text-sm text-rose-700">{{ loadError }}</p>
+                </div>
+            </div>
+            <button
+                class="h-10 shrink-0 rounded-xl border border-rose-300 bg-white px-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300"
+                type="button"
+                @click="loadKatalog(buildFilterParams())"
+            >
+                Coba lagi
+            </button>
+        </div>
+
+        <!-- Empty -->
+        <div v-else-if="!filteredTools.length" class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-6 py-12 text-center">
+            <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm">
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z" />
+                </svg>
+            </span>
+            <p class="mt-3 text-sm font-semibold text-slate-700">
+                {{ filters.search.trim() ? 'Alat tidak ditemukan' : 'Belum ada alat di katalog' }}
+            </p>
+            <p class="mx-auto mt-1 max-w-md text-sm text-slate-500">
+                {{
+                    filters.search.trim()
+                        ? 'Coba kata kunci lain, misalnya sebagian nama atau kode alat.'
+                        : 'Alat yang terdaftar pada area ini akan muncul di sini.'
+                }}
+            </p>
+            <button
+                v-if="filters.search.trim()"
+                class="mt-4 h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                type="button"
+                @click="filters.search = ''"
+            >
+                Kosongkan pencarian
+            </button>
+        </div>
+
+        <div v-else-if="viewMode === 'list'" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div class="max-h-[calc(100vh-15rem)] min-h-[34rem] overflow-auto">
                 <table class="min-w-full divide-y divide-slate-200 text-sm">
-                    <thead class="bg-slate-50">
-                        <tr class="text-left text-xs font-semibold uppercase text-slate-500">
-                            <th class="w-12 px-4 py-3 text-center">Pilih</th>
-                            <th class="min-w-[260px] px-4 py-3">Alat</th>
-                            <th class="w-32 px-4 py-3">Stok</th>
-                            <th class="w-56 px-4 py-3">Jumlah Dipinjam</th>
-                            <th class="w-40 px-4 py-3">Status</th>
+                    <thead class="sticky top-0 z-10 bg-slate-50">
+                        <tr class="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            <th scope="col" class="w-12 border-b border-slate-200 px-4 py-3 text-center">Pilih</th>
+                            <th scope="col" class="min-w-[260px] border-b border-slate-200 px-4 py-3">Alat</th>
+                            <th scope="col" class="w-32 border-b border-slate-200 px-4 py-3">Stok</th>
+                            <th scope="col" class="w-56 border-b border-slate-200 px-4 py-3">Jumlah Dipinjam</th>
+                            <th scope="col" class="w-40 border-b border-slate-200 px-4 py-3">Status</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 bg-white">
@@ -199,12 +321,8 @@
                             </td>
                             <td class="px-4 py-3 align-middle">
                                 <span
-                                    :class="[
-                                        'inline-flex min-w-[64px] items-center justify-center rounded-lg px-2.5 py-1 text-xs font-semibold',
-                                        isOutOfStock(tool)
-                                            ? 'bg-rose-50 text-rose-600'
-                                            : 'bg-slate-100 text-slate-700',
-                                    ]"
+                                    class="inline-flex min-w-[64px] items-center justify-center rounded-lg px-2.5 py-1 text-xs font-semibold tabular-nums"
+                                    :class="stockBadgeClass(tool)"
                                 >
                                     {{ tool.stok }}
                                 </span>
@@ -241,33 +359,28 @@
                             <td class="px-4 py-3 align-middle">
                                 <span
                                     v-if="isReadOnlyCatalog"
-                                    class="inline-flex rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700"
+                                    class="inline-flex whitespace-nowrap rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700"
                                 >
                                     Lihat Saja
                                 </span>
                                 <span
                                     v-else-if="isOutOfStock(tool)"
-                                    class="inline-flex rounded-lg bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600"
+                                    class="inline-flex whitespace-nowrap rounded-lg bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-600"
                                 >
                                     Stok Habis
                                 </span>
                                 <span
                                     v-else-if="isInCart(tool.id)"
-                                    class="inline-flex rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700"
+                                    class="inline-flex whitespace-nowrap rounded-lg bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700"
                                 >
                                     Di Keranjang
                                 </span>
                                 <span
                                     v-else
-                                    class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600"
+                                    class="inline-flex whitespace-nowrap rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600"
                                 >
                                     Belum Dipilih
                                 </span>
-                            </td>
-                        </tr>
-                        <tr v-if="!filteredTools.length && !isLoading">
-                            <td colspan="5" class="px-4 py-8 text-center text-sm text-slate-500">
-                                Data alat tidak ditemukan.
                             </td>
                         </tr>
                     </tbody>
@@ -280,8 +393,9 @@
                 v-for="tool in filteredTools"
                 :key="tool.id"
                 :class="[
-                    'relative rounded-2xl border bg-white p-5 shadow-sm transition',
+                    'relative flex flex-col rounded-2xl border bg-white p-5 shadow-sm transition hover:shadow-md',
                     isInCart(tool.id) ? 'border-blue-300 bg-blue-50/60 shadow-blue-100' : 'border-slate-200',
+                    isOutOfStock(tool) && !isInCart(tool.id) ? 'opacity-75' : '',
                 ]"
             >
                 <div class="flex flex-1 flex-col gap-3">
@@ -304,7 +418,10 @@
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2 text-xs text-slate-600">
-                        <span class="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700">
+                        <span
+                            class="flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold tabular-nums"
+                            :class="stockBadgeClass(tool)"
+                        >
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73Z" />
                                 <path d="m3.3 7 8.7 5 8.7-5" />
@@ -333,7 +450,7 @@
                     </div>
                 </div>
 
-                <div class="mt-5 flex items-center gap-3">
+                <div class="mt-auto flex items-center gap-3 pt-5">
                     <div class="flex items-center rounded-full bg-slate-100 px-2 py-1">
                         <button
                             class="flex h-7 w-7 items-center justify-center rounded-full text-base font-semibold text-slate-500 transition hover:text-slate-700 disabled:cursor-not-allowed disabled:text-slate-300"
@@ -357,7 +474,8 @@
                     </div>
                     <button
                         :class="[
-                            'flex items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-200',
+                            'flex items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700',
+                            'disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 disabled:shadow-none',
                             'flex-1 px-4 py-2.5',
                         ]"
                         type="button"
@@ -380,41 +498,58 @@
 
         <div
             v-if="pagination.lastPage > 1"
-            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
+            class="flex flex-col gap-3 border-t border-slate-200 pt-4 lg:flex-row lg:items-center lg:justify-between"
         >
-            <span>
-                Halaman {{ pagination.currentPage }} dari {{ pagination.lastPage }} · Total {{ pagination.total }} alat
-            </span>
-            <div class="flex flex-wrap items-center gap-2">
+            <p class="text-sm text-slate-500">
+                Halaman <span class="font-semibold text-slate-700">{{ pagination.currentPage }}</span>
+                dari <span class="font-semibold text-slate-700">{{ pagination.lastPage }}</span>
+            </p>
+
+            <nav class="flex items-center gap-1" aria-label="Navigasi halaman katalog alat">
                 <button
-                    class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:text-slate-300"
+                    class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
                     type="button"
-                    :disabled="pagination.currentPage === 1"
+                    :disabled="pagination.currentPage <= 1 || isLoading"
+                    title="Halaman sebelumnya"
                     @click="goToPage(pagination.currentPage - 1)"
                 >
-                    Sebelumnya
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m15 18-6-6 6-6" />
+                    </svg>
+                    <span class="hidden sm:inline">Sebelumnya</span>
                 </button>
+
                 <button
                     v-for="page in pageNumbers"
-                    :key="page"
-                    class="h-9 min-w-[36px] rounded-lg border px-3 text-sm font-semibold transition"
-                    :class="page === pagination.currentPage
-                        ? 'border-blue-600 bg-blue-600 text-white'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'"
+                    :key="`page-${page}`"
+                    class="min-w-[2.25rem] rounded-lg border px-2 py-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed"
+                    :class="
+                        page === pagination.currentPage
+                            ? 'border-blue-600 bg-blue-600 text-white'
+                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                    "
                     type="button"
+                    :disabled="isLoading"
+                    :aria-current="page === pagination.currentPage ? 'page' : undefined"
+                    :title="`Halaman ${page}`"
                     @click="goToPage(page)"
                 >
                     {{ page }}
                 </button>
+
                 <button
-                    class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:text-slate-300"
+                    class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
                     type="button"
-                    :disabled="pagination.currentPage === pagination.lastPage"
+                    :disabled="pagination.currentPage >= pagination.lastPage || isLoading"
+                    title="Halaman berikutnya"
                     @click="goToPage(pagination.currentPage + 1)"
                 >
-                    Selanjutnya
+                    <span class="hidden sm:inline">Berikutnya</span>
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m9 6 6 6-6 6" />
+                    </svg>
                 </button>
-            </div>
+            </nav>
         </div>
     </section>
 
@@ -428,6 +563,7 @@
         @decrease="decreaseCart"
         @increase="increaseCart"
         @checkout="openCheckout"
+        @add-more="addMoreTools"
     />
     <CheckoutModal
         v-model="checkoutOpen"
@@ -445,7 +581,7 @@
 <script setup>
 import { usePage } from '@inertiajs/vue3';
 import axios from 'axios';
-import { computed, inject, onMounted, reactive, ref, watch } from 'vue';
+import { computed, inject, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import CartModal from './CartModal.vue';
 import CheckoutModal from './CheckoutModal.vue';
 import ToastNotification from './ToastNotification.vue';
@@ -479,6 +615,11 @@ const pagination = reactive({
     total: 0,
     perPage: 8,
 });
+// Nilai selain 8 dipilih agar habis dibagi 2 dan 3, sehingga baris terakhir pada
+// tampilan kartu (2 kolom di md, 3 kolom di xl) tidak menyisakan kartu tunggal.
+// Batas atas 100 mengikuti aturan per_page pada endpoint /api/alats.
+const perPageOptions = [8, 24, 48, 96];
+const perPageChoice = ref(8);
 
 const userId = computed(() => page.props.auth?.user?.id ?? cachedUserId.value);
 const userAreaId = computed(() => page.props.auth?.user?.area?.id ?? cachedUser.value?.area?.id ?? null);
@@ -590,6 +731,7 @@ const templateWarnings = ref([]);
 const cartDrafts = reactive({});
 const drawerOpen = ref(false);
 const checkoutOpen = ref(false);
+const searchInput = ref(null);
 const isSubmitting = ref(false);
 const checkoutError = ref('');
 const alertMessage = ref('');
@@ -600,6 +742,36 @@ let alertTimeout = null;
 const katalogMap = computed(() => new Map(katalog.value.map((item) => [item.id, item])));
 const getToolById = (toolId) => toolCache[toolId] ?? katalogMap.value.get(toolId);
 const isOutOfStock = (tool) => (tool?.stok ?? 0) <= 0;
+
+// Warna stok mengikuti pola halaman master alat: merah habis, kuning menipis
+// (di bawah 35% dari total aset), hijau aman. Kalau total aset tidak diketahui,
+// ambang menipis memakai jumlah absolut supaya tetap memberi peringatan.
+const stockBadgeClass = (tool) => {
+    const available = Number(tool?.stok ?? 0);
+
+    if (available <= 0) {
+        return 'bg-rose-100 text-rose-700';
+    }
+
+    const total = Number(tool?.totalAset ?? 0);
+    const menipis = total > 0 ? available / total < 0.35 : available <= 2;
+
+    return menipis ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
+};
+
+const changePerPage = () => {
+    pagination.perPage = Number(perPageChoice.value) || 8;
+    pagination.currentPage = 1;
+    loadKatalog(buildFilterParams());
+};
+
+const rangeStart = computed(() =>
+    pagination.total === 0 ? 0 : (pagination.currentPage - 1) * pagination.perPage + 1
+);
+
+const rangeEnd = computed(() =>
+    Math.min(pagination.currentPage * pagination.perPage, pagination.total)
+);
 
 const normalizeCart = (items) => {
     return items
@@ -646,51 +818,121 @@ const cacheTool = (tool) => {
     };
 };
 
-const applyRepeatDraft = (draft) => {
+const applyRepeatDraft = async (draft) => {
     if (!draft || isReadOnlyCatalog.value) {
         return;
     }
 
-    const draftItems = draft.items
+    const requestedItems = draft.items
         .map((item) => {
             const id = item?.id ?? item?.alat_id ?? null;
             const qty = Math.max(1, Math.floor(Number(item?.qty ?? 0)));
-            const stok = Math.max(qty, Math.floor(Number(item?.stok ?? qty)));
 
             if (!id || !Number.isFinite(qty) || qty <= 0) {
                 return null;
             }
 
-            cacheTool({
-                id,
-                kode: item?.kode ?? item?.code ?? '-',
-                nama: item?.nama ?? item?.name ?? '-',
-                stok,
-                deskripsi: item?.deskripsi ?? '',
-                lokasi: item?.lokasi ?? '',
-            });
-
-            cartDrafts[id] = Math.min(qty, stok);
-
-            return {
-                id,
-                qty: Math.min(qty, stok),
-            };
+            return { id, qty, nama: item?.nama ?? item?.name ?? '-' };
         })
         .filter(Boolean);
 
-    if (!draftItems.length) {
+    if (!requestedItems.length) {
         return;
     }
 
-    cart.value = draftItems;
     form.value = {
         tanggal_pinjam: draft.tanggal_pinjam ?? '',
         tanggal_kembali: draft.tanggal_kembali ?? '',
         pekerjaan: draft.pekerjaan ?? '',
-        resi: draft.resi ?? '',
     };
+
+    const targetAreaId = draft.area_id ?? areaId.value;
+    if (!targetAreaId) {
+        return;
+    }
+
+    let availableItems = [];
+    try {
+        const response = await axios.post('/api/alats/availability', {
+            area_id: targetAreaId,
+            items: requestedItems.map(({ id, qty }) => ({ id, qty })),
+        });
+        availableItems = Array.isArray(response.data?.data) ? response.data.data : [];
+    } catch (error) {
+        showAlert('error', 'Gagal memeriksa stok terkini untuk peminjaman ulang.');
+        return;
+    }
+
+    const availabilityMap = new Map(availableItems.map((item) => [Number(item.id), item]));
+    const warnings = [];
+    const nextCart = requestedItems
+        .map((requested) => {
+            const item = availabilityMap.get(Number(requested.id));
+            if (!item) {
+                warnings.push({
+                    id: requested.id,
+                    nama: requested.nama,
+                    requested_qty: requested.qty,
+                    available_qty: 0,
+                    usable_qty: 0,
+                });
+                return null;
+            }
+
+            const availableQty = Math.max(0, Number(item.available_qty ?? item.stok ?? 0));
+            const usableQty = Math.min(requested.qty, Math.max(0, Number(item.usable_qty ?? availableQty)));
+            if (usableQty < requested.qty) {
+                warnings.push({
+                    id: item.id,
+                    nama: item.nama ?? requested.nama,
+                    requested_qty: requested.qty,
+                    available_qty: availableQty,
+                    usable_qty: usableQty,
+                });
+            }
+            if (usableQty <= 0) {
+                return null;
+            }
+
+            cacheTool({
+                id: item.id,
+                kode: item?.kode ?? '-',
+                nama: item?.nama ?? item?.name ?? '-',
+                stok: availableQty,
+                totalAset: Number(item?.total_aset ?? availableQty),
+                deskripsi: '',
+                lokasi: item?.area_name ?? areaName.value,
+            });
+            cartDrafts[item.id] = usableQty;
+
+            return {
+                id: item.id,
+                qty: usableQty,
+            };
+        })
+        .filter(Boolean);
+
+    templateWarnings.value = warnings;
     drawerOpen.value = true;
+
+    const outOfStockNames = warnings.filter((w) => w.usable_qty <= 0).map((w) => w.nama);
+    if (!nextCart.length) {
+        showAlert('error', `Stok seluruh alat pada peminjaman ini sudah habis, tidak ada yang ditambahkan ke keranjang: ${outOfStockNames.join(', ')}.`);
+        return;
+    }
+
+    cart.value = nextCart;
+
+    if (outOfStockNames.length) {
+        showAlert('error', `Alat berikut tidak ditambahkan ke keranjang karena stok habis: ${outOfStockNames.join(', ')}.`);
+        return;
+    }
+
+    if (warnings.length) {
+        showAlert('error', 'Sebagian alat disesuaikan dengan stok yang tersedia. Detail ada di keranjang.');
+        return;
+    }
+
     showAlert('success', 'Draft peminjaman ulang sudah dimuat. Silakan sesuaikan alat, jumlah, atau periode sebelum checkout.');
 };
 
@@ -744,6 +986,11 @@ const loadKatalog = async (params = {}) => {
             pagination.lastPage = Number(meta.last_page ?? 1);
             pagination.perPage = Number(meta.per_page ?? pagination.perPage);
             pagination.total = Number(meta.total ?? katalog.value.length);
+            // Selaraskan dropdown dengan nilai yang benar-benar dipakai server,
+            // termasuk bila server membatasinya.
+            if (perPageOptions.includes(pagination.perPage)) {
+                perPageChoice.value = pagination.perPage;
+            }
         }
         katalog.value.forEach((tool) => cacheTool(tool));
         cart.value = normalizeCart(cart.value);
@@ -1172,8 +1419,23 @@ const form = ref({
     tanggal_pinjam: '',
     tanggal_kembali: '',
     pekerjaan: '',
-    resi: '',
 });
+
+// Tombol "Tambah Lagi" di keranjang: tutup drawer lalu bawa pengguna kembali ke
+// kolom pencarian katalog supaya bisa langsung mencari alat berikutnya. Isi
+// keranjang sengaja tidak diubah.
+const addMoreTools = async () => {
+    drawerOpen.value = false;
+    await nextTick();
+
+    const input = searchInput.value;
+    if (!input) {
+        return;
+    }
+
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    input.focus({ preventScroll: true });
+};
 
 const openCheckout = () => {
     if (isReadOnlyCatalog.value) {
@@ -1198,7 +1460,6 @@ const resetCheckout = () => {
         tanggal_pinjam: '',
         tanggal_kembali: '',
         pekerjaan: '',
-        resi: '',
     };
     cart.value = [];
     Object.keys(cartDrafts).forEach((key) => {
@@ -1238,7 +1499,6 @@ const submitCheckout = async () => {
             tanggal_pinjam: form.value.tanggal_pinjam,
             tanggal_kembali: form.value.tanggal_kembali,
             pekerjaan: form.value.pekerjaan,
-            resi: form.value.resi?.trim() || null,
             ...(roleKey.value === 'super_admin' && areaId.value ? { area_id: areaId.value } : {}),
             items: cartItems.value.map((item) => ({ id: item.id, qty: item.qty })),
         };

@@ -361,7 +361,12 @@ const submitShipping = async (payload) => {
     try {
         const formData = new FormData();
         formData.append('pengirim_nama', payload.pengirimNama ?? '');
-        formData.append('surat_jalan', payload.suratJalan ?? null);
+        if (payload.resi) {
+            formData.append('resi', payload.resi);
+        }
+        (Array.isArray(payload.photos) ? payload.photos : []).forEach((photo) => {
+            formData.append('photos[]', photo);
+        });
         await axios.post(`/api/pengiriman/${payload.peminjamanId}/kirim`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });

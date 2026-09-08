@@ -117,8 +117,11 @@ class AlatImportService
 
                         $alat->total_aset = $totalAset;
                     } else {
+                        // Alat::withoutEvents() melewati hook creating pada model,
+                        // jadi kode default nomor urut area dibuat eksplisit di sini.
                         $alat = Alat::withoutEvents(fn () => Alat::create([
                             ...$lookup,
+                            'kode' => Alat::generateKode((int) ($lookup['area_id'] ?? 0)),
                             'total_aset' => $totalAset,
                         ]));
 

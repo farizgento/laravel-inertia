@@ -10,6 +10,7 @@ use App\Models\Peminjaman;
 use App\Models\PeminjamanItem;
 use App\Models\Role;
 use App\Models\SuratJalan;
+use App\Services\FastScaleDownModifier;
 use App\Services\OutgoingSuratJalanService;
 use App\Services\PeminjamanNotifier;
 use Illuminate\Http\Request;
@@ -615,6 +616,7 @@ class PengirimanController extends Controller
 
         $validated = $request->validate([
             'pengirim_nama' => ['required', 'string', 'max:255'],
+            'resi' => ['nullable', 'string', 'max:255'],
             'photos' => ['required', 'array', 'min:1', 'max:'.OutgoingSuratJalanService::MAX_PHOTOS],
             'photos.*' => [
                 'required',
@@ -625,6 +627,8 @@ class PengirimanController extends Controller
                     .',max_height='.OutgoingSuratJalanService::MAX_SOURCE_IMAGE_DIMENSION,
             ],
         ]);
+
+        $peminjaman->update(['resi' => $validated['resi'] ?? null]);
 
         $document = $suratJalanService->ship(
             $peminjaman,
@@ -899,7 +903,7 @@ class PengirimanController extends Controller
 
         $storedReportFiles = [];
 
-        // Kompresi foto (±12 detik untuk 8 foto) dikerjakan sebelum transaksi dibuka
+        // Kompresi foto (±6 detik untuk 8 foto) dikerjakan sebelum transaksi dibuka
         // supaya row lock peminjaman dan item tidak ditahan selama pengolahan gambar.
         $suratJalanService = app(OutgoingSuratJalanService::class);
         $preparedPhotos = $suratJalanService->prepareReturnPhotos($peminjaman, $validated['photos']);
@@ -1215,7 +1219,7 @@ class PengirimanController extends Controller
             $manager = new ImageManager($driver);
             $image = $manager->read($file->getRealPath())
                 ->orient()
-                ->scaleDown(1600, 1600);
+                ->modify(new FastScaleDownModifier(1600, 1600));
 
             $image = $image->resizeCanvas($image->width(), $image->height(), 'ffffff');
             $encoded = $image->toJpeg(quality: 75);

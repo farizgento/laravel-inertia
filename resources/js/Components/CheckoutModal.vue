@@ -91,17 +91,6 @@
                             class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                         />
                     </label>
-
-                    <label class="space-y-2">
-                        <span class="text-sm font-medium text-slate-700">Resi</span>
-                        <input
-                            v-model="form.resi"
-                            type="text"
-                            maxlength="255"
-                            placeholder="Nomor resi (opsional)"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                        />
-                    </label>
                 </div>
 
                 <div class="mt-6 flex flex-wrap justify-end gap-3">

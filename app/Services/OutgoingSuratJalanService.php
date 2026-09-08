@@ -96,10 +96,10 @@ class OutgoingSuratJalanService
      */
     public function ship(Peminjaman $peminjaman, User $actor, string $senderName, array $photos): SuratJalan
     {
-        // Kompresi foto adalah kerja CPU murni (±900 ms per foto, ±12 detik untuk 8
-        // foto) yang sama sekali tidak menyentuh basis data. Dikerjakan di luar
-        // transaksi supaya row lock peminjaman hanya dipegang selama penulisan data,
-        // bukan selama belasan detik pengolahan gambar.
+        // Kompresi foto adalah kerja CPU murni (±750 ms per foto kamera ponsel, ±6
+        // detik untuk 8 foto) yang sama sekali tidak menyentuh basis data. Dikerjakan
+        // di luar transaksi supaya row lock peminjaman hanya dipegang selama penulisan
+        // data, bukan selama pengolahan gambar berlangsung.
         $storageDirectory = 'surat-jalan/'.$peminjaman->getKey().'/pengiriman/'.Str::uuid();
         $documentPersisted = false;
 
@@ -585,7 +585,10 @@ class OutgoingSuratJalanService
                 // sama persis: hasil gambarnya identik tetapi memakan ±98 ms per foto.
                 $image = $manager->read($file->getRealPath())
                     ->orient()
-                    ->scaleDown(self::MAX_IMAGE_DIMENSION, self::MAX_IMAGE_DIMENSION);
+                    ->modify(new FastScaleDownModifier(
+                        self::MAX_IMAGE_DIMENSION,
+                        self::MAX_IMAGE_DIMENSION
+                    ));
                 $encoded = $image->toJpeg(quality: 78);
                 $path = $directory.'/'.str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT).'-'.Str::uuid().'.jpg';
 

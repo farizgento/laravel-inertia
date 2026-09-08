@@ -13,7 +13,7 @@
     </div>
 
     <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/50">
-        <div class="grid gap-4 lg:grid-cols-5">
+        <div class="grid gap-4 lg:grid-cols-4">
             <label class="space-y-2 text-sm font-medium text-slate-700">
                 <span>Area Sumber</span>
                 <select
@@ -55,17 +55,6 @@
                     v-model="form.pekerjaan"
                     type="text"
                     placeholder="Nama pekerjaan"
-                    class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-            </label>
-
-            <label class="space-y-2 text-sm font-medium text-slate-700">
-                <span>Resi</span>
-                <input
-                    v-model="form.resi"
-                    type="text"
-                    maxlength="255"
-                    placeholder="Opsional"
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
             </label>
@@ -319,7 +308,6 @@ const form = reactive({
     tanggal_pinjam: '',
     tanggal_kembali: '',
     pekerjaan: '',
-    resi: '',
 });
 
 const loadCachedUser = () => {
@@ -567,12 +555,10 @@ const submit = async () => {
             tanggal_pinjam: form.tanggal_pinjam,
             tanggal_kembali: form.tanggal_kembali,
             pekerjaan: form.pekerjaan,
-            resi: form.resi?.trim() || null,
             items: selectedItems.value,
         });
         resetSelection();
         form.pekerjaan = '';
-        form.resi = '';
         await loadTools();
         showAlert('success', 'Peminjaman antar area berhasil diajukan.');
     } catch (error) {

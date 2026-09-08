@@ -298,8 +298,21 @@ class PeminjamanController extends Controller
                 'last_page' => 1,
                 'per_page' => $perPage,
                 'total' => 0,
+                'status_counts' => [],
             ]);
         }
+
+        // Rekap per status dihitung dari seluruh data yang lolos filter, bukan dari
+        // satu halaman saja, supaya kartu ringkasan di halaman riwayat tidak
+        // menampilkan angka yang hanya mewakili baris yang kebetulan sedang tampil.
+        $statusCounts = (clone $query)
+            ->reorder()
+            ->toBase()
+            ->select('status', DB::raw('COUNT(*) as jumlah'))
+            ->groupBy('status')
+            ->pluck('jumlah', 'status')
+            ->map(fn ($jumlah) => (int) $jumlah)
+            ->all();
 
         $peminjamans = $query->paginate($perPage);
 
@@ -307,7 +320,9 @@ class PeminjamanController extends Controller
             $peminjamans->getCollection()->map(fn (Peminjaman $peminjaman) => $this->transformPeminjaman($peminjaman))->values()
         );
 
-        return $peminjamans;
+        return $peminjamans->toArray() + [
+            'status_counts' => $statusCounts,
+        ];
     }
 
     public function export(Request $request): StreamedResponse
@@ -424,7 +439,6 @@ class PeminjamanController extends Controller
             'tanggal_pinjam' => ['required', 'date'],
             'tanggal_kembali' => ['required', 'date', 'after_or_equal:tanggal_pinjam'],
             'pekerjaan' => ['required', 'string', 'max:1000'],
-            'resi' => ['nullable', 'string', 'max:255'],
             'area_id' => ['nullable', 'integer', 'exists:areas,id'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'integer'],
@@ -523,7 +537,6 @@ class PeminjamanController extends Controller
                 'tanggal_pinjam' => $validated['tanggal_pinjam'],
                 'tanggal_kembali' => $validated['tanggal_kembali'],
                 'pekerjaan' => $validated['pekerjaan'],
-                'resi' => $validated['resi'] ?? null,
             ]);
 
             $now = now();
@@ -703,7 +716,6 @@ class PeminjamanController extends Controller
             'tanggal_pinjam' => ['required', 'date'],
             'tanggal_kembali' => ['required', 'date', 'after_or_equal:tanggal_pinjam'],
             'pekerjaan' => ['required', 'string', 'max:1000'],
-            'resi' => ['nullable', 'string', 'max:255'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'integer'],
             'items.*.qty' => ['required', 'integer', 'min:1'],
@@ -778,7 +790,6 @@ class PeminjamanController extends Controller
                 'tanggal_pinjam' => $validated['tanggal_pinjam'],
                 'tanggal_kembali' => $validated['tanggal_kembali'],
                 'pekerjaan' => $validated['pekerjaan'],
-                'resi' => $validated['resi'] ?? null,
             ]);
 
             $now = now();

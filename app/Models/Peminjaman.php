@@ -52,6 +52,7 @@ class Peminjaman extends Model
         'kategori',
         'tanggal_pinjam',
         'tanggal_kembali',
+        'reminder_pengembalian_terakhir',
         'review_note',
         'reviewed_at',
         'reviewed_by',
@@ -63,6 +64,7 @@ class Peminjaman extends Model
     protected $casts = [
         'tanggal_pinjam' => 'date',
         'tanggal_kembali' => 'date',
+        'reminder_pengembalian_terakhir' => 'date',
         'reviewed_at' => 'datetime',
         'requester_reviewed_at' => 'datetime',
         'is_inter_area' => 'boolean',

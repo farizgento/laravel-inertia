@@ -719,9 +719,29 @@ class AlatController extends Controller
         ]);
     }
 
+    /**
+     * Kode alat bebas diubah pengguna, tetapi tetap harus unik dalam satu area
+     * supaya tidak ada dua alat dengan identitas yang sama.
+     */
+    private function ensureKodeTersedia(string $kode, int $areaId, ?int $kecualikanId = null): void
+    {
+        $bentrok = Alat::query()
+            ->where('area_id', $areaId)
+            ->where('kode', $kode)
+            ->when($kecualikanId, fn ($query) => $query->whereKeyNot($kecualikanId))
+            ->exists();
+
+        if ($bentrok) {
+            throw ValidationException::withMessages([
+                'kode' => ["Kode {$kode} sudah dipakai alat lain di area ini."],
+            ]);
+        }
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
+            'kode' => ['nullable', 'string', 'max:100'],
             'nama' => ['required', 'string', 'max:255'],
             'jenis_alat' => ['required', 'string', 'max:255'],
             'klasifikasi_alat' => ['required', 'string', 'max:255'],
@@ -735,6 +755,14 @@ class AlatController extends Controller
             ]);
         }
         $data = $this->applyWritableArea($request, $data);
+
+        // Dikosongkan supaya model mengisi kode default nomor urut area.
+        $data['kode'] = trim((string) ($data['kode'] ?? ''));
+        if ($data['kode'] === '') {
+            unset($data['kode']);
+        } else {
+            $this->ensureKodeTersedia($data['kode'], (int) $data['area_id']);
+        }
 
         $alat = Alat::create($data);
         $alat->load('area');
@@ -750,6 +778,7 @@ class AlatController extends Controller
         $this->ensureToolInAuthorizedArea($request, $alat);
 
         $data = $request->validate([
+            'kode' => ['nullable', 'string', 'max:100'],
             'nama' => ['required', 'string', 'max:255'],
             'jenis_alat' => ['required', 'string', 'max:255'],
             'klasifikasi_alat' => ['required', 'string', 'max:255'],
@@ -763,6 +792,14 @@ class AlatController extends Controller
             ]);
         }
         $data = $this->applyWritableArea($request, $data);
+
+        // Kode dikosongkan pengguna berarti kembali ke penomoran default area.
+        $data['kode'] = trim((string) ($data['kode'] ?? ''));
+        if ($data['kode'] === '') {
+            $data['kode'] = Alat::generateKode((int) $data['area_id']);
+        } else {
+            $this->ensureKodeTersedia($data['kode'], (int) $data['area_id'], $alat->id);
+        }
 
         $alat->update($data);
         $alat->load('area');

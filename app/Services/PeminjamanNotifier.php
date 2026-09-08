@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Mail\PeminjamanCompletedMail;
 use App\Mail\PeminjamanReadyToShipMail;
 use App\Mail\PeminjamanReturnedMail;
+use App\Mail\PeminjamanReturnReminderMail;
 use App\Mail\PeminjamanReviewNeededMail;
 use App\Mail\PeminjamanShippedMail;
 use App\Models\Peminjaman;
@@ -128,6 +129,59 @@ class PeminjamanNotifier
             'Gagal mengirim email konfirmasi pengiriman peminjaman.',
             $peminjaman
         );
+    }
+
+    /**
+     * Remind whoever is holding the alat that the return date is approaching,
+     * has arrived, or has passed. Recipients mirror notifyShipped(): the
+     * borrower for intra-area loans, or PIC Tool of the requesting area for
+     * inter-area loans. Returns the number of recipients the mail was queued
+     * for so the scheduler can report on it. Failures are logged, never thrown.
+     */
+    public static function notifyReturnReminder(
+        Peminjaman $peminjaman,
+        string $jenis,
+        int $hariTerlambat = 0
+    ): int {
+        $peminjaman->loadMissing(['items.alat', 'user', 'area']);
+
+        $recipients = self::resolveHolderRecipients($peminjaman);
+
+        self::sendToRecipients(
+            $recipients,
+            fn () => new PeminjamanReturnReminderMail($peminjaman, $jenis, $hariTerlambat),
+            'Gagal mengirim email pengingat pengembalian peminjaman.',
+            $peminjaman
+        );
+
+        return $recipients->count();
+    }
+
+    /**
+     * Pihak yang sedang memegang alat: peminjam untuk intra area, atau PIC Tool
+     * area peminjam untuk peminjaman antar area.
+     *
+     * @return Collection<int, User>
+     */
+    private static function resolveHolderRecipients(Peminjaman $peminjaman): Collection
+    {
+        if ($peminjaman->is_inter_area) {
+            $areaId = $peminjaman->requester_area_id ? (int) $peminjaman->requester_area_id : null;
+
+            if (! $areaId) {
+                return collect();
+            }
+
+            return User::query()
+                ->whereHas('role', fn ($query) => $query->where('key', Role::KEY_PIC_TOOL))
+                ->where('area_id', $areaId)
+                ->whereNotNull('email')
+                ->get();
+        }
+
+        return $peminjaman->user && $peminjaman->user->email
+            ? collect([$peminjaman->user])
+            : collect();
     }
 
     /**
