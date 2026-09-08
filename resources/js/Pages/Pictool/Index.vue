@@ -659,7 +659,7 @@
                         <div>
                             <h3 class="text-lg font-semibold text-slate-900">Import Data Alat</h3>
                             <p class="mt-1 text-sm text-slate-500">
-                                Upload file CSV atau XLSX dengan urutan kolom: nama alat, jenis alat, klasifikasi alat, total aset, area, lokasi.
+                                Upload file CSV atau XLSX dengan urutan kolom: nama alat, jenis alat, klasifikasi alat, total aset, area, lokasi, kode alat.
                             </p>
                         </div>
                         <button
@@ -701,16 +701,14 @@
                         <p>Kolom 3: klasifikasi alat</p>
                         <p>Kolom 4: total aset</p>
                         <p>Kolom 5: area</p>
-                        <p>Kolom 6: lokasi <span class="text-xs text-slate-500">(opsional)</span></p>
-                        <p class="mt-3 text-xs text-slate-500">
-                            Nilai klasifikasi alat harus salah satu dari `General Tools`, `Lifting Tools`, atau `Measurement Tools`.
+                        <p>Kolom 6: lokasi</p>
+                        <p>Kolom 7: kode alat <span class="text-xs text-slate-500">(opsional)</span></p>
+                        <p class="mt-3 text-xs  text-red-500">
+                            Nilai klasifikasi alat harus salah satu dari <b>`General Tools`</b>,<b>`Lifting Tools`</b>,<b> atau `Measurement Tools`.</b>
                         </p>
-                        <p class="mt-2 text-xs text-slate-500">
-                            Nilai pada kolom area harus sama dengan `slug` area, misalnya `uphk`, `I.1`, atau `kstubun`.
-                        </p>
-                        <p class="mt-2 text-xs text-slate-500">
-                            Kolom lokasi diisi tempat penyimpanan alat, misalnya `Gudang A - Rak 3`. Dikosongkan berarti
-                            lokasi yang sudah tercatat dibiarkan apa adanya.
+                        <p class="mt-2 text-xs text-red-500">
+                            <b>Kode Alat </b> boleh dikosongkan. Bila kosong, kode dibuat otomatis mengikuti nomor urut
+                            area, misalnya `UPHK-1`. Kode harus unik di dalam satu area.
                         </p>
                     </div>
 

@@ -95,22 +95,28 @@ class AlatImportService
                     $lookupKey = $row['lookup_key'];
                     $totalAset = $row['total_aset'];
                     $lokasi = trim((string) ($row['lokasi'] ?? ''));
+                    $kode = trim((string) ($row['kode'] ?? ''));
                     $alat = $alatMap[$lookupKey] ?? null;
 
                     if ($alat instanceof Alat) {
                         $updated += 1;
                         $oldTotalAset = (int) $alat->total_aset;
                         $oldLokasi = $alat->lokasi;
-                        // Kolom lokasi yang dikosongkan diartikan "biarkan apa adanya",
-                        // supaya berkas import lama tanpa kolom ini tidak menghapus
-                        // lokasi yang sudah tercatat.
-                        $lokasiBaru = $lokasi !== '' ? $lokasi : $oldLokasi;
+                        $oldKode = $alat->kode;
+                        // Kode yang dikosongkan berarti "biarkan kode yang sudah
+                        // ada", bukan dibuat ulang, supaya kode alat tidak berubah
+                        // sendiri setiap kali diimport ulang.
+                        $kodeBaru = $kode !== '' ? $kode : $oldKode;
+                        // Lokasi mengikuti isi berkas apa adanya: dikosongkan berarti
+                        // lokasi ikut dikosongkan (null), bukan dipertahankan.
+                        $lokasiBaru = $lokasi !== '' ? $lokasi : null;
 
-                        if ($oldTotalAset !== $totalAset || $oldLokasi !== $lokasiBaru) {
-                            Alat::withoutEvents(function () use ($alat, $totalAset, $lokasiBaru) {
+                        if ($oldTotalAset !== $totalAset || $oldLokasi !== $lokasiBaru || $oldKode !== $kodeBaru) {
+                            Alat::withoutEvents(function () use ($alat, $totalAset, $lokasiBaru, $kodeBaru) {
                                 $alat->forceFill([
                                     'total_aset' => $totalAset,
                                     'lokasi' => $lokasiBaru,
+                                    'kode' => $kodeBaru,
                                 ]);
                                 $alat->save();
                             });
@@ -118,20 +124,25 @@ class AlatImportService
                             $activityPayloads[] = $this->buildImportedAlatActivityPayload('update', $alat, [
                                 'total_aset' => $oldTotalAset,
                                 'lokasi' => $oldLokasi,
+                                'kode' => $oldKode,
                             ], [
                                 'total_aset' => $totalAset,
                                 'lokasi' => $lokasiBaru,
+                                'kode' => $kodeBaru,
                             ], $import);
                         }
 
                         $alat->total_aset = $totalAset;
                         $alat->lokasi = $lokasiBaru;
+                        $alat->kode = $kodeBaru;
                     } else {
                         // Alat::withoutEvents() melewati hook creating pada model,
                         // jadi kode default nomor urut area dibuat eksplisit di sini.
                         $alat = Alat::withoutEvents(fn () => Alat::create([
                             ...$lookup,
-                            'kode' => Alat::generateKode((int) ($lookup['area_id'] ?? 0)),
+                            // Kode dari berkas dipakai apa adanya; bila dikosongkan
+                            // barulah nomor urut area dibuatkan otomatis.
+                            'kode' => $kode !== '' ? $kode : Alat::generateKode((int) ($lookup['area_id'] ?? 0)),
                             'lokasi' => $lokasi !== '' ? $lokasi : null,
                             'total_aset' => $totalAset,
                         ]));
@@ -139,6 +150,7 @@ class AlatImportService
                         $alatMap[$lookupKey] = $alat;
                         $created += 1;
                         $activityPayloads[] = $this->buildImportedAlatActivityPayload('create', $alat, [], [
+                            'kode' => $alat->kode,
                             'nama' => $alat->nama,
                             'jenis_alat' => $alat->jenis_alat,
                             'klasifikasi_alat' => $alat->klasifikasi_alat,
@@ -200,9 +212,10 @@ class AlatImportService
             $klasifikasiAlat = $this->normalizeImportedText($cells[2] ?? null);
             $totalAset = $this->normalizeImportedNumber($cells[3] ?? null);
             $areaSlug = mb_strtolower($this->normalizeImportedText($cells[4] ?? null));
-            // Kolom keenam bersifat opsional supaya berkas import lama yang hanya
-            // punya lima kolom tetap bisa diproses.
+            // Kolom keenam dan ketujuh bersifat opsional supaya berkas import lama
+            // yang hanya punya lima kolom tetap bisa diproses.
             $lokasi = $this->normalizeImportedText($cells[5] ?? null);
+            $kode = $this->normalizeImportedText($cells[6] ?? null);
 
             if ($nama === '' && $jenisAlat === '' && $klasifikasiAlat === '' && $totalAset === null && $areaSlug === '') {
                 continue;
@@ -223,6 +236,9 @@ class AlatImportService
             }
             if (mb_strlen($lokasi) > 255) {
                 $rowErrors[] = 'lokasi maksimal 255 karakter';
+            }
+            if (mb_strlen($kode) > 100) {
+                $rowErrors[] = 'kode alat maksimal 100 karakter';
             }
             if ($totalAset === null) {
                 $rowErrors[] = 'total aset harus berupa angka bulat >= 0';
@@ -252,11 +268,101 @@ class AlatImportService
                 'lookup' => $lookup,
                 'lookup_key' => $this->makeAlatLookupKey($nama, $jenisAlat, $klasifikasiAlat, (int) $lookup['area_id']),
                 'lokasi' => $lokasi,
+                'kode' => $kode,
+                'row_number' => $excelRow,
                 'total_aset' => (int) $totalAset,
             ];
         }
 
+        $errors = array_merge($errors, $this->validateKodeUniqueness($validatedRows));
+
         return [$validatedRows, $errors];
+    }
+
+    /**
+     * Kode alat wajib unik di dalam satu area. Dicek dua arah: sesama baris pada
+     * berkas import, dan terhadap alat yang sudah ada di database. Baris yang
+     * memang menunjuk alat itu sendiri tidak dianggap bentrok, supaya kode alat
+     * yang sudah ada boleh diimport ulang dengan nilai yang sama.
+     *
+     * @param  array<int, array<string, mixed>>  $validatedRows
+     * @return array<int, string>
+     */
+    private function validateKodeUniqueness(array $validatedRows): array
+    {
+        $errors = [];
+        $terpakaiDiBerkas = [];
+        $kodePerArea = [];
+
+        foreach ($validatedRows as $row) {
+            $kode = trim((string) ($row['kode'] ?? ''));
+            if ($kode === '') {
+                continue;
+            }
+
+            $areaId = (int) $row['lookup']['area_id'];
+            $kunci = $areaId.'|'.mb_strtolower($kode);
+
+            if (isset($terpakaiDiBerkas[$kunci])) {
+                $errors[] = "Baris {$row['row_number']}: kode {$kode} dipakai lebih dari sekali pada berkas ini.";
+
+                continue;
+            }
+
+            $terpakaiDiBerkas[$kunci] = true;
+            $kodePerArea[$areaId][] = $kode;
+        }
+
+        foreach ($kodePerArea as $areaId => $daftarKode) {
+            $bentrok = Alat::query()
+                ->where('area_id', $areaId)
+                ->whereIn('kode', $daftarKode)
+                ->pluck('kode', 'id');
+
+            if ($bentrok->isEmpty()) {
+                continue;
+            }
+
+            // Kode yang ternyata milik alat yang sedang diperbarui baris ini
+            // bukan bentrok, jadi dikeluarkan dari daftar.
+            $milikSendiri = Alat::query()
+                ->where('area_id', $areaId)
+                ->whereIn('kode', $daftarKode)
+                ->get(['id', 'kode', 'nama', 'jenis_alat', 'klasifikasi_alat', 'area_id'])
+                ->filter(function (Alat $alat) use ($validatedRows) {
+                    $kunciAlat = $this->makeAlatLookupKey(
+                        (string) $alat->nama,
+                        (string) $alat->jenis_alat,
+                        (string) $alat->klasifikasi_alat,
+                        (int) $alat->area_id,
+                    );
+
+                    foreach ($validatedRows as $row) {
+                        if ($row['lookup_key'] === $kunciAlat && trim((string) ($row['kode'] ?? '')) === (string) $alat->kode) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                })
+                ->pluck('kode')
+                ->all();
+
+            foreach ($bentrok as $kode) {
+                if (in_array($kode, $milikSendiri, true)) {
+                    continue;
+                }
+
+                $barisBentrok = collect($validatedRows)
+                    ->first(fn (array $row) => (int) $row['lookup']['area_id'] === (int) $areaId
+                        && trim((string) ($row['kode'] ?? '')) === (string) $kode);
+
+                $nomorBaris = $barisBentrok['row_number'] ?? '?';
+                $errors[] = "Baris {$nomorBaris}: kode {$kode} sudah dipakai alat lain di area ini.";
+            }
+        }
+
+        return $errors;
     }
 
     private function makeAlatLookupKey(string $nama, string $jenisAlat, string $klasifikasiAlat, int $areaId): string
@@ -287,7 +393,9 @@ class AlatImportService
         Alat::query()
             ->whereIn('area_id', $areaIds)
             ->whereIn('nama', $names)
-            ->get(['id', 'nama', 'jenis_alat', 'klasifikasi_alat', 'lokasi', 'total_aset', 'area_id'])
+            // "kode" wajib ikut diambil: nilainya dipakai sebagai kode lama saat
+            // kolom kode pada berkas dikosongkan. Tanpa ini kode alat terhapus.
+            ->get(['id', 'kode', 'nama', 'jenis_alat', 'klasifikasi_alat', 'lokasi', 'total_aset', 'area_id'])
             ->each(function (Alat $alat) use (&$alatMap) {
                 $alatMap[$this->makeAlatLookupKey(
                     (string) $alat->nama,
