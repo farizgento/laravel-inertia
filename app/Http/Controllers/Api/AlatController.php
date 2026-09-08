@@ -851,8 +851,12 @@ class AlatController extends Controller
 
     public function downloadImportTemplate(Request $request): BinaryFileResponse
     {
-        $path = public_path('storage/templates/TEMPLATE-IMPORT-ALAT.xlsx');
-        abort_unless(file_exists($path), 404, 'Template import alat belum tersedia. Pastikan file berada di storage/app/public/templates dan jalankan php artisan storage:link.');
+        // Dibaca dari storage/templates (ikut terversi di git, sama seperti
+        // template surat jalan). Sebelumnya dibaca dari public/storage yang
+        // merupakan symlink ke storage/app/public dan diabaikan .gitignore,
+        // sehingga perubahan template tidak pernah ikut ter-commit.
+        $path = storage_path('templates/TEMPLATE-IMPORT-ALAT.xlsx');
+        abort_unless(file_exists($path), 404, 'Template import alat belum tersedia. Pastikan berkas berada di storage/templates.');
 
         $area = $this->resolveTemplateArea($request);
         if (! $area) {
