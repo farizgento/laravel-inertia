@@ -169,6 +169,10 @@ Route::middleware('auth')->group(function () {
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
     ]))->group(function () {
+        // Prefix terpisah dari /peminjaman-templates supaya tidak tertangkap
+        // route GET /peminjaman-templates/{template} yang terdaftar lebih dulu.
+        Route::get('/peminjaman-template-alat/unduh', [PeminjamanTemplateController::class, 'downloadDaftarAlat']);
+        Route::post('/peminjaman-template-alat/cocokkan', [PeminjamanTemplateController::class, 'cocokkanAlat']);
         Route::post('/peminjaman-templates', [PeminjamanTemplateController::class, 'store']);
         Route::put('/peminjaman-templates/{template}', [PeminjamanTemplateController::class, 'update']);
         Route::delete('/peminjaman-templates/{template}', [PeminjamanTemplateController::class, 'destroy']);

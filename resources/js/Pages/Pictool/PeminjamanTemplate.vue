@@ -423,6 +423,89 @@
                         </select>
                     </label>
 
+                    <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-semibold text-slate-800">Banyak alat? Pilih sekaligus lewat Excel</p>
+                                <p class="mt-0.5 text-xs text-slate-600">
+                                    Unduh daftar alat area ini, isi kolom <span class="font-semibold">Jumlah</span> pada alat
+                                    yang dibutuhkan, lalu unggah kembali. Tidak perlu hafal kode alat.
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button
+                                    class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                    type="button"
+                                    :disabled="!toolAreaId || isDownloadingDaftar"
+                                    :title="toolAreaId ? 'Unduh daftar seluruh alat area ini' : 'Pilih area terlebih dahulu'"
+                                    @click="downloadDaftarAlat"
+                                >
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M12 3v12" />
+                                        <path d="m7 10 5 5 5-5" />
+                                        <path d="M5 21h14" />
+                                    </svg>
+                                    {{ isDownloadingDaftar ? 'Mengunduh...' : 'Unduh Daftar Alat' }}
+                                </button>
+                                <button
+                                    class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                                    type="button"
+                                    :disabled="!toolAreaId || isMatchingDaftar"
+                                    @click="daftarInput?.click()"
+                                >
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M12 21V9" />
+                                        <path d="m7 14 5-5 5 5" />
+                                        <path d="M5 3h14" />
+                                    </svg>
+                                    {{ isMatchingDaftar ? 'Membaca...' : 'Unggah Daftar' }}
+                                </button>
+                                <input
+                                    ref="daftarInput"
+                                    type="file"
+                                    accept=".xlsx,.csv"
+                                    class="sr-only"
+                                    @change="uploadDaftarAlat"
+                                />
+                            </div>
+                        </div>
+
+                        <div v-if="hasilCocok" class="mt-3 rounded-lg border border-slate-200 bg-white p-3 text-xs">
+                            <div class="flex items-start justify-between gap-2">
+                                <p class="font-semibold" :class="hasilCocok.items.length ? 'text-emerald-700' : 'text-slate-600'">
+                                    {{ hasilCocok.items.length }} alat dimasukkan ke pilihan
+                                    <span v-if="hasilCocok.masalah.length" class="text-amber-700">
+                                        &middot; {{ hasilCocok.masalah.length }} baris perlu dicek
+                                    </span>
+                                </p>
+                                <button
+                                    class="shrink-0 text-slate-400 transition hover:text-slate-600"
+                                    type="button"
+                                    aria-label="Tutup hasil"
+                                    @click="hasilCocok = null"
+                                >
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                        <path d="M18 6 6 18M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <ul v-if="hasilCocok.items.length" class="mt-2 max-h-28 space-y-0.5 overflow-y-auto text-slate-600">
+                                <li v-for="item in hasilCocok.items" :key="`cocok-${item.id}`">
+                                    <span class="font-mono text-slate-400">{{ item.kode }}</span>
+                                    {{ item.nama }} &times; {{ item.qty }}
+                                </li>
+                            </ul>
+                            <ul
+                                v-if="hasilCocok.masalah.length"
+                                class="mt-2 max-h-28 space-y-0.5 overflow-y-auto rounded-md bg-amber-50 px-2 py-1.5 text-amber-800"
+                            >
+                                <li v-for="(masalah, index) in hasilCocok.masalah" :key="`masalah-${index}`">
+                                    Baris {{ masalah.baris }}: {{ masalah.pesan }}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
                     <div class="rounded-xl border border-slate-200">
                         <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 p-3">
                             <label class="relative min-w-0 flex-1">
@@ -624,6 +707,10 @@ const modalOpen = ref(false);
 const editingId = ref(null);
 const formError = ref('');
 const toolSearch = ref('');
+const daftarInput = ref(null);
+const isDownloadingDaftar = ref(false);
+const isMatchingDaftar = ref(false);
+const hasilCocok = ref(null);
 const alertMessage = ref('');
 const alertType = ref('success');
 const alertTitle = ref('');
@@ -714,6 +801,94 @@ const resetSelection = () => {
     Object.keys(selectedQty).forEach((key) => {
         delete selectedQty[key];
     });
+    hasilCocok.value = null;
+};
+
+const daftarAlatParams = () => ({
+    kategori: form.kategori,
+    area_id: activeManagedAreaId.value || undefined,
+    source_area_id: form.kategori === 'Antar Area' ? form.source_area_id || undefined : undefined,
+});
+
+const readBlobError = async (error, fallback) => {
+    const data = error?.response?.data;
+    if (data instanceof Blob) {
+        try {
+            const parsed = JSON.parse(await data.text());
+            return parsed?.message ?? fallback;
+        } catch (parseError) {
+            return fallback;
+        }
+    }
+    return data?.message ?? fallback;
+};
+
+const downloadDaftarAlat = async () => {
+    if (!toolAreaId.value) {
+        return;
+    }
+
+    isDownloadingDaftar.value = true;
+    try {
+        const response = await axios.get('/api/peminjaman-template-alat/unduh', {
+            params: daftarAlatParams(),
+            responseType: 'blob',
+        });
+        const disposition = response.headers?.['content-disposition'] ?? '';
+        const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+        const filename = match ? decodeURIComponent(match[1]) : 'DAFTAR-ALAT-TEMPLATE.xlsx';
+        const url = URL.createObjectURL(response.data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        showAlert('error', await readBlobError(error, 'Gagal mengunduh daftar alat.'));
+    } finally {
+        isDownloadingDaftar.value = false;
+    }
+};
+
+const uploadDaftarAlat = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || !toolAreaId.value) {
+        return;
+    }
+
+    isMatchingDaftar.value = true;
+    try {
+        const payload = new FormData();
+        payload.append('file', file);
+        Object.entries(daftarAlatParams()).forEach(([key, value]) => {
+            if (value !== undefined && value !== '') {
+                payload.append(key, value);
+            }
+        });
+
+        const response = await axios.post('/api/peminjaman-template-alat/cocokkan', payload);
+        const items = Array.isArray(response.data?.items) ? response.data.items : [];
+        const masalah = Array.isArray(response.data?.masalah) ? response.data.masalah : [];
+
+        // Hasil unggahan menimpa jumlah alat yang sama, alat lain yang sudah dipilih tetap dipertahankan.
+        items.forEach((item) => {
+            selectedQty[item.id] = Number(item.qty);
+        });
+        hasilCocok.value = { items, masalah };
+
+        if (!items.length && !masalah.length) {
+            showAlert('error', 'Tidak ada baris dengan kolom Jumlah terisi.');
+        }
+    } catch (error) {
+        const errors = error?.response?.data?.errors;
+        const firstError = errors ? Object.values(errors).flat()[0] : null;
+        showAlert('error', firstError ?? error?.response?.data?.message ?? 'Gagal membaca file daftar alat.');
+    } finally {
+        isMatchingDaftar.value = false;
+    }
 };
 
 const resetForm = () => {
