@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Observers\ModelActivityObserver;
 use Illuminate\Database\Events\ConnectionEstablished;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Throwable;
 
@@ -22,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->ignoreOraclePasswordExpiryWarning();
     }
 
     /**
@@ -41,6 +42,39 @@ class AppServiceProvider extends ServiceProvider
         PeminjamanItem::observe($observer);
         SuratJalan::observe($observer);
         LaporanAlat::observe($observer);
+    }
+
+    /**
+     * Saat password user database Oracle memasuki masa tenggang, oci_connect()
+     * TETAP berhasil tetapi memunculkan warning ORA-28002 (password akan
+     * kedaluwarsa). Handler error Laravel mengubah warning itu menjadi
+     * ErrorException sehingga koneksi gagal dibuat dan seluruh halaman balas
+     * 500 — termasuk login. Warning ini kita catat sebagai peringatan saja
+     * supaya aplikasi tetap jalan, sementara password database diperbarui.
+     */
+    private function ignoreOraclePasswordExpiryWarning(): void
+    {
+        $previous = set_error_handler(null);
+
+        set_error_handler(function (int $severity, string $message, string $file = '', int $line = 0) use ($previous) {
+            if (str_contains($message, 'ORA-28002')) {
+                static $sudahDicatat = false;
+
+                if (! $sudahDicatat) {
+                    $sudahDicatat = true;
+
+                    try {
+                        Log::warning('Password user database Oracle akan kedaluwarsa: ' . $message);
+                    } catch (Throwable $e) {
+                        // Logger belum siap; cukup abaikan warning-nya.
+                    }
+                }
+
+                return true;
+            }
+
+            return $previous ? $previous($severity, $message, $file, $line) : false;
+        });
     }
 
     /**

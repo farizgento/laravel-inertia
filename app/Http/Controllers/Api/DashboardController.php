@@ -7,6 +7,7 @@ use App\Models\Alat;
 use App\Models\Area;
 use App\Models\LaporanAlat;
 use App\Models\Peminjaman;
+use App\Models\PeminjamanItem;
 use App\Models\Role;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,7 +24,17 @@ class DashboardController extends Controller
 
         $validated = $request->validate([
             'area_id' => ['nullable', 'integer', 'exists:areas,id'],
+            'mulai' => ['nullable', 'date'],
+            'selesai' => ['nullable', 'date', 'after_or_equal:mulai'],
         ]);
+
+        // Default rentang utilisasi: satu tahun penuh pada tahun berjalan.
+        $rentangMulai = isset($validated['mulai'])
+            ? CarbonImmutable::parse($validated['mulai'])->startOfDay()
+            : CarbonImmutable::now()->startOfYear();
+        $rentangSelesai = isset($validated['selesai'])
+            ? CarbonImmutable::parse($validated['selesai'])->endOfDay()
+            : CarbonImmutable::now()->endOfYear();
 
         $user->loadMissing(['role', 'area']);
         $roleKey = strtolower((string) ($user->role?->key ?? ''));
@@ -93,6 +104,8 @@ class DashboardController extends Controller
             $insights = $this->buildOperationalInsights($effectiveAreaId);
         }
 
+        $utilisasi = $this->buildUtilisasiAlat($effectiveAreaId, $rentangMulai, $rentangSelesai);
+
         return response()->json([
             'area' => [
                 'id' => $effectiveArea?->id,
@@ -100,6 +113,7 @@ class DashboardController extends Controller
             ],
             'summary' => $summary,
             'insights' => $insights,
+            'utilisasi' => $utilisasi,
             'meta' => [
                 'role_key' => $roleKey,
                 'is_area_switcher' => $isAreaSwitcherRole,
@@ -108,6 +122,144 @@ class DashboardController extends Controller
                 'generated_at' => now()->toIso8601String(),
             ],
         ]);
+    }
+
+    /**
+     * Utilisasi alat: seberapa sering tiap alat dipinjam pada rentang tanggal terpilih,
+     * termasuk alat yang sama sekali belum pernah dipinjam.
+     */
+    private function buildUtilisasiAlat(?int $areaId, CarbonImmutable $mulai, CarbonImmutable $selesai): array
+    {
+        $kosong = [
+            'periode' => [
+                'mulai' => $mulai->toDateString(),
+                'selesai' => $selesai->toDateString(),
+                'label' => $mulai->translatedFormat('d M Y') . ' - ' . $selesai->translatedFormat('d M Y'),
+            ],
+            'ringkasan' => [
+                'jenis_alat' => 0,
+                'jenis_terpakai' => 0,
+                'jenis_tidak_terpakai' => 0,
+                'persen_utilisasi' => 0,
+                'total_unit_dipinjam' => 0,
+                'aset_menganggur' => 0,
+            ],
+            'paling_sering' => [],
+            'jarang_dipakai' => [],
+            'tren_bulanan' => [],
+        ];
+
+        if (! $areaId) {
+            return $kosong;
+        }
+
+        $alats = Alat::query()
+            ->where('area_id', $areaId)
+            ->orderBy('nama')
+            ->get(['id', 'kode', 'nama', 'jenis_alat', 'total_aset']);
+
+        if ($alats->isEmpty()) {
+            return $kosong;
+        }
+
+        $pemakaian = PeminjamanItem::query()
+            ->join('peminjamans as p', 'p.id', '=', 'peminjaman_items.peminjaman_id')
+            ->join('alats as a', 'a.id', '=', 'peminjaman_items.alat_id')
+            ->where('a.area_id', $areaId)
+            ->where('p.status', '!=', Peminjaman::STATUS_DITOLAK)
+            ->where('p.created_at', '>=', $mulai->toDateTimeString())
+            ->where('p.created_at', '<=', $selesai->toDateTimeString())
+            ->groupBy('a.id')
+            ->selectRaw('a.id as alat_id, COUNT(DISTINCT p.id) as frekuensi, COALESCE(SUM(peminjaman_items.qty), 0) as total_qty, MAX(p.created_at) as terakhir_dipinjam')
+            ->get()
+            ->keyBy('alat_id');
+
+        $baris = $alats->map(function (Alat $alat) use ($pemakaian) {
+            $stat = $pemakaian->get($alat->id);
+            $terakhir = $stat?->terakhir_dipinjam;
+
+            return [
+                'id' => (int) $alat->id,
+                'kode' => $alat->kode ?: '-',
+                'nama' => $alat->nama,
+                'jenis_alat' => $alat->jenis_alat,
+                'total_aset' => (int) $alat->total_aset,
+                'frekuensi' => (int) ($stat->frekuensi ?? 0),
+                'total_qty' => (int) ($stat->total_qty ?? 0),
+                'terakhir_dipinjam' => $terakhir ? CarbonImmutable::parse($terakhir)->translatedFormat('d M Y') : null,
+            ];
+        });
+
+        $terpakai = $baris->where('frekuensi', '>', 0);
+
+        $palingSering = $terpakai
+            ->sortByDesc(fn (array $row) => [$row['frekuensi'], $row['total_qty']])
+            ->take(8)
+            ->values()
+            ->all();
+
+        // Alat yang belum pernah dipinjam ditaruh paling atas, dan di antara yang
+        // sama-sama nganggur didahulukan yang asetnya paling banyak.
+        $jarangDipakai = $baris
+            ->sortBy(fn (array $row) => [$row['frekuensi'], $row['total_qty'], -$row['total_aset']])
+            ->take(8)
+            ->values()
+            ->all();
+
+        $jumlahJenis = $baris->count();
+        $jumlahTerpakai = $terpakai->count();
+
+        return [
+            'periode' => $kosong['periode'],
+            'ringkasan' => [
+                'jenis_alat' => $jumlahJenis,
+                'jenis_terpakai' => $jumlahTerpakai,
+                'jenis_tidak_terpakai' => $jumlahJenis - $jumlahTerpakai,
+                // Satu desimal supaya area dengan ratusan jenis alat tidak selalu tampil 0%.
+                'persen_utilisasi' => $jumlahJenis > 0 ? round(($jumlahTerpakai / $jumlahJenis) * 100, 1) : 0,
+                'total_unit_dipinjam' => (int) $baris->sum('total_qty'),
+                'aset_menganggur' => (int) $baris->where('frekuensi', 0)->sum('total_aset'),
+            ],
+            'paling_sering' => $palingSering,
+            'jarang_dipakai' => $jarangDipakai,
+            'tren_bulanan' => $this->buildTrenPeminjamanBulanan($areaId, $mulai, $selesai),
+        ];
+    }
+
+    /**
+     * Jumlah transaksi peminjaman per bulan sepanjang rentang terpilih (maksimal 24 bulan).
+     */
+    private function buildTrenPeminjamanBulanan(int $areaId, CarbonImmutable $mulai, CarbonImmutable $selesai): array
+    {
+        $rows = Peminjaman::query()
+            ->where('area_id', $areaId)
+            ->where('status', '!=', Peminjaman::STATUS_DITOLAK)
+            ->where('created_at', '>=', $mulai->toDateTimeString())
+            ->where('created_at', '<=', $selesai->toDateTimeString())
+            ->selectRaw('EXTRACT(YEAR FROM created_at) as tahun, EXTRACT(MONTH FROM created_at) as bulan, COUNT(*) as total')
+            ->groupByRaw('EXTRACT(YEAR FROM created_at)')
+            ->groupByRaw('EXTRACT(MONTH FROM created_at)')
+            ->get()
+            ->mapWithKeys(fn ($row) => [
+                sprintf('%04d-%02d', (int) $row->tahun, (int) $row->bulan) => (int) $row->total,
+            ]);
+
+        $awalBulan = $mulai->startOfMonth();
+        $jumlahBulan = min(24, max(1, $awalBulan->diffInMonths($selesai->startOfMonth()) + 1));
+
+        return collect(range(0, $jumlahBulan - 1))
+            ->map(function (int $offset) use ($awalBulan, $rows) {
+                $bulan = $awalBulan->addMonths($offset);
+                $key = $bulan->format('Y-m');
+
+                return [
+                    'key' => $key,
+                    'label' => $bulan->translatedFormat('M'),
+                    'label_panjang' => $bulan->translatedFormat('M Y'),
+                    'total' => (int) ($rows[$key] ?? 0),
+                ];
+            })
+            ->all();
     }
 
     private function laporanAreaQuery(?int $areaId): Builder

@@ -19,7 +19,7 @@ class LdapLoginService
         'userprincipalname',
     ];
 
-    public function attempt(string $username, string $password): User
+    public function attempt(string $username, #[\SensitiveParameter] string $password): User
     {
         $localUser = User::query()
             ->where('username', $username)
