@@ -73,9 +73,11 @@
                 <article
                     v-for="card in summaryCards"
                     :key="card.title"
-                    class="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50 transition hover:-translate-y-0.5 hover:shadow-xl"
+                    class="relative overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br p-5 shadow-lg shadow-slate-200/50 transition hover:-translate-y-0.5 hover:shadow-xl"
+                    :class="card.gradientClass"
                 >
                     <span class="absolute inset-x-0 top-0 h-1" :class="card.accentClass"></span>
+                    <span class="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full opacity-30 blur-2xl" :class="card.accentClass"></span>
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">{{ card.title }}</p>
@@ -87,44 +89,87 @@
                             </svg>
                         </span>
                     </div>
+
                     <p class="mt-3 text-sm leading-6 text-slate-500">{{ card.description }}</p>
                 </article>
             </section>
 
-            <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Alur Peminjaman</p>
-                        <h2 class="mt-2 text-lg font-semibold text-slate-900">Posisi transaksi saat ini</h2>
-                    </div>
-                    <p class="text-xs font-semibold text-slate-500">
-                        {{ formatNumber(statusTotal) }} transaksi aktif tercatat
+            <section class="grid gap-4 xl:grid-cols-3">
+                <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
+                    <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Status Peminjaman</p>
+                    <h2 class="mt-2 text-base font-semibold text-slate-900">Posisi transaksi</h2>
+
+                    <DonutChart
+                        v-if="adaIsi(rincian.peminjaman)"
+                        class="mt-4"
+                        :segmen="rincian.peminjaman"
+                        label-pusat="Transaksi"
+                        kelas-ukuran="h-36 w-36"
+                        :tebal="14"
+                        tata-letak="bawah"
+                        aria-label="Komposisi status peminjaman"
+                    />
+                    <p v-else class="mt-6 rounded-2xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                        Belum ada peminjaman di area ini.
                     </p>
                 </div>
 
-                <div class="mt-4 flex h-3 w-full overflow-hidden rounded-full bg-slate-100">
-                    <div
-                        v-for="item in statusCards"
-                        :key="`bar-${item.title}`"
-                        class="h-full transition-all duration-700"
-                        :class="item.barClass"
-                        :style="{ width: `${item.persen}%` }"
-                    ></div>
+                <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
+                    <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Status Laporan</p>
+                    <h2 class="mt-2 text-base font-semibold text-slate-900">Laporan kerusakan &amp; kehilangan</h2>
+
+                    <DonutChart
+                        v-if="adaIsi(rincian.laporan)"
+                        class="mt-4"
+                        :segmen="rincian.laporan"
+                        label-pusat="Laporan"
+                        kelas-ukuran="h-36 w-36"
+                        :tebal="14"
+                        tata-letak="bawah"
+                        aria-label="Komposisi status laporan alat"
+                    />
+                    <p v-else class="mt-6 rounded-2xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                        Belum ada laporan di area ini.
+                    </p>
                 </div>
 
-                <div class="mt-4 grid gap-3 sm:grid-cols-3">
-                    <div
-                        v-for="item in statusCards"
-                        :key="item.title"
-                        class="rounded-2xl border px-4 py-3"
-                        :class="item.wrapperClass"
-                    >
-                        <div class="flex items-center justify-between gap-2">
-                            <p class="text-sm font-semibold" :class="item.titleClass">{{ item.title }}</p>
-                            <p class="text-2xl font-semibold" :class="item.valueClass">{{ item.value }}</p>
+                <!-- Jenis alat bisa ratusan, jadi dipakai batang peringkat, bukan pie. -->
+                <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Jenis Alat</p>
+                            <h2 class="mt-2 text-base font-semibold text-slate-900">Jenis terbanyak</h2>
                         </div>
-                        <p class="mt-1 text-xs" :class="item.captionClass">{{ item.description }} &middot; {{ item.persen }}%</p>
+                        <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                            {{ formatNumber(jenisAlat.total_jenis) }} jenis
+                        </span>
                     </div>
+
+                    <ul v-if="jenisAlatTeratas.length" class="mt-4 space-y-2.5">
+                        <li v-for="item in jenisAlatTeratas" :key="item.key">
+                            <div class="flex items-baseline justify-between gap-3">
+                                <p class="truncate text-sm text-slate-700" :title="item.label">{{ item.label }}</p>
+                                <p class="shrink-0 text-xs font-semibold text-slate-500">
+                                    {{ formatNumber(item.nilai) }}
+                                    <span class="ml-1 font-medium text-slate-400">{{ item.persen }}%</span>
+                                </p>
+                            </div>
+                            <div class="mt-1 h-2 rounded-full bg-slate-100">
+                                <div
+                                    class="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700"
+                                    :style="{ width: `${item.lebar}%` }"
+                                ></div>
+                            </div>
+                        </li>
+                    </ul>
+                    <p v-else class="mt-6 rounded-2xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                        Belum ada alat di area ini.
+                    </p>
+
+                    <p v-if="jenisAlat.lainnya_jenis > 0" class="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                        + {{ formatNumber(jenisAlat.lainnya_jenis) }} jenis lainnya
+                        &middot; {{ formatNumber(jenisAlat.lainnya_alat) }} katalog alat
+                    </p>
                 </div>
             </section>
 
@@ -181,48 +226,22 @@
                 </div>
 
                 <div class="mt-5 grid gap-4 xl:grid-cols-[300px,1fr]">
-                    <div class="rounded-3xl border border-slate-100 bg-slate-50/80 p-5">
-                        <div class="flex items-center justify-center">
-                            <div class="relative">
-                                <svg class="h-40 w-40 -rotate-90" viewBox="0 0 120 120" aria-hidden="true">
-                                    <circle cx="60" cy="60" r="52" fill="none" stroke="#e2e8f0" stroke-width="14" />
-                                    <circle
-                                        cx="60"
-                                        cy="60"
-                                        r="52"
-                                        fill="none"
-                                        stroke="#0ea5e9"
-                                        stroke-width="14"
-                                        stroke-linecap="round"
-                                        :stroke-dasharray="donutDash"
-                                        class="transition-all duration-700"
-                                    />
-                                </svg>
-                                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                    <p class="text-3xl font-semibold text-slate-900">{{ formatPersen(utilRingkasan.persen_utilisasi) }}%</p>
-                                    <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Terpakai</p>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="rounded-3xl border border-slate-100 bg-gradient-to-br from-slate-50 to-white p-5">
+                        <DonutChart
+                            :segmen="utilisasiDonut"
+                            label-pusat="Terpakai"
+                            :nilai-pusat-prop="utilRingkasan.jenis_terpakai"
+                            aria-label="Perbandingan alat terpakai dan belum dipakai"
+                        />
 
                         <dl class="mt-4 space-y-2 text-sm">
-                            <div class="flex items-center justify-between rounded-xl bg-white px-3 py-2">
-                                <dt class="flex items-center gap-2 text-slate-600">
-                                    <span class="h-2.5 w-2.5 rounded-full bg-sky-500"></span>
-                                    Jenis alat terpakai
-                                </dt>
-                                <dd class="font-semibold text-slate-900">{{ formatNumber(utilRingkasan.jenis_terpakai) }}</dd>
+                            <div class="flex items-center justify-between rounded-xl bg-sky-50 px-3 py-2">
+                                <dt class="text-sky-800">Utilisasi</dt>
+                                <dd class="font-semibold text-sky-900">{{ formatPersen(utilRingkasan.persen_utilisasi) }}%</dd>
                             </div>
-                            <div class="flex items-center justify-between rounded-xl bg-white px-3 py-2">
-                                <dt class="flex items-center gap-2 text-slate-600">
-                                    <span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span>
-                                    Belum pernah dipakai
-                                </dt>
-                                <dd class="font-semibold text-slate-900">{{ formatNumber(utilRingkasan.jenis_tidak_terpakai) }}</dd>
-                            </div>
-                            <div class="flex items-center justify-between rounded-xl bg-white px-3 py-2">
-                                <dt class="text-slate-600">Unit dipinjam</dt>
-                                <dd class="font-semibold text-slate-900">{{ formatNumber(utilRingkasan.total_unit_dipinjam) }}</dd>
+                            <div class="flex items-center justify-between rounded-xl bg-indigo-50 px-3 py-2">
+                                <dt class="text-indigo-800">Unit dipinjam</dt>
+                                <dd class="font-semibold text-indigo-900">{{ formatNumber(utilRingkasan.total_unit_dipinjam) }}</dd>
                             </div>
                             <div class="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2">
                                 <dt class="text-amber-800">Aset menganggur</dt>
@@ -371,6 +390,151 @@
                 </div>
             </section>
 
+            <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Kebutuhan Alat</p>
+                        <h2 class="mt-2 text-lg font-semibold text-slate-900">Alat yang kekurangan dan kelebihan</h2>
+                        <p class="mt-1 text-sm text-slate-500">
+                            Perbandingan jumlah aset dengan max demand di {{ currentAreaName }}.
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+                        <span class="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-rose-700">
+                            <span class="h-2.5 w-2.5 rounded-full bg-rose-500"></span>
+                            Kekurangan {{ formatNumber(kebutuhan.ringkasan.kekurangan) }} jenis
+                        </span>
+                        <span class="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-sky-700">
+                            <span class="h-2.5 w-2.5 rounded-full bg-sky-500"></span>
+                            Kelebihan {{ formatNumber(kebutuhan.ringkasan.kelebihan) }} jenis
+                        </span>
+                        <button
+                            class="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-200 px-3 text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+                            type="button"
+                            :title="kebutuhanTampil ? 'Sembunyikan grafik' : 'Tampilkan grafik'"
+                            :aria-expanded="kebutuhanTampil"
+                            @click="toggleKebutuhan"
+                        >
+                            {{ kebutuhanTampil ? 'Sembunyikan' : 'Tampilkan' }}
+                            <svg
+                                class="h-4 w-4 transition"
+                                :class="kebutuhanTampil ? 'rotate-180' : ''"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="m6 9 6 6 6-6" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <template v-if="kebutuhanTampil">
+
+                <div class="mt-4 grid gap-5 lg:grid-cols-[320px,1fr]">
+                    <div class="rounded-3xl border border-slate-100 bg-gradient-to-br from-slate-50 to-white p-4">
+                        <DonutChart
+                            :segmen="kebutuhanDonut"
+                            label-pusat="Jenis Alat"
+                            aria-label="Komposisi kebutuhan alat"
+                        />
+                    </div>
+
+                    <div class="grid content-start gap-3 sm:grid-cols-2">
+                        <div
+                            v-for="bagian in kebutuhanSegmen"
+                            :key="`kartu-${bagian.key}`"
+                            class="rounded-2xl border bg-gradient-to-br px-4 py-3 transition hover:-translate-y-0.5 hover:shadow-md"
+                            :class="[bagian.cardClass, bagian.gradientClass]"
+                        >
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="text-sm font-semibold" :class="bagian.titleClass">{{ bagian.label }}</p>
+                                <p class="text-2xl font-semibold" :class="bagian.titleClass">{{ formatNumber(bagian.jumlah) }}</p>
+                            </div>
+                            <p class="mt-1 text-xs" :class="bagian.captionClass">{{ bagian.keterangan }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="adaDataKebutuhan" class="mt-4 grid gap-4 lg:grid-cols-2">
+                    <div class="rounded-3xl border border-slate-100 p-4">
+                        <div class="flex items-center gap-2">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="m3 7 6 6 4-4 7 7" />
+                                    <path d="M17 17h4v-4" />
+                                </svg>
+                            </span>
+                            <h3 class="text-sm font-semibold text-slate-900">Paling kekurangan</h3>
+                        </div>
+
+                        <ul v-if="kebutuhan.paling_kurang.length" class="mt-4 space-y-3">
+                            <li v-for="item in kebutuhan.paling_kurang" :key="`kurang-${item.id}`">
+                                <div class="flex items-baseline justify-between gap-3">
+                                    <p class="truncate text-sm font-medium text-slate-700" :title="item.nama">{{ item.nama }}</p>
+                                    <p class="shrink-0 text-xs font-semibold text-rose-600">kurang {{ formatNumber(item.selisih) }}</p>
+                                </div>
+                                <div class="mt-1.5 h-2 rounded-full bg-slate-100">
+                                    <div
+                                        class="h-2 rounded-full bg-gradient-to-r from-rose-500 to-rose-300 transition-all duration-700"
+                                        :style="{ width: `${lebarSelisih(item, maxSelisihKurang)}%` }"
+                                    ></div>
+                                </div>
+                                <p class="mt-1 text-[11px] text-slate-400">
+                                    {{ item.kode }} &middot; aset {{ formatNumber(item.total_aset) }} dari kebutuhan {{ formatNumber(item.max_demand) }}
+                                </p>
+                            </li>
+                        </ul>
+                        <p v-else class="mt-6 rounded-2xl bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                            Tidak ada alat yang kekurangan.
+                        </p>
+                    </div>
+
+                    <div class="rounded-3xl border border-slate-100 p-4">
+                        <div class="flex items-center gap-2">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="m3 17 6-6 4 4 7-7" />
+                                    <path d="M17 8h4v4" />
+                                </svg>
+                            </span>
+                            <h3 class="text-sm font-semibold text-slate-900">Paling kelebihan</h3>
+                        </div>
+
+                        <ul v-if="kebutuhan.paling_lebih.length" class="mt-4 space-y-3">
+                            <li v-for="item in kebutuhan.paling_lebih" :key="`lebih-${item.id}`">
+                                <div class="flex items-baseline justify-between gap-3">
+                                    <p class="truncate text-sm font-medium text-slate-700" :title="item.nama">{{ item.nama }}</p>
+                                    <p class="shrink-0 text-xs font-semibold text-sky-600">lebih {{ formatNumber(item.selisih) }}</p>
+                                </div>
+                                <div class="mt-1.5 h-2 rounded-full bg-slate-100">
+                                    <div
+                                        class="h-2 rounded-full bg-gradient-to-r from-sky-500 to-sky-300 transition-all duration-700"
+                                        :style="{ width: `${lebarSelisih(item, maxSelisihLebih)}%` }"
+                                    ></div>
+                                </div>
+                                <p class="mt-1 text-[11px] text-slate-400">
+                                    {{ item.kode }} &middot; aset {{ formatNumber(item.total_aset) }} dari kebutuhan {{ formatNumber(item.max_demand) }}
+                                </p>
+                            </li>
+                        </ul>
+                        <p v-else class="mt-6 rounded-2xl bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                            Tidak ada alat yang kelebihan.
+                        </p>
+                    </div>
+                </div>
+
+                <p v-else class="mt-4 rounded-2xl bg-amber-50 px-4 py-4 text-sm text-amber-800">
+                    Max demand belum diisi untuk alat di area ini, jadi perbandingannya belum bisa dihitung.
+                    Isi kolom Max Demand di menu Master Data &rsaquo; Alat, atau lewat import alat.
+                </p>
+                </template>
+            </section>
+
             <section v-if="showOperationalInsights" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-200/50">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -404,14 +568,16 @@
                                 <div class="flex h-full items-end gap-2">
                                     <div class="flex h-full items-end">
                                         <div
-                                            class="w-4 rounded-t-full bg-amber-400 transition-all duration-500 sm:w-5"
+                                            class="w-4 rounded-t-full bg-gradient-to-t from-amber-500 to-amber-300 transition-all duration-500 hover:from-amber-600 hover:to-amber-400 sm:w-5"
                                             :style="{ height: `${barHeight(item.kerusakan)}%` }"
+                                            :title="`${item.label}: ${item.kerusakan} kerusakan`"
                                         ></div>
                                     </div>
                                     <div class="flex h-full items-end">
                                         <div
-                                            class="w-4 rounded-t-full bg-rose-400 transition-all duration-500 sm:w-5"
+                                            class="w-4 rounded-t-full bg-gradient-to-t from-rose-500 to-rose-300 transition-all duration-500 hover:from-rose-600 hover:to-rose-400 sm:w-5"
                                             :style="{ height: `${barHeight(item.kehilangan)}%` }"
+                                            :title="`${item.label}: ${item.kehilangan} kehilangan`"
                                         ></div>
                                     </div>
                                 </div>
@@ -439,6 +605,7 @@ import axios from 'axios';
 import { computed, inject, onMounted, reactive, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../Layouts/AppLayout.vue';
+import DonutChart from '../Components/DonutChart.vue';
 import { loadAreas as loadSharedAreas } from '../lib/areas';
 
 defineOptions({
@@ -480,6 +647,17 @@ const dashboard = reactive({
         selesai: 0,
         laporan_aktif: 0,
     },
+    rincian: {
+        peminjaman: [],
+        laporan: [],
+        jenis_alat: {
+            total_jenis: 0,
+            total_alat: 0,
+            teratas: [],
+            lainnya_jenis: 0,
+            lainnya_alat: 0,
+        },
+    },
     insights: {
         kerusakan_tahunan: 0,
         kehilangan_tahunan: 0,
@@ -500,6 +678,19 @@ const dashboard = reactive({
         paling_sering: [],
         jarang_dipakai: [],
         tren_bulanan: [],
+    },
+    kebutuhan: {
+        ringkasan: {
+            jenis_alat: 0,
+            kekurangan: 0,
+            kelebihan: 0,
+            sesuai: 0,
+            belum_ditentukan: 0,
+            unit_kekurangan: 0,
+            unit_kelebihan: 0,
+        },
+        paling_kurang: [],
+        paling_lebih: [],
     },
     meta: {
         role_key: '',
@@ -593,12 +784,30 @@ const presetAktif = computed(() => {
     return 'custom';
 });
 
+const rincian = computed(() => dashboard.rincian);
+const adaIsi = (segmen) => Array.isArray(segmen) && segmen.some((item) => Number(item?.nilai ?? 0) > 0);
+
+const jenisAlat = computed(() => rincian.value.jenis_alat);
+const jenisAlatTeratas = computed(() => {
+    const daftar = jenisAlat.value.teratas ?? [];
+    const total = Math.max(1, Number(jenisAlat.value.total_alat ?? 0));
+    const terbesar = daftar.reduce((carry, item) => Math.max(carry, Number(item?.nilai ?? 0)), 0);
+
+    return daftar.map((item) => ({
+        ...item,
+        persen: Math.round((Number(item.nilai) / total) * 1000) / 10,
+        // Lebar batang relatif terhadap jenis terbanyak supaya perbedaannya terlihat.
+        lebar: terbesar > 0 ? Math.max(6, Math.round((Number(item.nilai) / terbesar) * 100)) : 0,
+    }));
+});
+
 const summaryCards = computed(() => [
     {
         title: 'Jumlah Peminjaman',
         value: formatNumber(summary.value.total_peminjaman),
         description: 'Akumulasi pengajuan peminjaman untuk area aktif.',
         accentClass: 'bg-sky-400',
+        gradientClass: 'from-white to-sky-50',
         iconClass: 'bg-sky-50 text-sky-600',
         iconPaths: ['M4 7h16', 'M4 12h10', 'M4 17h7'],
     },
@@ -607,6 +816,7 @@ const summaryCards = computed(() => [
         value: formatNumber(summary.value.total_aset_area),
         description: 'Total unit aset alat yang tercatat di area ini.',
         accentClass: 'bg-indigo-400',
+        gradientClass: 'from-white to-indigo-50',
         iconClass: 'bg-indigo-50 text-indigo-600',
         iconPaths: ['M21 8 12 3 3 8l9 5 9-5Z', 'm3 16 9 5 9-5', 'm3 12 9 5 9-5'],
     },
@@ -615,67 +825,21 @@ const summaryCards = computed(() => [
         value: formatNumber(summary.value.total_jenis_alat_area),
         description: 'Banyaknya katalog alat berbeda di area ini.',
         accentClass: 'bg-emerald-400',
+        gradientClass: 'from-white to-emerald-50',
         iconClass: 'bg-emerald-50 text-emerald-600',
         iconPaths: ['M4 5h16v14H4z', 'M9 5v14', 'M14 9h4'],
     },
     {
         title: 'Laporan Aktif',
         value: formatNumber(summary.value.laporan_aktif),
-        description: 'Laporan kerusakan atau kehilangan yang belum tuntas.',
+        description: 'Laporan kerusakan atau kehilangan yang belum diputuskan.',
         accentClass: 'bg-rose-400',
+        gradientClass: 'from-white to-rose-50',
         iconClass: 'bg-rose-50 text-rose-600',
         iconPaths: ['M12 9v4', 'M12 17h.01', 'M10.3 4 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4a2 2 0 0 0-3.4 0Z'],
     },
 ]);
 
-const statusTotal = computed(
-    () => summary.value.menunggu_review + summary.value.sedang_berjalan + summary.value.selesai
-);
-
-const persenStatus = (value) => {
-    const total = statusTotal.value;
-    if (total <= 0) {
-        return 0;
-    }
-
-    return Math.round((Number(value ?? 0) / total) * 100);
-};
-
-const statusCards = computed(() => [
-    {
-        title: 'Perlu Review',
-        value: formatNumber(summary.value.menunggu_review),
-        persen: persenStatus(summary.value.menunggu_review),
-        description: 'Menunggu tindak lanjut',
-        wrapperClass: 'border-amber-200 bg-amber-50/70',
-        titleClass: 'text-amber-900',
-        captionClass: 'text-amber-700/80',
-        valueClass: 'text-amber-900',
-        barClass: 'bg-amber-400',
-    },
-    {
-        title: 'Sedang Berjalan',
-        value: formatNumber(summary.value.sedang_berjalan),
-        persen: persenStatus(summary.value.sedang_berjalan),
-        description: 'Disetujui, dikirim, diterima',
-        wrapperClass: 'border-blue-200 bg-blue-50/70',
-        titleClass: 'text-blue-900',
-        captionClass: 'text-blue-700/80',
-        valueClass: 'text-blue-900',
-        barClass: 'bg-blue-500',
-    },
-    {
-        title: 'Selesai',
-        value: formatNumber(summary.value.selesai),
-        persen: persenStatus(summary.value.selesai),
-        description: 'Alat sudah kembali',
-        wrapperClass: 'border-emerald-200 bg-emerald-50/70',
-        titleClass: 'text-emerald-900',
-        captionClass: 'text-emerald-700/80',
-        valueClass: 'text-emerald-900',
-        barClass: 'bg-emerald-500',
-    },
-]);
 
 const utilisasi = computed(() => dashboard.utilisasi);
 const utilRingkasan = computed(() => utilisasi.value.ringkasan);
@@ -697,13 +861,10 @@ const frekuensiWidth = (value) => {
     return Math.max(8, Math.round((Number(value ?? 0) / max) * 100));
 };
 
-// Donut utilisasi: lingkaran r=52 sehingga keliling ~326.7.
-const DONUT_CIRCUMFERENCE = 2 * Math.PI * 52;
-const donutDash = computed(() => {
-    const persen = Math.min(100, Math.max(0, Number(utilRingkasan.value.persen_utilisasi ?? 0)));
-    const terpakai = (persen / 100) * DONUT_CIRCUMFERENCE;
-    return `${terpakai} ${DONUT_CIRCUMFERENCE - terpakai}`;
-});
+const utilisasiDonut = computed(() => [
+    { key: 'terpakai', label: 'Jenis alat terpakai', nilai: utilRingkasan.value.jenis_terpakai, warna: '#0ea5e9' },
+    { key: 'belum', label: 'Belum pernah dipakai', nilai: utilRingkasan.value.jenis_tidak_terpakai, warna: '#cbd5e1' },
+]);
 
 const trenMax = computed(() =>
     trenBulanan.value.reduce((carry, item) => Math.max(carry, Number(item?.total ?? 0)), 0)
@@ -741,6 +902,110 @@ const totalPeminjamanTren = computed(() =>
     trenBulanan.value.reduce((carry, item) => carry + Number(item?.total ?? 0), 0)
 );
 
+const kebutuhan = computed(() => dashboard.kebutuhan);
+
+// Pilihan buka/tutup grafik kebutuhan diingat di peramban masing-masing pengguna.
+const KUNCI_KEBUTUHAN = 'dashboard.kebutuhan.tampil';
+const kebutuhanTampil = ref(true);
+
+try {
+    kebutuhanTampil.value = localStorage.getItem(KUNCI_KEBUTUHAN) !== '0';
+} catch (error) {
+    kebutuhanTampil.value = true;
+}
+
+const toggleKebutuhan = () => {
+    kebutuhanTampil.value = !kebutuhanTampil.value;
+
+    try {
+        localStorage.setItem(KUNCI_KEBUTUHAN, kebutuhanTampil.value ? '1' : '0');
+    } catch (error) {
+        // Penyimpanan peramban tidak tersedia; cukup abaikan.
+    }
+};
+const adaDataKebutuhan = computed(
+    () => kebutuhan.value.ringkasan.jenis_alat > kebutuhan.value.ringkasan.belum_ditentukan
+);
+
+const kebutuhanSegmen = computed(() => {
+    const ringkasan = kebutuhan.value.ringkasan;
+    const total = Math.max(1, ringkasan.jenis_alat);
+    const persen = (jumlah) => Math.round((jumlah / total) * 100);
+
+    return [
+        {
+            key: 'kekurangan',
+            label: 'Kekurangan',
+            jumlah: ringkasan.kekurangan,
+            persen: persen(ringkasan.kekurangan),
+            keterangan: `${formatNumber(ringkasan.unit_kekurangan)} unit perlu ditambah`,
+            barClass: 'bg-rose-500',
+            cardClass: 'border-rose-200 bg-rose-50/70',
+            gradientClass: 'from-rose-50 to-rose-100/40',
+            titleClass: 'text-rose-900',
+            captionClass: 'text-rose-700/80',
+        },
+        {
+            key: 'kelebihan',
+            label: 'Kelebihan',
+            jumlah: ringkasan.kelebihan,
+            persen: persen(ringkasan.kelebihan),
+            keterangan: `${formatNumber(ringkasan.unit_kelebihan)} unit di atas kebutuhan`,
+            barClass: 'bg-sky-500',
+            cardClass: 'border-sky-200 bg-sky-50/70',
+            gradientClass: 'from-sky-50 to-sky-100/40',
+            titleClass: 'text-sky-900',
+            captionClass: 'text-sky-700/80',
+        },
+        {
+            key: 'sesuai',
+            label: 'Sesuai',
+            jumlah: ringkasan.sesuai,
+            persen: persen(ringkasan.sesuai),
+            keterangan: 'Jumlah aset pas dengan kebutuhan',
+            barClass: 'bg-emerald-500',
+            cardClass: 'border-emerald-200 bg-emerald-50/70',
+            gradientClass: 'from-emerald-50 to-emerald-100/40',
+            titleClass: 'text-emerald-900',
+            captionClass: 'text-emerald-700/80',
+        },
+        {
+            key: 'belum',
+            label: 'Belum Ditentukan',
+            jumlah: ringkasan.belum_ditentukan,
+            persen: persen(ringkasan.belum_ditentukan),
+            keterangan: 'Max demand masih 0',
+            barClass: 'bg-slate-300',
+            cardClass: 'border-slate-200 bg-slate-50',
+            gradientClass: 'from-slate-50 to-slate-100/60',
+            titleClass: 'text-slate-700',
+            captionClass: 'text-slate-500',
+        },
+    ];
+});
+
+const kebutuhanDonut = computed(() => [
+    { key: 'kekurangan', label: 'Kekurangan', nilai: kebutuhan.value.ringkasan.kekurangan, warna: '#f43f5e' },
+    { key: 'kelebihan', label: 'Kelebihan', nilai: kebutuhan.value.ringkasan.kelebihan, warna: '#0ea5e9' },
+    { key: 'sesuai', label: 'Sesuai', nilai: kebutuhan.value.ringkasan.sesuai, warna: '#10b981' },
+    { key: 'belum', label: 'Belum Ditentukan', nilai: kebutuhan.value.ringkasan.belum_ditentukan, warna: '#cbd5e1' },
+]);
+
+const maxSelisihKurang = computed(() =>
+    kebutuhan.value.paling_kurang.reduce((carry, item) => Math.max(carry, Number(item?.selisih ?? 0)), 0)
+);
+const maxSelisihLebih = computed(() =>
+    kebutuhan.value.paling_lebih.reduce((carry, item) => Math.max(carry, Number(item?.selisih ?? 0)), 0)
+);
+
+const lebarSelisih = (item, maksimum) => {
+    if (maksimum <= 0) {
+        return 0;
+    }
+
+    return Math.max(8, Math.round((Number(item?.selisih ?? 0) / maksimum) * 100));
+};
+
 const maxSeriesValue = computed(() => {
     if (!showOperationalInsights.value || !Array.isArray(insights.value.series)) {
         return 0;
@@ -775,6 +1040,17 @@ const applyPayload = (payload = {}) => {
         selesai: Number(payload?.summary?.selesai ?? 0),
         laporan_aktif: Number(payload?.summary?.laporan_aktif ?? 0),
     };
+    dashboard.rincian = {
+        peminjaman: Array.isArray(payload?.rincian?.peminjaman) ? payload.rincian.peminjaman : [],
+        laporan: Array.isArray(payload?.rincian?.laporan) ? payload.rincian.laporan : [],
+        jenis_alat: {
+            total_jenis: Number(payload?.rincian?.jenis_alat?.total_jenis ?? 0),
+            total_alat: Number(payload?.rincian?.jenis_alat?.total_alat ?? 0),
+            teratas: Array.isArray(payload?.rincian?.jenis_alat?.teratas) ? payload.rincian.jenis_alat.teratas : [],
+            lainnya_jenis: Number(payload?.rincian?.jenis_alat?.lainnya_jenis ?? 0),
+            lainnya_alat: Number(payload?.rincian?.jenis_alat?.lainnya_alat ?? 0),
+        },
+    };
     dashboard.insights = {
         kerusakan_tahunan: Number(payload?.insights?.kerusakan_tahunan ?? 0),
         kehilangan_tahunan: Number(payload?.insights?.kehilangan_tahunan ?? 0),
@@ -799,6 +1075,19 @@ const applyPayload = (payload = {}) => {
         paling_sering: Array.isArray(payload?.utilisasi?.paling_sering) ? payload.utilisasi.paling_sering : [],
         jarang_dipakai: Array.isArray(payload?.utilisasi?.jarang_dipakai) ? payload.utilisasi.jarang_dipakai : [],
         tren_bulanan: Array.isArray(payload?.utilisasi?.tren_bulanan) ? payload.utilisasi.tren_bulanan : [],
+    };
+    dashboard.kebutuhan = {
+        ringkasan: {
+            jenis_alat: Number(payload?.kebutuhan?.ringkasan?.jenis_alat ?? 0),
+            kekurangan: Number(payload?.kebutuhan?.ringkasan?.kekurangan ?? 0),
+            kelebihan: Number(payload?.kebutuhan?.ringkasan?.kelebihan ?? 0),
+            sesuai: Number(payload?.kebutuhan?.ringkasan?.sesuai ?? 0),
+            belum_ditentukan: Number(payload?.kebutuhan?.ringkasan?.belum_ditentukan ?? 0),
+            unit_kekurangan: Number(payload?.kebutuhan?.ringkasan?.unit_kekurangan ?? 0),
+            unit_kelebihan: Number(payload?.kebutuhan?.ringkasan?.unit_kelebihan ?? 0),
+        },
+        paling_kurang: Array.isArray(payload?.kebutuhan?.paling_kurang) ? payload.kebutuhan.paling_kurang : [],
+        paling_lebih: Array.isArray(payload?.kebutuhan?.paling_lebih) ? payload.kebutuhan.paling_lebih : [],
     };
     dashboard.meta = {
         role_key: payload?.meta?.role_key ?? roleKey.value,

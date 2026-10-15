@@ -207,4 +207,27 @@ Route::middleware('auth')->group(function () {
     Route::get('/area', function () {
         return Inertia::render('Admin/Area');
     })->middleware('role:' . Role::KEY_SUPER_ADMIN)->name('area.index');
+
+    Route::get('/analytics', function () {
+        abort_unless(
+            App\Http\Controllers\Api\AnalyticsController::bolehMengakses(request()->user()),
+            403,
+            'Anda tidak memiliki akses ke Analytics.'
+        );
+
+        return Inertia::render('Admin/Analytics');
+    })->middleware('role:' . implode(',', [
+        Role::KEY_SP_TOOL,
+        Role::KEY_MGR_TOOL,
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+    ]))->name('analytics');
+
+    Route::get('/pekerjaan-overhaul', function () {
+        return Inertia::render('Admin/PekerjaanOverhaul');
+    })->middleware('role:' . implode(',', [
+        Role::KEY_PIC_TOOL,
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+    ]))->name('pekerjaan-overhaul');
 });

@@ -18,63 +18,81 @@
                 <h2 class="text-lg font-semibold text-slate-900">Daftar Alat</h2>
                 <p class="mt-1 text-sm text-slate-500">Kelola inventaris alat di semua area</p>
             </div>
-            <div class="flex flex-wrap items-center gap-3">
-                <button
-                    v-if="canExportTools"
-                    class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
-                    type="button"
-                    :disabled="isExporting"
-                    @click="exportTools"
-                >
-                    <svg v-if="isExporting" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                        <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
-                    </svg>
-                    <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 3v12" />
-                        <path d="m7 10 5 5 5-5" />
-                        <path d="M5 21h14" />
-                    </svg>
-                    {{ isExporting ? 'Mengekspor...' : 'Export CSV' }}
-                </button>
-                <template v-if="canManageTools">
+            <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                <!-- Aksi sekunder cukup ikon pada layar lebar (label tetap muncul
+                     di layar kecil dan sebagai tooltip) supaya tombol utama
+                     "Tambah Alat" yang paling menonjol. -->
+                <div v-if="canExportTools || canManageTools" class="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                     <button
-                        v-if="isSuperAdmin"
-                        class="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        v-if="canExportTools"
+                        class="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 text-sm font-semibold text-sky-600 shadow-sm transition hover:bg-sky-100 hover:text-sky-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-11 sm:flex-none sm:px-0"
                         type="button"
+                        :title="isExporting ? 'Sedang mengekspor...' : 'Export CSV'"
+                        aria-label="Export CSV"
+                        :disabled="isExporting"
+                        @click="exportTools"
+                    >
+                        <svg v-if="isExporting" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
+                        </svg>
+                        <svg v-else class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 3v10" />
+                            <path d="m8 9 4 4 4-4" />
+                            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                        </svg>
+                        <span class="sm:hidden">{{ isExporting ? 'Mengekspor...' : 'Export CSV' }}</span>
+                    </button>
+
+                    <button
+                        v-if="canManageTools"
+                        class="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-600 shadow-sm transition hover:bg-emerald-100 hover:text-emerald-700 sm:w-11 sm:flex-none sm:px-0"
+                        type="button"
+                        title="Import CSV/XLSX"
+                        aria-label="Import data alat dari CSV atau XLSX"
+                        @click="openImport"
+                    >
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 13V3" />
+                            <path d="m8 7 4-4 4 4" />
+                            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                        </svg>
+                        <span class="sm:hidden">Import CSV/XLSX</span>
+                    </button>
+
+                    <button
+                        v-if="canManageTools && isSuperAdmin"
+                        class="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-semibold text-rose-600 shadow-sm transition hover:bg-rose-100 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-11 sm:flex-none sm:px-0"
+                        type="button"
+                        :title="activeAreaId ? 'Hapus seluruh alat di area aktif' : 'Pilih area terlebih dahulu'"
+                        aria-label="Hapus seluruh alat di area aktif"
                         :disabled="!activeAreaId || isDeleting"
                         @click="removeActiveAreaTools"
                     >
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg v-if="isDeleting" class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
+                        </svg>
+                        <svg v-else class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M3 6h18" />
                             <path d="M8 6V4h8v2" />
                             <path d="m6 6 1 14h10l1-14" />
                         </svg>
-                        Hapus Semuanya
+                        <span class="sm:hidden">{{ isDeleting ? 'Menghapus...' : 'Hapus Semuanya' }}</span>
                     </button>
-                    <button
-                        class="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
-                        type="button"
-                        @click="openImport"
-                    >
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 3v12" />
-                            <path d="m7 10 5 5 5-5" />
-                            <path d="M5 21h14" />
-                        </svg>
-                        Import CSV/XLSX
-                    </button>
-                    <button
-                        class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
-                        type="button"
-                        @click="openCreate"
-                    >
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 5v14M5 12h14" />
-                        </svg>
-                        Tambah Alat
-                    </button>
-                </template>
+                </div>
+
+                <button
+                    v-if="canManageTools"
+                    class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:from-blue-700 hover:to-indigo-700 sm:w-auto"
+                    type="button"
+                    @click="openCreate"
+                >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                        <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Tambah Alat
+                </button>
             </div>
         </div>
 
@@ -118,6 +136,22 @@
                     </option>
                 </select>
             </label>
+        </div>
+
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+            <span class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Kebutuhan</span>
+            <button
+                v-for="opsi in demandFilterOptions"
+                :key="opsi.value"
+                class="rounded-full border px-3 py-1 text-xs font-semibold transition"
+                :class="demandFilter === opsi.value
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700'"
+                type="button"
+                @click="demandFilter = opsi.value"
+            >
+                {{ opsi.label }}
+            </button>
         </div>
 
         <div class="mt-3 flex flex-wrap items-center gap-2">
@@ -251,6 +285,7 @@
                                     <th scope="col" class="border-b border-slate-200 px-4 py-3">Alat</th>
                                     <th scope="col" class="border-b border-slate-200 px-4 py-3">Area</th>
                                     <th scope="col" class="border-b border-slate-200 px-4 py-3">Ketersediaan</th>
+                                    <th scope="col" class="border-b border-slate-200 px-4 py-3">Kebutuhan</th>
                                     <th v-if="canManageTools" scope="col" class="border-b border-slate-200 px-4 py-3 text-right">Aksi</th>
                                 </tr>
                             </thead>
@@ -303,6 +338,16 @@
                                                 :style="{ width: stockPercent(tool) + '%' }"
                                             ></div>
                                         </div>
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <p class="text-xs text-slate-500">Max demand</p>
+                                        <p class="font-semibold tabular-nums text-slate-900">{{ tool.max_demand ?? 0 }}</p>
+                                        <span
+                                            class="mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                                            :class="demandBadgeClass(tool)"
+                                        >
+                                            {{ demandLabel(tool) }}
+                                        </span>
                                     </td>
                                     <td v-if="canManageTools" class="px-4 py-4">
                                         <div v-if="!tool.is_shared_area_stock" class="flex items-center justify-end gap-1">
@@ -393,6 +438,18 @@
                             <div v-if="tool.lokasi" class="flex gap-2">
                                 <dt class="w-24 shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Lokasi</dt>
                                 <dd class="min-w-0 text-slate-600">{{ tool.lokasi }}</dd>
+                            </div>
+                            <div class="flex gap-2">
+                                <dt class="w-24 shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Kebutuhan</dt>
+                                <dd class="min-w-0 text-slate-600">
+                                    {{ tool.max_demand ?? 0 }}
+                                    <span
+                                        class="ml-1 rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                                        :class="demandBadgeClass(tool)"
+                                    >
+                                        {{ demandLabel(tool) }}
+                                    </span>
+                                </dd>
                             </div>
                         </dl>
 
@@ -603,6 +660,16 @@
                                 class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                             />
                         </label>
+                        <label class="space-y-2 text-sm font-medium text-slate-700">
+                            <span>Max Demand</span>
+                            <input
+                                v-model.number="form.max_demand"
+                                type="number"
+                                min="0"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            />
+                            <p class="text-xs" :class="selisihFormClass">{{ selisihFormLabel }}</p>
+                        </label>
                     </div>
 
                     <p v-if="formError" class="mt-3 text-sm font-semibold text-rose-500">
@@ -659,7 +726,7 @@
                         <div>
                             <h3 class="text-lg font-semibold text-slate-900">Import Data Alat</h3>
                             <p class="mt-1 text-sm text-slate-500">
-                                Upload file CSV atau XLSX dengan urutan kolom: nama alat, jenis alat, klasifikasi alat, total aset, area, lokasi, kode alat.
+                                Upload file CSV atau XLSX dengan urutan kolom: nama alat, jenis alat, klasifikasi alat, total aset, area, lokasi, kode alat, max demand.
                             </p>
                         </div>
                         <button
@@ -703,6 +770,7 @@
                         <p>Kolom 5: area</p>
                         <p>Kolom 6: lokasi</p>
                         <p>Kolom 7: kode alat <span class="text-xs text-slate-500">(opsional)</span></p>
+                        <p>Kolom 8: max demand <span class="text-xs text-slate-500">(opsional, kebutuhan alat)</span></p>
                         <p class="mt-3 text-xs  text-red-500">
                             Nilai klasifikasi alat harus salah satu dari <b>`General Tools`</b>,<b>`Lifting Tools`</b>,<b> atau `Measurement Tools`.</b>
                         </p>
@@ -885,6 +953,13 @@ let importStatusInterval = null;
 let alertTimeout = null;
 
 const search = ref('');
+const demandFilter = ref('');
+const demandFilterOptions = [
+    { value: '', label: 'Semua' },
+    { value: 'kekurangan', label: 'Kekurangan' },
+    { value: 'kelebihan', label: 'Kelebihan' },
+    { value: 'sesuai', label: 'Sesuai' },
+];
 const pagination = reactive({
     currentPage: 1,
     lastPage: 1,
@@ -902,8 +977,60 @@ const form = reactive({
     jenis_alat: '',
     klasifikasi_alat: '',
     total_aset: 0,
+    max_demand: 0,
     area_id: '',
 });
+
+// Selisih aset terhadap kebutuhan: positif kelebihan, negatif kekurangan.
+const selisihForm = computed(() => Number(form.total_aset ?? 0) - Number(form.max_demand ?? 0));
+const selisihFormLabel = computed(() => {
+    if (!Number(form.max_demand)) {
+        return 'Kosongkan atau isi 0 bila kebutuhan belum ditentukan.';
+    }
+
+    if (selisihForm.value > 0) {
+        return `Kelebihan ${selisihForm.value} unit dari kebutuhan.`;
+    }
+
+    if (selisihForm.value < 0) {
+        return `Kekurangan ${Math.abs(selisihForm.value)} unit dari kebutuhan.`;
+    }
+
+    return 'Jumlah aset sudah sesuai kebutuhan.';
+});
+const selisihFormClass = computed(() => {
+    if (!Number(form.max_demand)) {
+        return 'text-slate-400';
+    }
+
+    if (selisihForm.value > 0) {
+        return 'text-sky-600';
+    }
+
+    return selisihForm.value < 0 ? 'text-rose-600' : 'text-emerald-600';
+});
+
+const demandLabel = (tool) => {
+    const selisih = Number(tool?.selisih_demand ?? 0);
+    const status = tool?.status_demand ?? 'Sesuai';
+
+    if (status === 'Kelebihan') {
+        return `Kelebihan ${selisih}`;
+    }
+
+    return status === 'Kekurangan' ? `Kekurangan ${Math.abs(selisih)}` : 'Sesuai';
+};
+
+const demandBadgeClass = (tool) => {
+    switch (tool?.status_demand) {
+        case 'Kelebihan':
+            return 'bg-sky-100 text-sky-700';
+        case 'Kekurangan':
+            return 'bg-rose-100 text-rose-700';
+        default:
+            return 'bg-emerald-100 text-emerald-700';
+    }
+};
 
 const page = usePage();
 const defaultClassificationOptions = ['General Tools', 'Lifting Tools', 'Measurement Tools'];
@@ -1108,6 +1235,7 @@ const resetForm = () => {
     form.jenis_alat = '';
     form.klasifikasi_alat = '';
     form.total_aset = 0;
+    form.max_demand = 0;
     form.area_id = normalizeAreaId(
         isSuperAdmin.value && isAreaSwitcherRole.value ? activeAreaId.value : userAreaId.value
     );
@@ -1133,6 +1261,7 @@ const openEdit = (tool) => {
     form.jenis_alat = tool.jenis_alat ?? '';
     form.klasifikasi_alat = tool.klasifikasi_alat ?? '';
     form.total_aset = Number(tool.total_aset ?? tool.stok ?? 0);
+    form.max_demand = Number(tool.max_demand ?? 0);
     form.area_id = normalizeAreaId(
         isSuperAdmin.value
             ? tool.area_id ?? activeAreaId.value ?? ''
@@ -1277,6 +1406,9 @@ const buildParams = () => {
     if (isSuperAdmin.value && isAreaSwitcherRole.value && activeAreaId.value) {
         params.area_id = activeAreaId.value;
     }
+    if (demandFilter.value) {
+        params.status_demand = demandFilter.value;
+    }
     return params;
 };
 
@@ -1305,6 +1437,9 @@ const loadTools = async (options = {}) => {
             klasifikasi_alat: item.klasifikasi_alat ?? '-',
             lokasi: item.lokasi ?? '',
             total_aset: Number(item.total_aset ?? item.stok ?? 0),
+            max_demand: Number(item.max_demand ?? 0),
+            selisih_demand: Number(item.selisih_demand ?? (Number(item.total_aset ?? 0) - Number(item.max_demand ?? 0))),
+            status_demand: item.status_demand ?? "Sesuai",
             stok_tersedia: Number(item.stok_tersedia ?? item.stok ?? 0),
             // lokasi tidak lagi dipakai sebagai cadangan nama area karena kini
             // berisi posisi rak/gudang, bukan nama area.
@@ -1372,6 +1507,7 @@ const submitForm = async () => {
             klasifikasi_alat: form.klasifikasi_alat.trim(),
             area_id: form.area_id,
             total_aset: form.total_aset,
+            max_demand: form.max_demand,
         };
         if (isEdit.value) {
             await axios.put(`/api/alats/${form.id}`, payload);
@@ -1562,7 +1698,7 @@ const confirmDelete = async () => {
 
 let filterTimeout = null;
 watch(
-    search,
+    [search, demandFilter],
     () => {
         if (filterTimeout) {
             clearTimeout(filterTimeout);

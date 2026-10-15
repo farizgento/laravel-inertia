@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\LdapLoginException;
 use App\Http\Controllers\Controller;
+use App\Services\ActivityLogger;
 use App\Services\LdapLoginService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Throwable;
 
 class AuthController extends Controller
 {
@@ -37,6 +39,20 @@ class AuthController extends Controller
         }
 
         $user->loadMissing(['area', 'role']);
+
+        // Dicatat supaya keaktifan tiap area bisa diukur di halaman Analytics.
+        // Kegagalan pencatatan tidak boleh membuat pengguna gagal masuk.
+        try {
+            ActivityLogger::log('login', $user, [
+                'actor' => $user,
+                'subject_type' => 'Auth',
+                'subject_label' => $user->name,
+                'area_id' => $user->area_id,
+                'description' => $user->name.' masuk ke aplikasi',
+            ]);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
 
         return response()->json([
             'user' => $user,

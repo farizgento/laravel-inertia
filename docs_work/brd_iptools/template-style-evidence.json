@@ -1,0 +1,168 @@
+{
+  "input": "D:\\WEB\\laravel-inertia\\docs_work\\brd_iptools\\BRD InfraSight reference.docx",
+  "fonts_by_char_count": {},
+  "direct_run_formatting_runs": 3257,
+  "direct_paragraph_formatting_paragraphs": 1505,
+  "heading_like_paragraphs_not_heading_style": [
+    {
+      "para_index": 1,
+      "text": "Business Requirements Document ",
+      "style": "Normal"
+    },
+    {
+      "para_index": 2,
+      "text": "(BRD)",
+      "style": "Normal"
+    },
+    {
+      "para_index": 3,
+      "text": "IT INFRASTRUCTURE MONITOR",
+      "style": "Normal"
+    },
+    {
+      "para_index": 118,
+      "text": "INFRASIGHT",
+      "style": "Normal"
+    },
+    {
+      "para_index": 119,
+      "text": "Tanggal",
+      "style": "Normal"
+    },
+    {
+      "para_index": 120,
+      "text": "Penyusun",
+      "style": "Normal"
+    },
+    {
+      "para_index": 121,
+      "text": "Versi",
+      "style": "Normal"
+    },
+    {
+      "para_index": 122,
+      "text": "Uraian Perubahan",
+      "style": "Normal"
+    },
+    {
+      "para_index": 135,
+      "text": "Peran",
+      "style": "Normal"
+    },
+    {
+      "para_index": 136,
+      "text": "Nama / Jabatan",
+      "style": "Normal"
+    },
+    {
+      "para_index": 137,
+      "text": "Status",
+      "style": "Normal"
+    },
+    {
+      "para_index": 138,
+      "text": "Tanggal / Tanda Tangan",
+      "style": "Normal"
+    },
+    {
+      "para_index": 139,
+      "text": "Disusun oleh",
+      "style": "Normal"
+    },
+    {
+      "para_index": 143,
+      "text": "Diperiksa oleh",
+      "style": "Normal"
+    },
+    {
+      "para_index": 147,
+      "text": "Disetujui oleh",
+      "style": "Normal"
+    },
+    {
+      "para_index": 151,
+      "text": "No. Salinan",
+      "style": "Normal"
+    },
+    {
+      "para_index": 152,
+      "text": "Penerima / Fungsi",
+      "style": "Normal"
+    },
+    {
+      "para_index": 153,
+      "text": "Lokasi / Media",
+      "style": "Normal"
+    },
+    {
+      "para_index": 163,
+      "text": "Atribut",
+      "style": "Normal"
+    },
+    {
+      "para_index": 164,
+      "text": "Isi",
+      "style": "Normal"
+    }
+  ],
+  "examples": {
+    "direct_run_formatting": [
+      {
+        "para_index": 1,
+        "run_text": "Business Requirements Document",
+        "style": "Normal"
+      },
+      {
+        "para_index": 1,
+        "run_text": " ",
+        "style": "Normal"
+      },
+      {
+        "para_index": 2,
+        "run_text": "(BRD)",
+        "style": "Normal"
+      },
+      {
+        "para_index": 3,
+        "run_text": "IT INFRASTRUCTURE MONITOR",
+        "style": "Normal"
+      },
+      {
+        "para_index": 4,
+        "run_text": "PENGELOLAAN INVENTARIS INFRASTRUCTURE, LAPORAN BULANAN, BAST LAPTOP, DAN LISENSI",
+        "style": "Normal"
+      }
+    ],
+    "direct_paragraph_formatting": [
+      {
+        "para_index": 3,
+        "text": "IT INFRASTRUCTURE MONITOR",
+        "style": "Normal"
+      },
+      {
+        "para_index": 4,
+        "text": "PENGELOLAAN INVENTARIS INFRASTRUCTURE, LAPORAN BULANAN, BAST LAPTOP, DAN LISENSI",
+        "style": "Normal"
+      },
+      {
+        "para_index": 5,
+        "text": "PT PLN INDONESIA POWER UBH",
+        "style": "Normal"
+      },
+      {
+        "para_index": 6,
+        "text": "VERSI 1.0 \u2013 AGUSTUS 2026",
+        "style": "Normal"
+      },
+      {
+        "para_index": 12,
+        "text": "Catatan pengendalian: dokumen ini menggunakan satu sumber resmi. Isian bertanda TBD memerlukan keputusan atau konfirmasi",
+        "style": "Normal"
+      }
+    ]
+  },
+  "notes": [
+    "Direct formatting is not always wrong, but it often causes inconsistent output when templates change.",
+    "Heading-like paragraphs not using Heading styles can break TOC and accessibility."
+  ]
+}

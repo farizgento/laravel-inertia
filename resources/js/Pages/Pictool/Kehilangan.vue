@@ -49,20 +49,9 @@
                         <path d="M12 18v-6" />
                         <path d="m9 15 3 3 3-3" />
                     </svg>
-                    Template Surat
+                    Template Excel
                 </button>
-                <button
-                    class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-blue-300 hover:text-blue-600"
-                    type="button"
-                    @click="exportCsv"
-                >
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 3v12" />
-                        <path d="m7 10 5 5 5-5" />
-                        <path d="M5 21h14" />
-                    </svg>
-                    Export CSV
-                </button>
+                <LaporanExcelExport kategori="kehilangan" :params="buildExportParams()" :total="pagination.total" />
                 <button
                     v-if="canManageReports"
                     class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
@@ -103,12 +92,14 @@
             </select>
         </div>
 
+        <LaporanPeriodFilter v-model="periodFilter" />
+
         <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200">
             <div class="overflow-x-auto">
                 <table class="min-w-[980px] w-full text-sm">
                     <thead class="bg-slate-50">
                         <tr class="text-left text-xs font-semibold uppercase tracking-widest text-slate-500">
-                            <th class="px-4 py-3">Tanggal</th>
+                            <th class="px-4 py-3">Tanggal Pelaporan</th>
                             <th class="px-4 py-3">Alat</th>
                             <th class="px-4 py-3">Pelapor</th>
                             <th class="px-4 py-3">Jumlah</th>
@@ -130,8 +121,8 @@
                         </tr>
                         <tr v-else v-for="item in reports" :key="item.id">
                             <td class="px-4 py-4 text-slate-600">
-                                <p class="font-semibold text-slate-900">{{ item.createdAt }}</p>
-                                <p class="mt-1 text-xs text-slate-400">#{{ item.id }}</p>
+                                <p class="font-semibold text-slate-900">{{ item.tanggalLaporan }}</p>
+                                <p class="mt-1 text-xs text-slate-400">#{{ item.id }} &middot; input {{ item.createdAt }}</p>
                             </td>
                             <td class="px-4 py-4">
                                 <p class="font-semibold text-slate-900">{{ item.alatNama }}</p>
@@ -234,11 +225,13 @@
             class="fixed inset-0 z-50 bg-slate-900/50"
         >
             <div class="flex min-h-full items-center justify-center overflow-y-auto p-4" @click.self="closeForm">
-            <div class="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+            <div class="max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <h3 class="text-lg font-semibold text-slate-900">Tambah Laporan Kehilangan</h3>
-                        <p class="mt-1 text-sm text-slate-500">Isi detail kehilangan alat yang ditemukan.</p>
+                        <p class="mt-1 text-sm text-slate-500">
+                            Centang satu atau beberapa alat yang hilang, atau pilih sekaligus lewat Excel.
+                        </p>
                     </div>
                     <button
                         class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:text-slate-700"
@@ -252,64 +245,354 @@
                     </button>
                 </div>
 
-                <div class="mt-5 grid gap-4 md:grid-cols-2">
-                    <label class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
-                        <span>Alat *</span>
-                        <select
-                            v-model="form.alat_id"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                <div class="mt-5 space-y-5">
+                    <div class="flex items-center gap-2">
+                        <span class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">1</span>
+                        <p class="text-sm font-semibold text-slate-800">Waktu dan alat yang dilaporkan</p>
+                    </div>
+
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <label class="space-y-2 text-sm font-medium text-slate-700">
+                            <span>Tanggal Pelaporan *</span>
+                            <input
+                                v-model="form.tanggal_laporan"
+                                type="date"
+                                :max="hariIniIso"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            />
+                            <p v-if="formErrors.tanggal_laporan" class="text-xs font-semibold text-rose-500">
+                                {{ formErrors.tanggal_laporan }}
+                            </p>
+                        </label>
+                        <label class="space-y-2 text-sm font-medium text-slate-700">
+                            <span>Status</span>
+                            <input
+                                type="text"
+                                value="Dilaporkan"
+                                disabled
+                                class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700"
+                            />
+                        </label>
+                    </div>
+
+                    <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-semibold text-slate-800">Banyak alat hilang? Pilih lewat Excel</p>
+                                <p class="mt-0.5 text-xs text-slate-600">
+                                    Unduh daftar alat area ini, isi kolom <span class="font-semibold">Jumlah</span> pada alat
+                                    yang hilang, lalu unggah kembali. Tidak perlu hafal kode alat.
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button
+                                    class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                    type="button"
+                                    :disabled="isDownloadingDaftar"
+                                    @click="downloadDaftarAlat"
+                                >
+                                    {{ isDownloadingDaftar ? 'Mengunduh...' : 'Unduh Daftar Alat' }}
+                                </button>
+                                <button
+                                    class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                                    type="button"
+                                    :disabled="isMatchingDaftar"
+                                    @click="daftarInput?.click()"
+                                >
+                                    {{ isMatchingDaftar ? 'Membaca...' : 'Unggah Daftar' }}
+                                </button>
+                                <input
+                                    ref="daftarInput"
+                                    type="file"
+                                    accept=".xlsx,.csv"
+                                    class="sr-only"
+                                    @change="uploadDaftarAlat"
+                                />
+                            </div>
+                        </div>
+
+                        <div v-if="hasilCocok" class="mt-3 rounded-lg border border-slate-200 bg-white p-3 text-xs">
+                            <div class="flex items-start justify-between gap-2">
+                                <p class="font-semibold" :class="hasilCocok.items.length ? 'text-emerald-700' : 'text-slate-600'">
+                                    {{ hasilCocok.items.length }} alat dimasukkan ke pilihan
+                                    <span v-if="hasilCocok.masalah.length" class="text-amber-700">
+                                        &middot; {{ hasilCocok.masalah.length }} baris perlu dicek
+                                    </span>
+                                </p>
+                                <button
+                                    class="shrink-0 text-slate-400 transition hover:text-slate-600"
+                                    type="button"
+                                    aria-label="Tutup hasil"
+                                    @click="hasilCocok = null"
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                            <ul v-if="hasilCocok.items.length" class="mt-2 max-h-24 space-y-0.5 overflow-y-auto text-slate-600">
+                                <li v-for="item in hasilCocok.items" :key="`cocok-${item.id}`">
+                                    <span class="font-mono text-slate-400">{{ item.kode }}</span>
+                                    {{ item.nama }} &times; {{ item.qty }}
+                                </li>
+                            </ul>
+                            <ul
+                                v-if="hasilCocok.masalah.length"
+                                class="mt-2 max-h-24 space-y-0.5 overflow-y-auto rounded-md bg-amber-50 px-2 py-1.5 text-amber-800"
+                            >
+                                <li v-for="(masalah, index) in hasilCocok.masalah" :key="`masalah-${index}`">
+                                    Baris {{ masalah.baris }}: {{ masalah.pesan }}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <span class="text-sm font-medium text-slate-700">Alat Hilang *</span>
+                            <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                                {{ selectedItems.length }} alat dipilih
+                            </span>
+                        </div>
+                        <div class="rounded-xl border border-slate-200">
+                            <div class="flex flex-wrap items-center gap-2 border-b border-slate-200 p-3">
+                                <input
+                                    v-model="toolSearch"
+                                    type="search"
+                                    placeholder="Cari nama atau kode alat"
+                                    class="h-9 flex-1 rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                />
+                                <button
+                                    v-if="selectedItems.length"
+                                    class="h-9 rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-600"
+                                    type="button"
+                                    @click="clearSelection"
+                                >
+                                    Kosongkan Pilihan
+                                </button>
+                            </div>
+                            <div class="max-h-64 divide-y divide-slate-100 overflow-y-auto">
+                                <label
+                                    v-for="tool in filteredTools"
+                                    :key="tool.id"
+                                    class="flex items-center gap-3 px-3 py-2 transition hover:bg-slate-50"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        class="h-4 w-4 rounded border-slate-300 text-blue-600"
+                                        :checked="qtyFor(tool.id) > 0"
+                                        @change="toggleTool(tool)"
+                                    />
+                                    <div class="min-w-0 flex-1">
+                                        <p class="truncate text-sm font-medium text-slate-800">{{ tool.nama }}</p>
+                                        <p class="truncate text-xs text-slate-400">
+                                            {{ tool.kode }} &middot; {{ tool.jenis_alat || '-' }}
+                                        </p>
+                                    </div>
+                                    <span
+                                        class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                                        :class="stockBadgeClass(tool)"
+                                    >
+                                        {{ tool.stok_tersedia }}/{{ tool.total_aset }} tersedia
+                                    </span>
+                                    <input
+                                        v-if="qtyFor(tool.id) > 0"
+                                        type="number"
+                                        min="1"
+                                        :max="maxQty(tool)"
+                                        :value="qtyFor(tool.id)"
+                                        class="h-8 w-16 shrink-0 rounded-lg border border-slate-200 px-2 text-xs text-slate-700 outline-none focus:border-blue-500"
+                                        @input="setQty(tool, $event.target.value)"
+                                    />
+                                </label>
+                                <p v-if="!filteredTools.length" class="px-3 py-6 text-center text-sm text-slate-500">
+                                    Tidak ada alat yang cocok dengan pencarian.
+                                </p>
+                            </div>
+                        </div>
+                        <p v-if="formErrors.items" class="text-xs font-semibold text-rose-500">{{ formErrors.items }}</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                        <div class="flex items-center gap-2">
+                            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">2</span>
+                            <p class="text-sm font-semibold text-slate-800">Deskripsi dan foto tiap alat</p>
+                        </div>
+                        <span
+                            v-if="selectedItems.length"
+                            class="rounded-full px-3 py-1 text-xs font-semibold"
+                            :class="itemBelumLengkap.length ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'"
                         >
-                            <option value="">Pilih alat</option>
-                            <option v-for="tool in tools" :key="tool.id" :value="tool.id">
-                                {{ tool.nama }} ({{ tool.kode }})
-                            </option>
-                        </select>
-                        <p v-if="formErrors.alat_id" class="text-xs font-semibold text-rose-500">{{ formErrors.alat_id }}</p>
-                    </label>
-                    <label class="space-y-2 text-sm font-medium text-slate-700">
-                        <span>Jumlah Hilang *</span>
-                        <input
-                            v-model.number="form.jumlah"
-                            type="number"
-                            min="1"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                        />
-                        <p v-if="formErrors.jumlah" class="text-xs font-semibold text-rose-500">{{ formErrors.jumlah }}</p>
-                    </label>
-                    <label class="space-y-2 text-sm font-medium text-slate-700">
-                        <span>Status</span>
-                        <input
-                            type="text"
-                            value="Dilaporkan"
-                            disabled
-                            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700"
-                        />
-                    </label>
-                    <label class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
-                        <span>Deskripsi Kehilangan *</span>
+                            {{ itemBelumLengkap.length ? `${itemBelumLengkap.length} alat belum lengkap` : 'Semua alat lengkap' }}
+                        </span>
+                    </div>
+
+                    <p
+                        v-if="!selectedItems.length"
+                        class="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500"
+                    >
+                        Pilih alat dulu di langkah 1, lalu isi deskripsi dan foto tiap alat di sini.
+                    </p>
+
+                    <div v-else class="max-h-[26rem] space-y-3 overflow-y-auto pr-1">
+                        <article
+                            v-for="item in selectedItems"
+                            :key="`terpilih-${item.id}`"
+                            class="rounded-xl border p-3 transition"
+                            :class="itemLengkap(item) ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-white'"
+                        >
+                            <div class="flex flex-wrap items-start justify-between gap-2">
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-semibold text-slate-800">{{ item.nama }}</p>
+                                    <p class="text-xs text-slate-400">{{ item.kode }}</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <label class="flex items-center gap-1 text-xs text-slate-500">
+                                        Jumlah
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            :max="Math.max(1, item.total_aset)"
+                                            :value="item.qty"
+                                            class="h-8 w-16 rounded-lg border border-slate-200 px-2 text-xs text-slate-700 outline-none focus:border-blue-500"
+                                            @input="setQty(item, $event.target.value)"
+                                        />
+                                    </label>
+                                    <button
+                                        class="rounded-lg border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-500 transition hover:border-rose-200 hover:text-rose-600"
+                                        type="button"
+                                        @click="removeSelected(item.id)"
+                                    >
+                                        Hapus
+                                    </button>
+                                </div>
+                            </div>
+
+                            <p
+                                class="mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                                :class="itemLengkap(item) ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'"
+                            >
+                                {{ statusItem(item) }}
+                            </p>
+
+                            <textarea
+                                :value="item.deskripsi"
+                                rows="2"
+                                class="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                placeholder="Jelaskan kehilangan alat ini"
+                                @input="setDeskripsi(item.id, $event.target.value)"
+                            ></textarea>
+
+                            <div class="mt-3">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <span class="text-xs font-semibold text-slate-600">Foto alat ini (minimal 3)</span>
+                                    <label
+                                        class="cursor-pointer rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                                    >
+                                        Tambah Foto
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            class="sr-only"
+                                            @change="handleItemFotoChange(item.id, $event)"
+                                        />
+                                    </label>
+                                </div>
+
+                                <div v-if="item.previews.length" class="mt-2 grid grid-cols-3 gap-2">
+                                    <div
+                                        v-for="(preview, index) in item.previews"
+                                        :key="`foto-${item.id}-${index}`"
+                                        class="relative overflow-hidden rounded-lg border border-slate-200"
+                                    >
+                                        <img :src="preview.url" :alt="`Foto ${index + 1}`" class="h-20 w-full object-cover" />
+                                        <button
+                                            class="absolute right-1 top-1 rounded-full bg-slate-900/70 px-1.5 text-[11px] font-semibold text-white transition hover:bg-rose-600"
+                                            type="button"
+                                            aria-label="Hapus foto"
+                                            @click="removeItemFoto(item.id, index)"
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+                                </div>
+                                <p v-else class="mt-2 text-xs text-slate-400">
+                                    Belum ada foto khusus alat ini. Foto umum di langkah 3 akan dipakai bila dibiarkan kosong.
+                                </p>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-slate-400 text-xs font-semibold text-white">3</span>
+                                <p class="text-sm font-semibold text-slate-800">Deskripsi dan foto umum (opsional)</p>
+                            </div>
+                            <button
+                                v-if="form.deskripsi.trim()"
+                                class="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+                                type="button"
+                                @click="terapkanDeskripsiUmum"
+                            >
+                                Salin deskripsi ke semua alat
+                            </button>
+                        </div>
+                        <p class="mt-1 text-xs text-slate-500">
+                            Dipakai otomatis untuk alat yang deskripsi atau fotonya dibiarkan kosong.
+                        </p>
+
                         <textarea
                             v-model="form.deskripsi"
-                            rows="3"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            placeholder="Jelaskan kehilangan yang terjadi"
+                            rows="2"
+                            class="mt-3 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            placeholder="Contoh: alat terendam banjir di gudang"
                         ></textarea>
-                        <p v-if="formErrors.deskripsi" class="text-xs font-semibold text-rose-500">{{ formErrors.deskripsi }}</p>
-                    </label>
-                    <label class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
-                        <span>Foto Kehilangan *</span>
-                        <input
-                            ref="fileInput"
-                            type="file"
-                            accept="image/*"
-                            class="block w-full text-sm text-slate-600 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700"
-                            @change="handleFileChange"
-                        />
-                        <p v-if="formErrors.foto" class="text-xs font-semibold text-rose-500">{{ formErrors.foto }}</p>
-                    </label>
-                </div>
+                        <p v-if="formErrors.deskripsi" class="mt-1 text-xs font-semibold text-rose-500">{{ formErrors.deskripsi }}</p>
 
-                <div v-if="previewUrl" class="mt-4 overflow-hidden rounded-2xl border border-slate-200">
-                    <img :src="previewUrl" alt="Preview" class="h-56 w-full object-cover" />
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
+                            <span class="text-xs font-semibold text-slate-600">Foto umum (minimal 3 bila dipakai)</span>
+                            <div class="flex items-center gap-2">
+                                <span
+                                    v-if="form.foto.length"
+                                    class="rounded-full px-3 py-1 text-xs font-semibold"
+                                    :class="form.foto.length >= 3 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'"
+                                >
+                                    {{ form.foto.length }} foto
+                                </span>
+                                <label class="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700">
+                                    Tambah Foto
+                                    <input
+                                        ref="fileInput"
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        class="sr-only"
+                                        @change="handleFileChange"
+                                    />
+                                </label>
+                            </div>
+                        </div>
+
+                        <div v-if="previewUrls.length" class="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5">
+                            <div
+                                v-for="(preview, index) in previewUrls"
+                                :key="`preview-${index}`"
+                                class="relative overflow-hidden rounded-lg border border-slate-200"
+                            >
+                                <img :src="preview.url" :alt="`Foto umum ${index + 1}`" class="h-20 w-full object-cover" />
+                                <button
+                                    class="absolute right-1 top-1 rounded-full bg-slate-900/70 px-1.5 text-[11px] font-semibold text-white transition hover:bg-rose-600"
+                                    type="button"
+                                    aria-label="Hapus foto"
+                                    @click="removeFoto(index)"
+                                >
+                                    &times;
+                                </button>
+                            </div>
+                        </div>
+                        <p v-if="formErrors.foto" class="mt-1 text-xs font-semibold text-rose-500">{{ formErrors.foto }}</p>
+                        <p class="mt-2 text-xs text-slate-400">Tiap foto maksimal 5 MB, maksimal 10 foto per alat.</p>
+                    </div>
                 </div>
 
                 <p v-if="formError" class="mt-3 text-sm font-semibold text-rose-500">
@@ -368,7 +651,9 @@
                         <p class="font-semibold text-slate-900">{{ detailItem?.userName }}</p>
                         <p class="text-slate-500">Area</p>
                         <p class="font-semibold text-slate-900">{{ detailItem?.areaName }}</p>
-                        <p class="text-slate-500">Tanggal</p>
+                        <p class="text-slate-500">Tanggal Pelaporan</p>
+                        <p class="font-semibold text-slate-900">{{ detailItem?.tanggalLaporan }}</p>
+                        <p class="text-slate-500">Waktu Input</p>
                         <p class="font-semibold text-slate-900">{{ detailItem?.createdAt }}</p>
                         <p class="text-slate-500">Jumlah</p>
                         <p class="font-semibold text-slate-900">{{ detailItem?.jumlah }} unit</p>
@@ -383,8 +668,20 @@
                     <div>
                         <p class="text-sm text-slate-500">Deskripsi</p>
                         <p class="mt-2 text-sm font-semibold text-slate-900">{{ detailItem?.deskripsi }}</p>
-                        <div v-if="detailItem?.url" class="mt-4 overflow-hidden rounded-2xl border border-slate-200">
-                            <img :src="detailItem.url" alt="Foto kehilangan" class="h-56 w-full object-cover" />
+                        <p v-if="detailPhotos.length" class="mt-4 text-sm text-slate-500">
+                            Foto ({{ detailPhotos.length }})
+                        </p>
+                        <div v-if="detailPhotos.length" class="mt-2 grid grid-cols-2 gap-2">
+                            <a
+                                v-for="(photo, index) in detailPhotos"
+                                :key="`foto-${index}`"
+                                :href="photo.url"
+                                target="_blank"
+                                rel="noopener"
+                                class="overflow-hidden rounded-2xl border border-slate-200 transition hover:border-blue-300"
+                            >
+                                <img :src="photo.url" :alt="`Foto kehilangan ${index + 1}`" class="h-32 w-full object-cover" />
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -412,6 +709,8 @@ import { computed, inject, onMounted, reactive, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import LaporanStatusModal from '../../Components/LaporanStatusModal.vue';
+import LaporanPeriodFilter from '../../Components/LaporanPeriodFilter.vue';
+import LaporanExcelExport from '../../Components/LaporanExcelExport.vue';
 import ToastNotification from '../../Components/ToastNotification.vue';
 
 defineOptions({
@@ -439,6 +738,8 @@ const userAreaId = computed(() => authUser.value?.area_id ?? authUser.value?.are
 const canManageReports = computed(() =>
     ['sp_tool', 'pic_tool', 'mgr_tool', 'admin', 'super_admin'].includes(roleKey.value)
 );
+// Laporan yang sudah final hanya boleh dikoreksi PIC Tool, admin, dan super admin.
+const canCorrectStatus = computed(() => ['pic_tool', 'admin', 'super_admin'].includes(roleKey.value));
 const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
 const activeAreaId = inject('activeAreaId', ref(null));
 const setAreaSwitching = inject('setAreaSwitching', null);
@@ -460,6 +761,7 @@ const loadError = ref('');
 const search = ref('');
 const selectedTool = ref('');
 const statusFilter = ref('Semua');
+const periodFilter = ref({ period: 'all' });
 
 const pagination = reactive({
     currentPage: 1,
@@ -471,14 +773,21 @@ const pagination = reactive({
 const formOpen = ref(false);
 const formError = ref('');
 const formErrors = reactive({
-    alat_id: '',
-    jumlah: '',
+    items: '',
+    tanggal_laporan: '',
     deskripsi: '',
     foto: '',
 });
+// Alat yang dicentang pada form: id alat -> { nama, kode, qty, total_aset, deskripsi }.
+const selectedQty = reactive({});
+const toolSearch = ref('');
+const daftarInput = ref(null);
+const isDownloadingDaftar = ref(false);
+const isMatchingDaftar = ref(false);
+const hasilCocok = ref(null);
 const isSubmitting = ref(false);
 const fileInput = ref(null);
-const previewUrl = ref('');
+const previewUrls = ref([]);
 const detailItem = ref(null);
 const selectedStatusItem = ref(null);
 const isStatusSubmitting = ref(false);
@@ -493,15 +802,177 @@ const alertType = ref('success');
 const alertTitle = ref('');
 let alertTimeout = null;
 
+const toDateInput = (date) => {
+    const bulan = String(date.getMonth() + 1).padStart(2, '0');
+    const tanggal = String(date.getDate()).padStart(2, '0');
+    return `${date.getFullYear()}-${bulan}-${tanggal}`;
+};
+
+const hariIniIso = computed(() => toDateInput(new Date()));
+
 const form = reactive({
-    alat_id: '',
-    jumlah: 1,
+    tanggal_laporan: toDateInput(new Date()),
     deskripsi: '',
-    foto: null,
+    foto: [],
 });
 
+const detailPhotos = computed(() => detailItem.value?.photos ?? []);
+
+const filteredTools = computed(() => {
+    const keyword = toolSearch.value.trim().toLowerCase();
+    if (!keyword) {
+        return tools.value;
+    }
+
+    return tools.value.filter((tool) =>
+        [tool.nama, tool.kode, tool.jenis_alat]
+            .filter(Boolean)
+            .some((nilai) => String(nilai).toLowerCase().includes(keyword))
+    );
+});
+
+const selectedItems = computed(() =>
+    Object.values(selectedQty)
+        .filter((item) => Number(item?.qty) > 0)
+        .sort((a, b) => String(a.nama).localeCompare(String(b.nama)))
+);
+
+const qtyFor = (toolId) => Number(selectedQty[toolId]?.qty ?? 0);
+
+const maxQty = (tool) => Math.max(1, Number(tool?.total_aset ?? 1));
+
+// Warna badge mengikuti halaman template peminjaman: merah habis, kuning menipis, hijau aman.
+const stockBadgeClass = (tool) => {
+    const total = Number(tool?.total_aset ?? 0);
+    const tersedia = Number(tool?.stok_tersedia ?? 0);
+
+    if (tersedia <= 0) {
+        return 'bg-rose-100 text-rose-700';
+    }
+
+    if (total > 0 && tersedia / total < 0.35) {
+        return 'bg-amber-100 text-amber-700';
+    }
+
+    return 'bg-emerald-100 text-emerald-700';
+};
+
+const pilihAlat = (tool, qty = 1, deskripsi = '') => {
+    const jumlah = Math.max(1, Math.min(Math.floor(Number(qty) || 1), maxQty(tool)));
+    const sebelumnya = selectedQty[tool.id];
+
+    selectedQty[tool.id] = {
+        id: tool.id,
+        nama: tool.nama ?? sebelumnya?.nama ?? '-',
+        kode: tool.kode ?? sebelumnya?.kode ?? '-',
+        total_aset: Number(tool.total_aset ?? sebelumnya?.total_aset ?? 0),
+        qty: jumlah,
+        deskripsi: deskripsi || sebelumnya?.deskripsi || '',
+        // Foto khusus alat ini; bila kosong, foto umum yang dipakai.
+        fotos: sebelumnya?.fotos ?? [],
+        previews: sebelumnya?.previews ?? [],
+    };
+};
+
+const MIN_FOTO = 3;
+
+const punyaDeskripsi = (item) => Boolean(item.deskripsi.trim() || form.deskripsi.trim());
+
+const punyaFoto = (item) =>
+    item.fotos.length >= MIN_FOTO || (item.fotos.length === 0 && form.foto.length >= MIN_FOTO);
+
+const itemLengkap = (item) => punyaDeskripsi(item) && punyaFoto(item);
+
+const statusItem = (item) => {
+    if (itemLengkap(item)) {
+        return item.fotos.length ? `Lengkap · ${item.fotos.length} foto` : 'Lengkap · pakai foto umum';
+    }
+
+    const kurang = [];
+    if (!punyaDeskripsi(item)) {
+        kurang.push('deskripsi');
+    }
+    if (!punyaFoto(item)) {
+        const sisa = MIN_FOTO - item.fotos.length;
+        kurang.push(item.fotos.length ? `${sisa} foto lagi` : `${MIN_FOTO} foto`);
+    }
+
+    return `Butuh ${kurang.join(' dan ')}`;
+};
+
+const itemBelumLengkap = computed(() => selectedItems.value.filter((item) => !itemLengkap(item)));
+
+const handleItemFotoChange = (itemId, event) => {
+    const item = selectedQty[itemId];
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    if (!item || !files.length) {
+        return;
+    }
+
+    const sisa = MAKS_FOTO - item.fotos.length;
+    if (sisa <= 0) {
+        showAlert('error', `Maksimal ${MAKS_FOTO} foto per alat.`);
+        return;
+    }
+
+    files.slice(0, sisa).forEach((file) => {
+        item.fotos.push(file);
+        item.previews.push({ url: URL.createObjectURL(file), name: file.name });
+    });
+
+    if (files.length > sisa) {
+        showAlert('error', `Hanya ${sisa} foto ditambahkan, maksimal ${MAKS_FOTO} foto per alat.`);
+    }
+};
+
+const removeItemFoto = (itemId, index) => {
+    const item = selectedQty[itemId];
+    if (!item) {
+        return;
+    }
+
+    const preview = item.previews[index];
+    if (preview) {
+        URL.revokeObjectURL(preview.url);
+    }
+    item.previews.splice(index, 1);
+    item.fotos.splice(index, 1);
+};
+
+const setQty = (tool, value) => {
+    pilihAlat(tool, value);
+};
+
+const setDeskripsi = (toolId, value) => {
+    if (selectedQty[toolId]) {
+        selectedQty[toolId].deskripsi = value;
+    }
+};
+
+const toggleTool = (tool) => {
+    if (qtyFor(tool.id) > 0) {
+        delete selectedQty[tool.id];
+        return;
+    }
+
+    pilihAlat(tool, 1);
+};
+
+const removeSelected = (toolId) => {
+    (selectedQty[toolId]?.previews ?? []).forEach((preview) => URL.revokeObjectURL(preview.url));
+    delete selectedQty[toolId];
+};
+
+const clearSelection = () => {
+    Object.keys(selectedQty).forEach((key) => {
+        removeSelected(key);
+    });
+    hasilCocok.value = null;
+};
+
 const statusOptions = computed(() => {
-    const base = ['Dilaporkan', 'Disetujui', 'Ditolak', 'Selesai'];
+    const base = ['Dilaporkan', 'Disetujui', 'Ditolak'];
     const dynamic = new Set(base);
     reports.value.forEach((item) => {
         if (item.status) {
@@ -539,23 +1010,23 @@ const statusBadge = (status) => {
     }
 };
 
-const canShowStatusAction = (item) => canManageReports.value && ['Dilaporkan', 'Disetujui'].includes(item?.status);
+const isLaporanFinal = (item) => (item?.status ?? 'Dilaporkan') !== 'Dilaporkan';
+
+const canShowStatusAction = (item) =>
+    isLaporanFinal(item) ? canCorrectStatus.value : canManageReports.value;
 
 const statusActionLabel = (item) => {
-    if (item?.status === 'Disetujui') {
-        return isStatusSubmitting.value && statusSubmittingId.value === item.id ? 'Memproses...' : 'Selesai';
+    if (isStatusSubmitting.value && statusSubmittingId.value === item?.id) {
+        return 'Memproses...';
     }
 
-    return 'Persetujuan';
+    return isLaporanFinal(item) ? 'Ubah Status' : 'Persetujuan';
 };
 
-const statusActionClass = (item) => {
-    if (item?.status === 'Disetujui') {
-        return 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300';
-    }
-
-    return 'border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300';
-};
+const statusActionClass = (item) =>
+    isLaporanFinal(item)
+        ? 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+        : 'border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300';
 
 const normalizeReport = (item) => ({
     id: item?.id ?? '',
@@ -568,13 +1039,20 @@ const normalizeReport = (item) => ({
     status: item?.status ?? 'Dilaporkan',
     deskripsi: item?.deskripsi ?? '-',
     url: item?.url ?? '',
+    photos: Array.isArray(item?.photos) && item.photos.length
+        ? item.photos
+        : item?.url
+          ? [{ url: item.url, original_name: item?.original_name ?? null }]
+          : [],
     createdAt: item?.created_at ?? '-',
+    tanggalLaporan: item?.tanggal_laporan ?? item?.created_at ?? '-',
 });
 
 const buildParams = () => {
     const params = {
         page: pagination.currentPage,
         per_page: pagination.perPage,
+        ...periodFilter.value,
     };
     const keyword = search.value.trim();
     if (keyword) {
@@ -593,7 +1071,7 @@ const buildParams = () => {
 };
 
 const buildExportParams = () => {
-    const params = {};
+    const params = { ...periodFilter.value };
     const keyword = search.value.trim();
     if (keyword) {
         params.search = keyword;
@@ -610,37 +1088,13 @@ const buildExportParams = () => {
     return params;
 };
 
-const exportCsv = () => {
-    axios.get('/api/laporan-kehilangan/export', {
-        params: buildExportParams(),
-        responseType: 'blob',
-    })
-        .then((response) => {
-            const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            const disposition = response.headers['content-disposition'] ?? '';
-            const match = disposition.match(/filename=\"?([^\";]+)\"?/i);
-
-            link.href = url;
-            link.download = match?.[1] ?? 'laporan-kehilangan.csv';
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(url);
-        })
-        .catch(() => {
-            showAlert('error', 'Gagal mengunduh file CSV.');
-        });
-};
-
 const downloadTemplateSurat = () => {
     axios.get('/api/laporan-kehilangan/template', {
         responseType: 'blob',
     })
         .then((response) => {
             const blob = new Blob([response.data], {
-                type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -648,24 +1102,27 @@ const downloadTemplateSurat = () => {
             const match = disposition.match(/filename=\"?([^\";]+)\"?/i);
 
             link.href = url;
-            link.download = match?.[1] ?? 'template-surat-kehilangan.docx';
+            link.download = match?.[1] ?? 'template-kehilangan.xlsx';
             document.body.appendChild(link);
             link.click();
             link.remove();
             window.URL.revokeObjectURL(url);
         })
         .catch(() => {
-            showAlert('error', 'Template surat kehilangan belum tersedia.');
+            showAlert('error', 'Gagal mengunduh template Excel kehilangan.');
         });
 };
 
+let reportRequestId = 0;
 const loadReports = async () => {
+    const requestId = ++reportRequestId;
     isLoading.value = true;
     loadError.value = '';
     try {
         const response = await axios.get('/api/laporan-kehilangan', {
             params: buildParams(),
         });
+        if (requestId !== reportRequestId) return;
         const payload = response.data;
         const data = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
         reports.value = data.map((item) => normalizeReport(item));
@@ -681,27 +1138,38 @@ const loadReports = async () => {
             pagination.total = Number(meta.total ?? reports.value.length);
         }
     } catch (error) {
+        if (requestId !== reportRequestId) return;
         reports.value = [];
         loadError.value = 'Gagal memuat laporan kehilangan.';
         showAlert('error', loadError.value);
     } finally {
-        isLoading.value = false;
+        if (requestId === reportRequestId) isLoading.value = false;
     }
 };
 
 const loadTools = async () => {
     try {
-        const params = { for_select: 1 };
+        // Payload lengkap (bukan mode for_select) dipakai supaya ketersediaan
+        // dan jenis alat ikut terbawa untuk pemilih alat.
+        const params = {};
         if (currentAreaId.value) {
             params.area_id = currentAreaId.value;
         }
         const response = await axios.get('/api/alats', { params });
-        const data = Array.isArray(response.data) ? response.data : [];
-        tools.value = data.map((tool) => ({
-            id: tool.id,
-            nama: tool.nama ?? '-',
-            kode: tool.kode ?? '-',
-        }));
+        const payload = response.data;
+        const data = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
+        tools.value = data.map((tool) => {
+            const totalAset = Number(tool.total_aset ?? 0);
+
+            return {
+                id: tool.id,
+                nama: tool.nama ?? '-',
+                kode: tool.kode ?? '-',
+                jenis_alat: tool.jenis_alat ?? '',
+                total_aset: totalAset,
+                stok_tersedia: Number(tool.stok_tersedia ?? tool.stok ?? totalAset),
+            };
+        });
     } catch (error) {
         tools.value = [];
     }
@@ -739,25 +1207,28 @@ const closeAlert = () => {
 
 const resetFormErrors = () => {
     formError.value = '';
-    formErrors.alat_id = '';
-    formErrors.jumlah = '';
+    formErrors.items = '';
+    formErrors.tanggal_laporan = '';
     formErrors.deskripsi = '';
     formErrors.foto = '';
 };
 
+const bersihkanPreview = () => {
+    previewUrls.value.forEach((preview) => URL.revokeObjectURL(preview.url));
+    previewUrls.value = [];
+};
+
 const resetForm = () => {
-    form.alat_id = '';
-    form.jumlah = 1;
+    form.tanggal_laporan = toDateInput(new Date());
     form.deskripsi = '';
-    form.foto = null;
+    form.foto = [];
+    toolSearch.value = '';
+    clearSelection();
     resetFormErrors();
     if (fileInput.value) {
         fileInput.value.value = '';
     }
-    if (previewUrl.value) {
-        URL.revokeObjectURL(previewUrl.value);
-        previewUrl.value = '';
-    }
+    bersihkanPreview();
 };
 
 const openCreate = () => {
@@ -769,50 +1240,187 @@ const closeForm = () => {
     formOpen.value = false;
 };
 
+const MAKS_FOTO = 10;
+
+// Foto ditambahkan, bukan menimpa, supaya bisa memilih beberapa kali.
 const handleFileChange = (event) => {
-    const file = event.target.files?.[0] ?? null;
-    form.foto = file;
-    if (previewUrl.value) {
-        URL.revokeObjectURL(previewUrl.value);
-        previewUrl.value = '';
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    if (!files.length) {
+        return;
     }
-    if (file) {
-        previewUrl.value = URL.createObjectURL(file);
+
+    const sisa = MAKS_FOTO - form.foto.length;
+    if (sisa <= 0) {
+        showAlert('error', `Maksimal ${MAKS_FOTO} foto per laporan.`);
+        return;
     }
+
+    const diterima = files.slice(0, sisa);
+    diterima.forEach((file) => {
+        form.foto.push(file);
+        previewUrls.value.push({ url: URL.createObjectURL(file), name: file.name });
+    });
+
+    if (files.length > diterima.length) {
+        showAlert('error', `Hanya ${diterima.length} foto ditambahkan, maksimal ${MAKS_FOTO} foto per laporan.`);
+    }
+};
+
+const removeFoto = (index) => {
+    const preview = previewUrls.value[index];
+    if (preview) {
+        URL.revokeObjectURL(preview.url);
+    }
+    previewUrls.value.splice(index, 1);
+    form.foto.splice(index, 1);
+};
+
+const daftarAlatParams = () => (currentAreaId.value ? { area_id: currentAreaId.value } : {});
+
+const downloadDaftarAlat = async () => {
+    isDownloadingDaftar.value = true;
+    try {
+        const response = await axios.get('/api/laporan-alat/daftar-alat', {
+            params: daftarAlatParams(),
+            responseType: 'blob',
+        });
+        const disposition = response.headers?.['content-disposition'] ?? '';
+        const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+        const filename = match ? decodeURIComponent(match[1]) : 'DAFTAR-ALAT-LAPORAN.xlsx';
+        const url = URL.createObjectURL(response.data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        showAlert('error', 'Gagal mengunduh daftar alat.');
+    } finally {
+        isDownloadingDaftar.value = false;
+    }
+};
+
+const uploadDaftarAlat = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) {
+        return;
+    }
+
+    isMatchingDaftar.value = true;
+    try {
+        const payload = new FormData();
+        payload.append('file', file);
+        Object.entries(daftarAlatParams()).forEach(([key, value]) => {
+            payload.append(key, value);
+        });
+
+        const response = await axios.post('/api/laporan-alat/cocokkan', payload);
+        const items = Array.isArray(response.data?.items) ? response.data.items : [];
+        const masalah = Array.isArray(response.data?.masalah) ? response.data.masalah : [];
+
+        items.forEach((item) => {
+            pilihAlat(
+                {
+                    id: item.id,
+                    nama: item.nama,
+                    kode: item.kode,
+                    total_aset: item.total_aset,
+                },
+                item.qty
+            );
+        });
+        hasilCocok.value = { items, masalah };
+
+        if (!items.length && !masalah.length) {
+            showAlert('error', 'Tidak ada baris dengan kolom Jumlah terisi.');
+        }
+    } catch (error) {
+        const errors = error?.response?.data?.errors;
+        const firstError = errors ? Object.values(errors).flat()[0] : null;
+        showAlert('error', firstError ?? error?.response?.data?.message ?? 'Gagal membaca file daftar alat.');
+    } finally {
+        isMatchingDaftar.value = false;
+    }
+};
+
+const terapkanDeskripsiUmum = () => {
+    const umum = form.deskripsi.trim();
+    if (!umum) {
+        return;
+    }
+
+    selectedItems.value.forEach((item) => {
+        setDeskripsi(item.id, umum);
+    });
 };
 
 const submitForm = async () => {
     resetFormErrors();
-    if (!form.alat_id || !form.deskripsi || !form.foto || form.jumlah < 1) {
+    if (!selectedItems.value.length) {
+        formErrors.items = 'Pilih minimal satu alat.';
         formError.value = 'Lengkapi semua field wajib.';
+        return;
+    }
+    if (!form.tanggal_laporan) {
+        formError.value = 'Lengkapi semua field wajib.';
+        return;
+    }
+    if (form.foto.length && form.foto.length < 3) {
+        formErrors.foto = 'Foto umum minimal 3, atau kosongkan dan isi foto tiap alat.';
+        formError.value = 'Lengkapi semua field wajib.';
+        return;
+    }
+    if (itemBelumLengkap.value.length) {
+        const contoh = itemBelumLengkap.value[0];
+        formErrors.items = `${itemBelumLengkap.value.length} alat belum lengkap, contoh: ${contoh.nama} (${statusItem(contoh).toLowerCase()}).`;
+        formError.value = 'Lengkapi deskripsi dan foto tiap alat.';
         return;
     }
     isSubmitting.value = true;
     try {
         const payload = new FormData();
-        payload.append('alat_id', form.alat_id);
+        payload.append('tanggal_laporan', form.tanggal_laporan);
         payload.append('deskripsi', form.deskripsi);
-        payload.append('jumlah', form.jumlah);
-        payload.append('foto', form.foto);
+        form.foto.forEach((file, index) => {
+            payload.append(`foto[${index}]`, file);
+        });
+        selectedItems.value.forEach((item, index) => {
+            payload.append(`items[${index}][alat_id]`, item.id);
+            payload.append(`items[${index}][jumlah]`, item.qty);
+            payload.append(`items[${index}][deskripsi]`, item.deskripsi);
+            item.fotos.forEach((file, urutan) => {
+                payload.append(`items[${index}][foto][${urutan}]`, file);
+            });
+        });
 
-        await axios.post('/api/laporan-kehilangan', payload, {
+        const response = await axios.post('/api/laporan-kehilangan', payload, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
-            params: currentAreaId.value ? { area_id: currentAreaId.value } : {},
+            params: daftarAlatParams(),
         });
+
+        const total = Number(response.data?.total ?? selectedItems.value.length);
 
         await loadReports();
         await refreshSidebarNotificationCounts();
         closeForm();
-        showAlert('success', 'Laporan kehilangan berhasil dikirim.');
+        showAlert('success', `${total} laporan kehilangan berhasil dikirim.`);
     } catch (error) {
         if (error?.response?.status === 422) {
             const errors = error.response?.data?.errors ?? {};
-            formErrors.alat_id = errors.alat_id?.[0] ?? '';
-            formErrors.jumlah = errors.jumlah?.[0] ?? '';
+            // Galat per baris item (items.3.deskripsi) ikut ditampilkan di bagian pilihan alat.
+            const itemErrorKey = Object.keys(errors).find((key) => key.startsWith('items.'));
+            formErrors.items = errors.items?.[0] ?? (itemErrorKey ? errors[itemErrorKey][0] : '');
+            formErrors.tanggal_laporan = errors.tanggal_laporan?.[0] ?? '';
             formErrors.deskripsi = errors.deskripsi?.[0] ?? '';
-            formErrors.foto = errors.foto?.[0] ?? '';
+            formErrors.foto = errors.foto?.[0]
+                ?? Object.keys(errors).filter((key) => key.startsWith('foto.')).map((key) => errors[key][0])[0]
+                ?? '';
             formError.value = error.response?.data?.message ?? 'Periksa kembali isian.';
         } else {
             formError.value = error.response?.data?.message ?? 'Gagal mengirim laporan.';
@@ -834,11 +1442,6 @@ const openStatusModal = (item) => {
 };
 
 const handleStatusAction = (item) => {
-    if (item?.status === 'Disetujui') {
-        submitStatusFor(item, 'Selesai');
-        return;
-    }
-
     openStatusModal(item);
 };
 
@@ -889,7 +1492,7 @@ const submitStatusFor = async (item, status, shouldCloseModal = false) => {
 };
 
 let filterTimeout = null;
-watch([search, selectedTool, statusFilter], () => {
+watch([search, selectedTool, statusFilter, periodFilter], () => {
     if (filterTimeout) {
         clearTimeout(filterTimeout);
     }

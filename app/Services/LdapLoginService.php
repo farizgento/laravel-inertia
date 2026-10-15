@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\LdapLoginException;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Hash;
 use LdapRecord\Models\ActiveDirectory\User as LdapUser;
 use Throwable;
 
@@ -27,6 +28,16 @@ class LdapLoginService
 
         if (! $localUser) {
             throw new LdapLoginException(401, 'Akun belum diizinkan untuk login ke aplikasi ini.');
+        }
+
+        // Akun statis diverifikasi langsung dengan kata sandi lokal supaya tetap
+        // bisa masuk walau tidak terdaftar di direktori LDAP.
+        if ($localUser->punyaPasswordLokal()) {
+            if (! Hash::check($password, $localUser->password)) {
+                throw new LdapLoginException(401, 'Username atau password salah.');
+            }
+
+            return $localUser;
         }
 
         $ldapUser = $this->findLdapUser($username);

@@ -1,0 +1,168 @@
+{
+  "input": "D:\\WEB\\laravel-inertia\\outputs\\BRD-IPTOOLS-LITE.docx",
+  "fonts_by_char_count": {},
+  "direct_run_formatting_runs": 1695,
+  "direct_paragraph_formatting_paragraphs": 1751,
+  "heading_like_paragraphs_not_heading_style": [
+    {
+      "para_index": 2,
+      "text": "BRD",
+      "style": "Normal"
+    },
+    {
+      "para_index": 3,
+      "text": "SISTEM PENGELOLAAN ALAT DAN PEMINJAMAN ANTAR AREA",
+      "style": "Normal"
+    },
+    {
+      "para_index": 212,
+      "text": "IPTOOLS LITE",
+      "style": "Normal"
+    },
+    {
+      "para_index": 213,
+      "text": "Tanggal",
+      "style": "Normal"
+    },
+    {
+      "para_index": 214,
+      "text": "Penyusun",
+      "style": "Normal"
+    },
+    {
+      "para_index": 215,
+      "text": "Versi",
+      "style": "Normal"
+    },
+    {
+      "para_index": 216,
+      "text": "Uraian Perubahan",
+      "style": "Normal"
+    },
+    {
+      "para_index": 225,
+      "text": "Peran",
+      "style": "Normal"
+    },
+    {
+      "para_index": 226,
+      "text": "Nama atau Jabatan",
+      "style": "Normal"
+    },
+    {
+      "para_index": 227,
+      "text": "Status",
+      "style": "Normal"
+    },
+    {
+      "para_index": 228,
+      "text": "Tanggal dan Tanda Tangan",
+      "style": "Normal"
+    },
+    {
+      "para_index": 241,
+      "text": "Nomor Salinan",
+      "style": "Normal"
+    },
+    {
+      "para_index": 242,
+      "text": "Penerima atau Fungsi",
+      "style": "Normal"
+    },
+    {
+      "para_index": 243,
+      "text": "Lokasi atau Media",
+      "style": "Normal"
+    },
+    {
+      "para_index": 253,
+      "text": "Atribut",
+      "style": "Normal"
+    },
+    {
+      "para_index": 254,
+      "text": "Isi",
+      "style": "Normal"
+    },
+    {
+      "para_index": 269,
+      "text": "No",
+      "style": "Normal"
+    },
+    {
+      "para_index": 270,
+      "text": "Tujuan Bisnis",
+      "style": "Normal"
+    },
+    {
+      "para_index": 271,
+      "text": "Indikator atau Ukuran Keberhasilan",
+      "style": "Normal"
+    },
+    {
+      "para_index": 272,
+      "text": "Sasaran",
+      "style": "Normal"
+    }
+  ],
+  "examples": {
+    "direct_paragraph_formatting": [
+      {
+        "para_index": 1,
+        "text": "Business Requirements Document",
+        "style": "Title"
+      },
+      {
+        "para_index": 2,
+        "text": "BRD",
+        "style": "Normal"
+      },
+      {
+        "para_index": 3,
+        "text": "SISTEM PENGELOLAAN ALAT DAN PEMINJAMAN ANTAR AREA",
+        "style": "Normal"
+      },
+      {
+        "para_index": 4,
+        "text": "MASTER ALAT, REVIEW, PENGIRIMAN, PENGEMBALIAN, MUTASI, LAPORAN, DAN AUDIT",
+        "style": "Normal"
+      },
+      {
+        "para_index": 5,
+        "text": "PT PLN INDONESIA POWER UBH",
+        "style": "Normal"
+      }
+    ],
+    "direct_run_formatting": [
+      {
+        "para_index": 2,
+        "run_text": "BRD",
+        "style": "Normal"
+      },
+      {
+        "para_index": 3,
+        "run_text": "SISTEM PENGELOLAAN ALAT DAN PEMINJAMAN ANTAR AREA",
+        "style": "Normal"
+      },
+      {
+        "para_index": 4,
+        "run_text": "MASTER ALAT, REVIEW, PENGIRIMAN, PENGEMBALIAN, MUTASI, LAPORAN, DAN AUDIT",
+        "style": "Normal"
+      },
+      {
+        "para_index": 5,
+        "run_text": "PT PLN INDONESIA POWER UBH",
+        "style": "Normal"
+      },
+      {
+        "para_index": 6,
+        "run_text": "VERSI 1.0  SEPTEMBER 2026",
+        "style": "Normal"
+      }
+    ]
+  },
+  "notes": [
+    "Direct formatting is not always wrong, but it often causes inconsistent output when templates change.",
+    "Heading-like paragraphs not using Heading styles can break TOC and accessibility."
+  ]
+}

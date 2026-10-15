@@ -14,7 +14,7 @@
                 <p class="mt-1 text-sm text-slate-500">Kelola daftar alat siap pakai untuk peminjaman intra area dan antar area.</p>
             </div>
             <button
-                class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2"
+                class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 sm:w-auto"
                 type="button"
                 @click="startCreate"
             >
@@ -267,7 +267,7 @@
                                                     </svg>
                                                 </button>
                                                 <button
-                                                    class="flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200"
+                                                    class="flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-600 transition hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200"
                                                     type="button"
                                                     title="Hapus template"
                                                     aria-label="Hapus template"
@@ -323,17 +323,26 @@
 
                             <div class="mt-3 flex gap-2">
                                 <button
-                                    class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700"
+                                    class="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700"
                                     type="button"
                                     @click="editTemplate(template)"
                                 >
+                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M12 20h9" />
+                                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                                    </svg>
                                     Edit
                                 </button>
                                 <button
-                                    class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:border-rose-300"
+                                    class="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 text-xs font-semibold text-rose-600 transition hover:bg-rose-100"
                                     type="button"
                                     @click="askDeleteTemplate(template)"
                                 >
+                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M3 6h18" />
+                                        <path d="M8 6V4h8v2" />
+                                        <path d="m6 6 1 14h10l1-14" />
+                                    </svg>
                                     Hapus
                                 </button>
                             </div>
@@ -432,31 +441,43 @@
                                     yang dibutuhkan, lalu unggah kembali. Tidak perlu hafal kode alat.
                                 </p>
                             </div>
-                            <div class="flex flex-wrap gap-2">
+                            <!-- Unduh dan unggah dijadikan satu grup netral supaya
+                                 terbaca sebagai dua langkah dari alur yang sama. -->
+                            <div class="inline-flex w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm sm:w-auto">
                                 <button
-                                    class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                    class="inline-flex h-9 flex-1 items-center justify-center gap-2 px-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
                                     type="button"
                                     :disabled="!toolAreaId || isDownloadingDaftar"
                                     :title="toolAreaId ? 'Unduh daftar seluruh alat area ini' : 'Pilih area terlebih dahulu'"
                                     @click="downloadDaftarAlat"
                                 >
-                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M12 3v12" />
-                                        <path d="m7 10 5 5 5-5" />
-                                        <path d="M5 21h14" />
+                                    <svg v-if="isDownloadingDaftar" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                                        <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
                                     </svg>
-                                    {{ isDownloadingDaftar ? 'Mengunduh...' : 'Unduh Daftar Alat' }}
+                                    <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M12 3v10" />
+                                        <path d="m8 9 4 4 4-4" />
+                                        <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                                    </svg>
+                                    {{ isDownloadingDaftar ? 'Mengunduh...' : 'Unduh Daftar' }}
                                 </button>
+                                <span class="my-2 w-px bg-slate-200"></span>
                                 <button
-                                    class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                                    class="inline-flex h-9 flex-1 items-center justify-center gap-2 px-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
                                     type="button"
                                     :disabled="!toolAreaId || isMatchingDaftar"
+                                    :title="toolAreaId ? 'Unggah daftar alat yang sudah diisi' : 'Pilih area terlebih dahulu'"
                                     @click="daftarInput?.click()"
                                 >
-                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M12 21V9" />
-                                        <path d="m7 14 5-5 5 5" />
-                                        <path d="M5 3h14" />
+                                    <svg v-if="isMatchingDaftar" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                                        <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
+                                    </svg>
+                                    <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M12 13V3" />
+                                        <path d="m8 7 4-4 4 4" />
+                                        <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
                                     </svg>
                                     {{ isMatchingDaftar ? 'Membaca...' : 'Unggah Daftar' }}
                                 </button>
@@ -586,17 +607,21 @@
                 </div>
                 <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
                     <button
-                        class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                        class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
                         type="button"
                         @click="closeModal"
                     >
                         Batal
                     </button>
                     <button
-                        class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                        class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                         type="submit"
                         :disabled="isSubmitting"
                     >
+                        <svg v-if="isSubmitting" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
+                        </svg>
                         {{ isSubmitting ? 'Menyimpan...' : 'Simpan Template' }}
                     </button>
                 </div>
@@ -648,7 +673,7 @@
 
                 <div class="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 px-6 py-4">
                     <button
-                        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300"
+                        class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
                         type="button"
                         :disabled="isDeleting"
                         @click="cancelDelete"
@@ -656,11 +681,15 @@
                         Batal
                     </button>
                     <button
-                        class="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-300"
+                        class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-semibold text-white shadow-lg shadow-rose-200 transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-300"
                         type="button"
                         :disabled="isDeleting"
                         @click="confirmDelete"
                     >
+                        <svg v-if="isDeleting" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                            <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
+                        </svg>
                         {{ isDeleting ? 'Menghapus...' : 'Ya, hapus' }}
                     </button>
                 </div>

@@ -147,6 +147,10 @@ class AlatController extends Controller
     {
         $totalAset = $totalOverride ?? (int) $alat->total_aset;
         $stokTersedia = max($totalAset - $borrowedQty, 0);
+        $maxDemand = (int) $alat->max_demand;
+        // Selisih dihitung dari total aset baris ini supaya tetap benar pada
+        // tampilan stok alat pinjaman dari area lain.
+        $selisihDemand = $totalAset - $maxDemand;
 
         return [
             'id' => $alat->id,
@@ -157,6 +161,9 @@ class AlatController extends Controller
             'stok' => $stokTersedia,
             'total_aset' => $totalAset,
             'stok_tersedia' => $stokTersedia,
+            'max_demand' => $maxDemand,
+            'selisih_demand' => $selisihDemand,
+            'status_demand' => $selisihDemand > 0 ? 'Kelebihan' : ($selisihDemand < 0 ? 'Kekurangan' : 'Sesuai'),
             'deskripsi' => '',
             // Lokasi fisik alat di dalam area (rak/gudang). Nama area tetap
             // dikirim terpisah lewat area_name.
@@ -277,6 +284,16 @@ class AlatController extends Controller
 
         if ($classification !== '') {
             $query->where('klasifikasi_alat', $classification);
+        }
+
+        // Saring berdasarkan perbandingan total aset dengan kebutuhan (max demand).
+        $statusDemand = strtolower(trim((string) $request->query('status_demand', '')));
+        if ($statusDemand === 'kelebihan') {
+            $query->whereColumn('total_aset', '>', 'max_demand');
+        } elseif ($statusDemand === 'kekurangan') {
+            $query->whereColumn('total_aset', '<', 'max_demand');
+        } elseif ($statusDemand === 'sesuai') {
+            $query->whereColumn('total_aset', '=', 'max_demand');
         }
 
         if (! empty($areaId)) {
@@ -458,7 +475,7 @@ class AlatController extends Controller
             ->with($forSelect
                 ? ['alat:id,kode,nama,area_id', 'alat.area:id,kode']
                 : [
-                    'alat:id,kode,nama,jenis_alat,klasifikasi_alat,lokasi,total_aset,area_id',
+                    'alat:id,kode,nama,jenis_alat,klasifikasi_alat,lokasi,total_aset,max_demand,area_id',
                     'alat.area:id,name,slug,kode',
                     'sourcePeminjaman:id,tanggal_pinjam,tanggal_kembali',
                 ])
@@ -579,7 +596,7 @@ class AlatController extends Controller
         $sharedStocks = $sharedStockIds
             ? AreaAlatStock::query()
                 ->with([
-                    'alat:id,kode,nama,jenis_alat,klasifikasi_alat,lokasi,total_aset,area_id',
+                    'alat:id,kode,nama,jenis_alat,klasifikasi_alat,lokasi,total_aset,max_demand,area_id',
                     'alat.area:id,name,slug,kode',
                     'sourcePeminjaman:id,tanggal_pinjam,tanggal_kembali',
                 ])
@@ -698,7 +715,7 @@ class AlatController extends Controller
             $handle = fopen('php://output', 'wb');
             fwrite($handle, "\xEF\xBB\xBF");
             fwrite($handle, "sep={$delimiter}\r\n");
-            fputcsv($handle, ['Kode', 'Nama', 'Jenis Alat', 'Klasifikasi Alat', 'Area', 'Lokasi', 'Total Aset', 'Stok Tersedia'], $delimiter);
+            fputcsv($handle, ['Kode', 'Nama', 'Jenis Alat', 'Klasifikasi Alat', 'Area', 'Lokasi', 'Total Aset', 'Stok Tersedia', 'Max Demand', 'Selisih', 'Status Kebutuhan'], $delimiter);
 
             $query->chunk(500, function ($alats) use ($handle, $delimiter) {
                 $borrowedMap = $this->borrowedMap($alats->pluck('id')->all());
@@ -715,6 +732,9 @@ class AlatController extends Controller
                         $formatted['lokasi'] ?? '',
                         $formatted['total_aset'],
                         $formatted['stok_tersedia'],
+                        $formatted['max_demand'],
+                        $formatted['selisih_demand'],
+                        $formatted['status_demand'],
                     ], $delimiter);
                 }
             });
@@ -753,6 +773,7 @@ class AlatController extends Controller
             'klasifikasi_alat' => ['required', 'string', 'max:255'],
             'lokasi' => ['nullable', 'string', 'max:255'],
             'total_aset' => ['required', 'integer', 'min:0'],
+            'max_demand' => ['nullable', 'integer', 'min:0'],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
         ]);
         $data['klasifikasi_alat'] = trim($data['klasifikasi_alat']);
@@ -763,6 +784,7 @@ class AlatController extends Controller
                 'klasifikasi_alat' => ['Klasifikasi alat wajib diisi.'],
             ]);
         }
+        $data['max_demand'] = (int) ($data['max_demand'] ?? 0);
         $data = $this->applyWritableArea($request, $data);
 
         // Dikosongkan supaya model mengisi kode default nomor urut area.
@@ -793,6 +815,7 @@ class AlatController extends Controller
             'klasifikasi_alat' => ['required', 'string', 'max:255'],
             'lokasi' => ['nullable', 'string', 'max:255'],
             'total_aset' => ['required', 'integer', 'min:0'],
+            'max_demand' => ['nullable', 'integer', 'min:0'],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
         ]);
         $data['klasifikasi_alat'] = trim($data['klasifikasi_alat']);
@@ -803,6 +826,7 @@ class AlatController extends Controller
                 'klasifikasi_alat' => ['Klasifikasi alat wajib diisi.'],
             ]);
         }
+        $data['max_demand'] = (int) ($data['max_demand'] ?? 0);
         $data = $this->applyWritableArea($request, $data);
 
         // Kode dikosongkan pengguna berarti kembali ke penomoran default area.

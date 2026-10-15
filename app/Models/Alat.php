@@ -18,8 +18,29 @@ class Alat extends Model
         'klasifikasi_alat',
         'lokasi',
         'total_aset',
+        'max_demand',
         'area_id',
     ];
+
+    /**
+     * Selisih aset terhadap kebutuhan: positif berarti kelebihan, negatif
+     * berarti kekurangan.
+     */
+    public function selisihDemand(): int
+    {
+        return (int) $this->total_aset - (int) $this->max_demand;
+    }
+
+    public function statusDemand(): string
+    {
+        $selisih = $this->selisihDemand();
+
+        if ($selisih > 0) {
+            return 'Kelebihan';
+        }
+
+        return $selisih < 0 ? 'Kekurangan' : 'Sesuai';
+    }
 
     protected static function booted(): void
     {

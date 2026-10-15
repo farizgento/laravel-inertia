@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AlatController;
+use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\AreaController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\api\MutasiAlatController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PeminjamanController;
 use App\Http\Controllers\Api\PeminjamanTemplateController;
+use App\Http\Controllers\Api\PekerjaanOhController;
 use App\Http\Controllers\Api\PengirimanController;
 use App\Http\Controllers\Api\ReviewPeminjamanController;
 use App\Http\Controllers\Api\UserManagementController;
@@ -85,6 +87,28 @@ Route::middleware('auth')->group(function () {
     ]))->group(function () {
         Route::get('/alat-logs', [ActivityLogController::class, 'alatIndex']);
         Route::get('/alat-logs/export', [ActivityLogController::class, 'alatExport']);
+    });
+
+    // Analytics lintas area: pembatasan area TRLA dicek di dalam controller.
+    Route::middleware('role:'.implode(',', [
+        Role::KEY_SP_TOOL,
+        Role::KEY_MGR_TOOL,
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+    ]))->get('/analytics', AnalyticsController::class);
+
+    // Pekerjaan overhaul.
+    Route::middleware('role:'.implode(',', [
+        Role::KEY_PIC_TOOL,
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+    ]))->group(function () {
+        Route::get('/pekerjaan-ohs', [PekerjaanOhController::class, 'index']);
+        // Terdaftar sebelum rute dengan parameter supaya tidak tertangkap olehnya.
+        Route::get('/pekerjaan-ohs/pengguna-area', [PekerjaanOhController::class, 'penggunaArea']);
+        Route::post('/pekerjaan-ohs', [PekerjaanOhController::class, 'store']);
+        Route::put('/pekerjaan-ohs/{pekerjaanOh}', [PekerjaanOhController::class, 'update']);
+        Route::delete('/pekerjaan-ohs/{pekerjaanOh}', [PekerjaanOhController::class, 'destroy']);
     });
 
     Route::middleware('role:'.Role::KEY_SUPER_ADMIN)->group(function () {
@@ -265,7 +289,7 @@ Route::middleware('auth')->group(function () {
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
         ]));
-    Route::get('/laporan-kerusakan/export', [LaporanAlatController::class, 'exportKerusakan'])
+    Route::match(['get', 'post'], '/laporan-kerusakan/export', [LaporanAlatController::class, 'exportKerusakan'])
         ->middleware('role:'.implode(',', [
             Role::KEY_GUEST,
             Role::KEY_SP_TOOL,
@@ -286,6 +310,23 @@ Route::middleware('auth')->group(function () {
     Route::get('/laporan-kerusakan/template', [LaporanAlatController::class, 'downloadTemplateKerusakan'])
         ->middleware('role:'.implode(',', [
             Role::KEY_USER,
+            Role::KEY_SP_TOOL,
+            Role::KEY_PIC_TOOL,
+            Role::KEY_MGR_TOOL,
+            Role::KEY_ADMIN,
+            Role::KEY_SUPER_ADMIN,
+        ]));
+    // Pemilihan alat massal lewat Excel untuk laporan kerusakan/kehilangan.
+    Route::get('/laporan-alat/daftar-alat', [LaporanAlatController::class, 'downloadDaftarAlat'])
+        ->middleware('role:'.implode(',', [
+            Role::KEY_SP_TOOL,
+            Role::KEY_PIC_TOOL,
+            Role::KEY_MGR_TOOL,
+            Role::KEY_ADMIN,
+            Role::KEY_SUPER_ADMIN,
+        ]));
+    Route::post('/laporan-alat/cocokkan', [LaporanAlatController::class, 'cocokkanAlat'])
+        ->middleware('role:'.implode(',', [
             Role::KEY_SP_TOOL,
             Role::KEY_PIC_TOOL,
             Role::KEY_MGR_TOOL,
@@ -326,7 +367,7 @@ Route::middleware('auth')->group(function () {
             Role::KEY_ADMIN,
             Role::KEY_SUPER_ADMIN,
         ]));
-    Route::get('/laporan-kehilangan/export', [LaporanAlatController::class, 'exportKehilangan'])
+    Route::match(['get', 'post'], '/laporan-kehilangan/export', [LaporanAlatController::class, 'exportKehilangan'])
         ->middleware('role:'.implode(',', [
             Role::KEY_GUEST,
             Role::KEY_SP_TOOL,

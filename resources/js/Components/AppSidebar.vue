@@ -247,6 +247,21 @@
                                     <path d="M15 6v15" />
                                 </svg>
                                 <svg
+                                    v-else-if="item.icon === 'analytics'"
+                                    class="h-4 w-4"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path d="M3 3v18h18" />
+                                    <path d="M8 17V9" />
+                                    <path d="M13 17V5" />
+                                    <path d="M18 17v-6" />
+                                </svg>
+                                <svg
                                     v-else-if="item.icon === 'users'"
                                     class="h-4 w-4"
                                     viewBox="0 0 24 24"
@@ -398,7 +413,12 @@ const props = defineProps({
 const emit = defineEmits(['logout', 'navigate']);
 const page = usePage();
 
-const masterDataMenuKeys = new Set(['tambah-pengguna', 'area', 'master-alat', 'template-peminjaman']);
+const masterDataMenuKeys = new Set([
+    'tambah-pengguna',
+    'area',
+    'master-alat',
+    'template-peminjaman',
+]);
 const transaksiMenuKeys = new Set([
     'peminjaman',
     'pengiriman',
@@ -512,6 +532,12 @@ const menuItems = computed(() => {
                       icon: 'peminjaman',
                   },
                   {
+                      key: 'pekerjaan-overhaul',
+                      label: 'Pekerjaan Overhaul',
+                      href: '/pekerjaan-overhaul',
+                      icon: 'riwayat',
+                  },
+                  {
                       key: 'mutasi-alat',
                       label: 'Mutasi Alat',
                       href: '/mutasi-alat',
@@ -575,6 +601,12 @@ const menuItems = computed(() => {
                       icon: 'peminjaman',
                   },
                   {
+                      key: 'pekerjaan-overhaul',
+                      label: 'Pekerjaan Overhaul',
+                      href: '/pekerjaan-overhaul',
+                      icon: 'riwayat',
+                  },
+                  {
                       key: 'pengiriman',
                       label: 'Intra Area',
                       href: '/pengiriman-alat',
@@ -636,6 +668,12 @@ const menuItems = computed(() => {
                       label: 'Template Peminjaman',
                       href: '/template-peminjaman',
                       icon: 'peminjaman',
+                  },
+                  {
+                      key: 'pekerjaan-overhaul',
+                      label: 'Pekerjaan Overhaul',
+                      href: '/pekerjaan-overhaul',
+                      icon: 'riwayat',
                   },
                   {
                       key: 'pengiriman',
@@ -863,6 +901,20 @@ const menuItems = computed(() => {
                           ]),
                 ]),
     ];
+
+    // Analytics melihat seluruh area, jadi hanya untuk super admin dan
+    // pengelola pusat (SP Tool, Mgr Tool, admin) yang areanya TRLA.
+    const kodeArea = String(page.props.auth?.user?.area?.kode ?? '').toUpperCase();
+    const bolehAnalytics = isSuperAdmin || ((isSpTool || isMgrTool || isAdmin) && kodeArea === 'TRLA');
+
+    if (bolehAnalytics) {
+        items.push({
+            key: 'analytics',
+            label: 'Analytics',
+            href: '/analytics',
+            icon: 'analytics',
+        });
+    }
 
     return groupMenuItems(items);
 });

@@ -12,6 +12,8 @@ use App\Models\Role;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
@@ -94,9 +96,42 @@ class DashboardController extends Controller
                 (int) ($statusCounts[Peminjaman::STATUS_SELESAI] ?? 0),
             'laporan_aktif' => $effectiveAreaId
                 ? $this->laporanAreaQuery($effectiveAreaId)
-                    ->whereIn('status', ['Dilaporkan', 'Disetujui'])
+                    // Disetujui/Ditolak sudah final, jadi laporan aktif hanya yang belum diputuskan.
+                    ->where('status', LaporanAlat::STATUS_DILAPORKAN)
                     ->count()
                 : 0,
+        ];
+
+        // Rincian untuk pie chart pada tiap kartu ringkasan.
+        $rincian = [
+            'peminjaman' => [
+                [
+                    'key' => 'review',
+                    'label' => 'Perlu Review',
+                    'nilai' => $summary['menunggu_review'],
+                    'warna' => '#f59e0b',
+                ],
+                [
+                    'key' => 'berjalan',
+                    'label' => 'Sedang Berjalan',
+                    'nilai' => $summary['sedang_berjalan'],
+                    'warna' => '#3b82f6',
+                ],
+                [
+                    'key' => 'selesai',
+                    'label' => 'Selesai',
+                    'nilai' => $summary['selesai'],
+                    'warna' => '#10b981',
+                ],
+                [
+                    'key' => 'ditolak',
+                    'label' => 'Ditolak',
+                    'nilai' => (int) ($statusCounts[Peminjaman::STATUS_DITOLAK] ?? 0),
+                    'warna' => '#f43f5e',
+                ],
+            ],
+            'jenis_alat' => $this->buildRincianJenisAlat($effectiveAreaId),
+            'laporan' => $this->buildRincianLaporan($effectiveAreaId),
         ];
 
         $insights = null;
@@ -105,6 +140,7 @@ class DashboardController extends Controller
         }
 
         $utilisasi = $this->buildUtilisasiAlat($effectiveAreaId, $rentangMulai, $rentangSelesai);
+        $kebutuhan = $this->buildKebutuhanAlat($effectiveAreaId);
 
         return response()->json([
             'area' => [
@@ -112,8 +148,10 @@ class DashboardController extends Controller
                 'name' => $effectiveArea?->name ?? 'Area belum dipilih',
             ],
             'summary' => $summary,
+            'rincian' => $rincian,
             'insights' => $insights,
             'utilisasi' => $utilisasi,
+            'kebutuhan' => $kebutuhan,
             'meta' => [
                 'role_key' => $roleKey,
                 'is_area_switcher' => $isAreaSwitcherRole,
@@ -122,6 +160,184 @@ class DashboardController extends Controller
                 'generated_at' => now()->toIso8601String(),
             ],
         ]);
+    }
+
+    /**
+     * Komposisi katalog alat berdasarkan jenisnya. Jenis dengan jumlah kecil
+     * digabung menjadi "Lainnya" supaya pie chart tetap terbaca.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildRincianJenisAlat(?int $areaId): array
+    {
+        $kosong = [
+            'total_jenis' => 0,
+            'total_alat' => 0,
+            'teratas' => [],
+            'lainnya_jenis' => 0,
+            'lainnya_alat' => 0,
+        ];
+
+        if (! $areaId) {
+            return $kosong;
+        }
+
+        $jenis = Alat::query()
+            ->where('area_id', $areaId)
+            ->selectRaw('jenis_alat, COUNT(*) as total')
+            ->groupBy('jenis_alat')
+            ->orderByDesc('total')
+            ->get();
+
+        if ($jenis->isEmpty()) {
+            return $kosong;
+        }
+
+        // Jenis alat bisa ratusan, jadi hanya sebagian teratas yang ditampilkan
+        // sebagai batang; sisanya cukup diringkas menjadi satu baris.
+        $batas = 8;
+        $teratas = $jenis->take($batas);
+        $sisa = $jenis->slice($batas);
+
+        return [
+            'total_jenis' => $jenis->count(),
+            'total_alat' => (int) $jenis->sum('total'),
+            'teratas' => $teratas
+                ->values()
+                ->map(fn ($baris, $index) => [
+                    'key' => 'jenis-'.$index,
+                    'label' => $baris->jenis_alat ?: 'Tanpa jenis',
+                    'nilai' => (int) $baris->total,
+                ])
+                ->all(),
+            'lainnya_jenis' => $sisa->count(),
+            'lainnya_alat' => (int) $sisa->sum('total'),
+        ];
+    }
+
+    /**
+     * Komposisi laporan alat berdasarkan statusnya.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildRincianLaporan(?int $areaId): array
+    {
+        if (! $areaId) {
+            return [];
+        }
+
+        $perStatus = $this->laporanAreaQuery($areaId)
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $warna = [
+            LaporanAlat::STATUS_DILAPORKAN => '#f59e0b',
+            LaporanAlat::STATUS_DISETUJUI => '#0ea5e9',
+            LaporanAlat::STATUS_DITOLAK => '#f43f5e',
+            LaporanAlat::STATUS_SELESAI_LAMA => '#10b981',
+        ];
+
+        $rincian = [];
+        foreach ($warna as $status => $kode) {
+            $rincian[] = [
+                'key' => Str::slug($status),
+                'label' => $status,
+                'nilai' => (int) ($perStatus[$status] ?? 0),
+                'warna' => $kode,
+            ];
+        }
+
+        // Status di luar daftar baku (bila ada data lama) tetap ditampilkan.
+        foreach ($perStatus as $status => $total) {
+            if (! array_key_exists($status, $warna)) {
+                $rincian[] = [
+                    'key' => Str::slug((string) $status),
+                    'label' => (string) $status,
+                    'nilai' => (int) $total,
+                    'warna' => '#94a3b8',
+                ];
+            }
+        }
+
+        return $rincian;
+    }
+
+    /**
+     * Perbandingan jumlah aset dengan kebutuhan (max demand) per area. Alat yang
+     * max demand-nya masih 0 dianggap belum ditentukan, bukan kelebihan, supaya
+     * grafiknya tidak menyesatkan selama kebutuhan belum diisi.
+     *
+     * @return array<string, mixed>
+     */
+    private function buildKebutuhanAlat(?int $areaId): array
+    {
+        $kosong = [
+            'ringkasan' => [
+                'jenis_alat' => 0,
+                'kekurangan' => 0,
+                'kelebihan' => 0,
+                'sesuai' => 0,
+                'belum_ditentukan' => 0,
+                'unit_kekurangan' => 0,
+                'unit_kelebihan' => 0,
+            ],
+            'paling_kurang' => [],
+            'paling_lebih' => [],
+        ];
+
+        if (! $areaId) {
+            return $kosong;
+        }
+
+        $agregat = Alat::query()
+            ->where('area_id', $areaId)
+            ->selectRaw('COUNT(*) as jenis_alat')
+            ->selectRaw('SUM(CASE WHEN max_demand > 0 AND total_aset < max_demand THEN 1 ELSE 0 END) as kekurangan')
+            ->selectRaw('SUM(CASE WHEN max_demand > 0 AND total_aset > max_demand THEN 1 ELSE 0 END) as kelebihan')
+            ->selectRaw('SUM(CASE WHEN max_demand > 0 AND total_aset = max_demand THEN 1 ELSE 0 END) as sesuai')
+            ->selectRaw('SUM(CASE WHEN max_demand = 0 THEN 1 ELSE 0 END) as belum_ditentukan')
+            ->selectRaw('SUM(CASE WHEN max_demand > 0 AND total_aset < max_demand THEN max_demand - total_aset ELSE 0 END) as unit_kekurangan')
+            ->selectRaw('SUM(CASE WHEN max_demand > 0 AND total_aset > max_demand THEN total_aset - max_demand ELSE 0 END) as unit_kelebihan')
+            ->first();
+
+        $ambilTeratas = function (string $arah) use ($areaId) {
+            $selisih = $arah === 'kurang' ? 'max_demand - total_aset' : 'total_aset - max_demand';
+
+            return Alat::query()
+                ->where('area_id', $areaId)
+                ->where('max_demand', '>', 0)
+                ->whereColumn('total_aset', $arah === 'kurang' ? '<' : '>', 'max_demand')
+                ->orderByRaw($selisih.' DESC')
+                ->orderBy('nama')
+                ->take(8)
+                ->get(['id', 'kode', 'nama', 'jenis_alat', 'total_aset', 'max_demand'])
+                ->map(fn (Alat $alat) => [
+                    'id' => (int) $alat->id,
+                    'kode' => $alat->kode ?: '-',
+                    'nama' => $alat->nama,
+                    'jenis_alat' => $alat->jenis_alat,
+                    'total_aset' => (int) $alat->total_aset,
+                    'max_demand' => (int) $alat->max_demand,
+                    'selisih' => abs((int) $alat->total_aset - (int) $alat->max_demand),
+                ])
+                ->values()
+                ->all();
+        };
+
+        return [
+            'ringkasan' => [
+                'jenis_alat' => (int) ($agregat->jenis_alat ?? 0),
+                'kekurangan' => (int) ($agregat->kekurangan ?? 0),
+                'kelebihan' => (int) ($agregat->kelebihan ?? 0),
+                'sesuai' => (int) ($agregat->sesuai ?? 0),
+                'belum_ditentukan' => (int) ($agregat->belum_ditentukan ?? 0),
+                'unit_kekurangan' => (int) ($agregat->unit_kekurangan ?? 0),
+                'unit_kelebihan' => (int) ($agregat->unit_kelebihan ?? 0),
+            ],
+            'paling_kurang' => $ambilTeratas('kurang'),
+            'paling_lebih' => $ambilTeratas('lebih'),
+        ];
     }
 
     /**
@@ -236,9 +452,9 @@ class DashboardController extends Controller
             ->where('status', '!=', Peminjaman::STATUS_DITOLAK)
             ->where('created_at', '>=', $mulai->toDateTimeString())
             ->where('created_at', '<=', $selesai->toDateTimeString())
-            ->selectRaw('EXTRACT(YEAR FROM created_at) as tahun, EXTRACT(MONTH FROM created_at) as bulan, COUNT(*) as total')
-            ->groupByRaw('EXTRACT(YEAR FROM created_at)')
-            ->groupByRaw('EXTRACT(MONTH FROM created_at)')
+            ->selectRaw($this->sqlBagianTanggal('YEAR').' as tahun, '.$this->sqlBagianTanggal('MONTH').' as bulan, COUNT(*) as total')
+            ->groupByRaw($this->sqlBagianTanggal('YEAR'))
+            ->groupByRaw($this->sqlBagianTanggal('MONTH'))
             ->get()
             ->mapWithKeys(fn ($row) => [
                 sprintf('%04d-%02d', (int) $row->tahun, (int) $row->bulan) => (int) $row->total,
@@ -262,6 +478,21 @@ class DashboardController extends Controller
             ->all();
     }
 
+    /**
+     * Pengambilan tahun/bulan dari created_at. Oracle memakai EXTRACT, sedangkan
+     * SQLite (dipakai pengujian) hanya mengenal strftime.
+     */
+    private function sqlBagianTanggal(string $bagian): string
+    {
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            $format = $bagian === 'YEAR' ? '%Y' : '%m';
+
+            return "CAST(strftime('{$format}', created_at) AS INTEGER)";
+        }
+
+        return "EXTRACT({$bagian} FROM created_at)";
+    }
+
     private function laporanAreaQuery(?int $areaId): Builder
     {
         return LaporanAlat::query()
@@ -283,9 +514,9 @@ class DashboardController extends Controller
             ])
             ->where('created_at', '>=', $currentYearStart->toDateTimeString())
             ->where('created_at', '<', $nextYearStart->toDateTimeString())
-            ->selectRaw('kategori, EXTRACT(MONTH FROM created_at) as month_number, COALESCE(SUM(jumlah), 0) as total_jumlah')
+            ->selectRaw('kategori, '.$this->sqlBagianTanggal('MONTH').' as month_number, COALESCE(SUM(jumlah), 0) as total_jumlah')
             ->groupBy('kategori')
-            ->groupByRaw('EXTRACT(MONTH FROM created_at)')
+            ->groupByRaw($this->sqlBagianTanggal('MONTH'))
             ->get();
 
         $monthly = collect(range(0, 11))

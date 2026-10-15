@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         $this->call(AreaSeeder::class);
         $this->call(RoleSeeder::class);
         $this->call(UserSeeder::class);
+        $this->call(SuperAdminSeeder::class);
         // $this->call(AlatSeeder::class);
 
         // \App\Models\User::factory(10)->create();

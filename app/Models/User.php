@@ -22,9 +22,26 @@ class User extends Authenticatable
         'name',
         'username',
         'email',
+        'password',
         'role_id',
         'area_id',
     ];
+
+    /**
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * Akun statis (non-LDAP) menyimpan kata sandi lokal; akun LDAP tidak.
+     */
+    public function punyaPasswordLokal(): bool
+    {
+        return filled($this->password);
+    }
 
     public function area(): BelongsTo
     {

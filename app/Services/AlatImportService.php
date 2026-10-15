@@ -96,6 +96,7 @@ class AlatImportService
                     $totalAset = $row['total_aset'];
                     $lokasi = trim((string) ($row['lokasi'] ?? ''));
                     $kode = trim((string) ($row['kode'] ?? ''));
+                    $maxDemand = $row['max_demand'] ?? null;
                     $alat = $alatMap[$lookupKey] ?? null;
 
                     if ($alat instanceof Alat) {
@@ -103,6 +104,8 @@ class AlatImportService
                         $oldTotalAset = (int) $alat->total_aset;
                         $oldLokasi = $alat->lokasi;
                         $oldKode = $alat->kode;
+                        $oldMaxDemand = (int) $alat->max_demand;
+                        $maxDemandBaru = $maxDemand ?? $oldMaxDemand;
                         // Kode yang dikosongkan berarti "biarkan kode yang sudah
                         // ada", bukan dibuat ulang, supaya kode alat tidak berubah
                         // sendiri setiap kali diimport ulang.
@@ -111,12 +114,17 @@ class AlatImportService
                         // lokasi ikut dikosongkan (null), bukan dipertahankan.
                         $lokasiBaru = $lokasi !== '' ? $lokasi : null;
 
-                        if ($oldTotalAset !== $totalAset || $oldLokasi !== $lokasiBaru || $oldKode !== $kodeBaru) {
-                            Alat::withoutEvents(function () use ($alat, $totalAset, $lokasiBaru, $kodeBaru) {
+                        if ($oldTotalAset !== $totalAset
+                            || $oldLokasi !== $lokasiBaru
+                            || $oldKode !== $kodeBaru
+                            || $oldMaxDemand !== $maxDemandBaru
+                        ) {
+                            Alat::withoutEvents(function () use ($alat, $totalAset, $lokasiBaru, $kodeBaru, $maxDemandBaru) {
                                 $alat->forceFill([
                                     'total_aset' => $totalAset,
                                     'lokasi' => $lokasiBaru,
                                     'kode' => $kodeBaru,
+                                    'max_demand' => $maxDemandBaru,
                                 ]);
                                 $alat->save();
                             });
@@ -125,16 +133,19 @@ class AlatImportService
                                 'total_aset' => $oldTotalAset,
                                 'lokasi' => $oldLokasi,
                                 'kode' => $oldKode,
+                                'max_demand' => $oldMaxDemand,
                             ], [
                                 'total_aset' => $totalAset,
                                 'lokasi' => $lokasiBaru,
                                 'kode' => $kodeBaru,
+                                'max_demand' => $maxDemandBaru,
                             ], $import);
                         }
 
                         $alat->total_aset = $totalAset;
                         $alat->lokasi = $lokasiBaru;
                         $alat->kode = $kodeBaru;
+                        $alat->max_demand = $maxDemandBaru;
                     } else {
                         // Alat::withoutEvents() melewati hook creating pada model,
                         // jadi kode default nomor urut area dibuat eksplisit di sini.
@@ -145,6 +156,7 @@ class AlatImportService
                             'kode' => $kode !== '' ? $kode : Alat::generateKode((int) ($lookup['area_id'] ?? 0)),
                             'lokasi' => $lokasi !== '' ? $lokasi : null,
                             'total_aset' => $totalAset,
+                            'max_demand' => $maxDemand ?? 0,
                         ]));
 
                         $alatMap[$lookupKey] = $alat;
@@ -156,6 +168,7 @@ class AlatImportService
                             'klasifikasi_alat' => $alat->klasifikasi_alat,
                             'lokasi' => $alat->lokasi,
                             'total_aset' => (int) $alat->total_aset,
+                            'max_demand' => (int) $alat->max_demand,
                             'area_id' => (int) $alat->area_id,
                         ], $import);
                     }
@@ -216,6 +229,10 @@ class AlatImportService
             // yang hanya punya lima kolom tetap bisa diproses.
             $lokasi = $this->normalizeImportedText($cells[5] ?? null);
             $kode = $this->normalizeImportedText($cells[6] ?? null);
+            // Kolom max demand juga opsional: dikosongkan berarti nilai lama
+            // dipertahankan, bukan direset ke nol.
+            $maxDemandMentah = $this->normalizeImportedText($cells[7] ?? null);
+            $maxDemand = $maxDemandMentah === '' ? null : $this->normalizeImportedNumber($cells[7] ?? null);
 
             if ($nama === '' && $jenisAlat === '' && $klasifikasiAlat === '' && $totalAset === null && $areaSlug === '') {
                 continue;
@@ -242,6 +259,9 @@ class AlatImportService
             }
             if ($totalAset === null) {
                 $rowErrors[] = 'total aset harus berupa angka bulat >= 0';
+            }
+            if ($maxDemandMentah !== '' && $maxDemand === null) {
+                $rowErrors[] = 'max demand harus berupa angka bulat >= 0';
             }
             if ($areaSlug === '') {
                 $rowErrors[] = 'area wajib diisi dengan kode atau slug area';
@@ -271,6 +291,7 @@ class AlatImportService
                 'kode' => $kode,
                 'row_number' => $excelRow,
                 'total_aset' => (int) $totalAset,
+                'max_demand' => $maxDemand === null ? null : (int) $maxDemand,
             ];
         }
 
@@ -395,7 +416,7 @@ class AlatImportService
             ->whereIn('nama', $names)
             // "kode" wajib ikut diambil: nilainya dipakai sebagai kode lama saat
             // kolom kode pada berkas dikosongkan. Tanpa ini kode alat terhapus.
-            ->get(['id', 'kode', 'nama', 'jenis_alat', 'klasifikasi_alat', 'lokasi', 'total_aset', 'area_id'])
+            ->get(['id', 'kode', 'nama', 'jenis_alat', 'klasifikasi_alat', 'lokasi', 'total_aset', 'max_demand', 'area_id'])
             ->each(function (Alat $alat) use (&$alatMap) {
                 $alatMap[$this->makeAlatLookupKey(
                     (string) $alat->nama,

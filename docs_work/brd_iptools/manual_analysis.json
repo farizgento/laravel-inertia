@@ -1,0 +1,4956 @@
+{
+  "path": "D:\\WEB\\laravel-inertia\\Manual_Book_IPTOOLS_LITE.docx.08b626c3",
+  "size": 8315,
+  "sha256": "e89ec085800856edae7ebaaef30c4841b135fefc7c63d42c97ce7027ceb87d42",
+  "core_properties": {
+    "title": "Word Document",
+    "subject": "",
+    "author": "",
+    "created": "None",
+    "modified": "2026-09-10 02:29:50+00:00"
+  },
+  "sections": [
+    {
+      "page_width_cm": 21.001,
+      "page_height_cm": 29.7,
+      "orientation": "PORTRAIT (0)",
+      "top_margin_cm": 2.0,
+      "bottom_margin_cm": 2.0,
+      "left_margin_cm": 2.0,
+      "right_margin_cm": 2.0,
+      "header_distance_cm": 1.249,
+      "footer_distance_cm": 1.249,
+      "start_type": "NEW_PAGE (2)",
+      "different_first_page_header_footer": false
+    }
+  ],
+  "paragraphs": [
+    {
+      "text": "MANUAL BOOK",
+      "style": "Title",
+      "alignment": "CENTER (1)",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "MANUAL BOOK",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "IPTOOLS LITE BETA",
+      "style": "Subtitle",
+      "alignment": "CENTER (1)",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "IPTOOLS LITE BETA",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Panduan Penggunaan Website Peminjaman dan Monitoring Alat",
+      "style": "Normal",
+      "alignment": "CENTER (1)",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Panduan Penggunaan Website Peminjaman dan Monitoring Alat",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Tanggal dokumen: 21 Mei 2026",
+      "style": "Normal",
+      "alignment": "CENTER (1)",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Tanggal dokumen: 21 Mei 2026",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "1. Pendahuluan",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "1. Pendahuluan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "IPTOOLS LITE adalah aplikasi web untuk mengelola data alat, peminjaman alat, review peminjaman, pengiriman, pengembalian, mutasi alat, laporan kerusakan, laporan kehilangan, serta log aktivitas. Aplikasi menggunakan sistem hak akses berdasarkan peran pengguna sehingga menu yang tampil dapat berbeda pada setiap akun.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "IPTOOLS LITE adalah aplikasi web untuk mengelola data alat, peminjaman alat, review peminjaman, pengiriman, pengembalian, mutasi alat, laporan kerusakan, laporan kehilangan, serta log aktivitas. Aplikasi menggunakan sistem hak akses berdasarkan peran pengguna sehingga menu yang tampil dapat berbeda pada setiap akun.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "1.1 Tujuan Manual Book",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "1.1 Tujuan Manual Book",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Membantu pengguna memahami fungsi setiap menu.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Membantu pengguna memahami fungsi setiap menu.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Menjelaskan langkah kerja utama dari login sampai transaksi selesai.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Menjelaskan langkah kerja utama dari login sampai transaksi selesai.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Memberikan panduan untuk admin, super admin, PIC Tools, SP Tool, Mgr Tool, dan user.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Memberikan panduan untuk admin, super admin, PIC Tools, SP Tool, Mgr Tool, dan user.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "1.2 Istilah Penting",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "1.2 Istilah Penting",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "2. Hak Akses Pengguna",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "2. Hak Akses Pengguna",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Hak akses menentukan menu yang bisa dibuka oleh pengguna. Jika suatu menu tidak tampil, berarti akun tidak memiliki peran yang sesuai.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Hak akses menentukan menu yang bisa dibuka oleh pengguna. Jika suatu menu tidak tampil, berarti akun tidak memiliki peran yang sesuai.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "3. Masuk dan Keluar Aplikasi",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "3. Masuk dan Keluar Aplikasi",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "3.1 Login",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "3.1 Login",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Buka alamat website IPTOOLS LITE melalui browser.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Buka alamat website IPTOOLS LITE melalui browser.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Masukkan email dan password akun.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Masukkan email dan password akun.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik tombol Login.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik tombol Login.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Setelah berhasil, sistem menampilkan Dashboard dan menu sesuai role akun.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Setelah berhasil, sistem menampilkan Dashboard dan menu sesuai role akun.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "3.2 Lupa Password",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "3.2 Lupa Password",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pada halaman login, pilih menu Lupa Password.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pada halaman login, pilih menu Lupa Password.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Masukkan email akun yang terdaftar.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Masukkan email akun yang terdaftar.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Ikuti tautan reset password yang dikirim melalui email.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Ikuti tautan reset password yang dikirim melalui email.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Masukkan password baru dan konfirmasi password.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Masukkan password baru dan konfirmasi password.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "3.3 Logout",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "3.3 Logout",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik tombol Keluar pada bagian bawah sidebar. Setelah logout, pengguna akan diarahkan keluar dari sesi aplikasi.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik tombol Keluar pada bagian bawah sidebar. Setelah logout, pengguna akan diarahkan keluar dari sesi aplikasi.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "4. Dashboard",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "4. Dashboard",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Dashboard digunakan untuk melihat ringkasan informasi seperti jumlah alat, peminjaman, pengiriman, laporan, dan notifikasi yang relevan dengan role pengguna.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Dashboard digunakan untuk melihat ringkasan informasi seperti jumlah alat, peminjaman, pengiriman, laporan, dan notifikasi yang relevan dengan role pengguna.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Gunakan kartu ringkasan untuk membaca kondisi transaksi secara cepat.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Gunakan kartu ringkasan untuk membaca kondisi transaksi secara cepat.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Perhatikan badge angka di menu. Badge menunjukkan item yang masih perlu tindakan, seperti review pending, pengiriman, atau laporan pending.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Perhatikan badge angka di menu. Badge menunjukkan item yang masih perlu tindakan, seperti review pending, pengiriman, atau laporan pending.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Jika data tidak berubah, lakukan refresh halaman atau pastikan koneksi jaringan stabil.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Jika data tidak berubah, lakukan refresh halaman atau pastikan koneksi jaringan stabil.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "5. Membuat Peminjaman Alat",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "5. Membuat Peminjaman Alat",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Menu Buat Peminjaman digunakan oleh User, Admin, dan Super Admin untuk mengajukan peminjaman alat.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Menu Buat Peminjaman digunakan oleh User, Admin, dan Super Admin untuk mengajukan peminjaman alat.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "5.1 Menambahkan Alat ke Keranjang",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "5.1 Menambahkan Alat ke Keranjang",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Buka menu Transaksi Alat lalu pilih Buat Peminjaman.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Buka menu Transaksi Alat lalu pilih Buat Peminjaman.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Cari alat berdasarkan nama, jenis alat, klasifikasi, atau area jika filter tersedia.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Cari alat berdasarkan nama, jenis alat, klasifikasi, atau area jika filter tersedia.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pilih alat yang akan dipinjam.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pilih alat yang akan dipinjam.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Masukkan jumlah alat sesuai kebutuhan dan ketersediaan stok.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Masukkan jumlah alat sesuai kebutuhan dan ketersediaan stok.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik tombol tambah ke keranjang.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik tombol tambah ke keranjang.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "5.2 Checkout Peminjaman",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "5.2 Checkout Peminjaman",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Buka Keranjang Peminjaman.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Buka Keranjang Peminjaman.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Periksa daftar alat dan jumlah yang akan dipinjam.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Periksa daftar alat dan jumlah yang akan dipinjam.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Checkout.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Checkout.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Isi tanggal pinjam, tanggal kembali, dan pekerjaan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Isi tanggal pinjam, tanggal kembali, dan pekerjaan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Ajukan Peminjaman.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Ajukan Peminjaman.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Setelah diajukan, status peminjaman akan masuk ke tahap review. Untuk peminjaman intra area status awal umumnya Perlu Disetujui. Untuk skenario antar area dapat masuk ke Perlu Direview sebelum disetujui.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Setelah diajukan, status peminjaman akan masuk ke tahap review. Untuk peminjaman intra area status awal umumnya Perlu Disetujui. Untuk skenario antar area dapat masuk ke Perlu Direview sebelum disetujui.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "6. Riwayat Peminjaman",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "6. Riwayat Peminjaman",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Menu Riwayat Peminjaman menampilkan daftar pengajuan dan transaksi peminjaman.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Menu Riwayat Peminjaman menampilkan daftar pengajuan dan transaksi peminjaman.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Gunakan pencarian untuk mencari nama alat, peminjam, pekerjaan, area, atau data lain yang tersedia.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Gunakan pencarian untuk mencari nama alat, peminjam, pekerjaan, area, atau data lain yang tersedia.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Gunakan filter status atau kategori untuk mempersempit daftar.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Gunakan filter status atau kategori untuk mempersempit daftar.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Lihat Detail untuk melihat rincian alat, jumlah diminta, jumlah disetujui, catatan, dan status.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Lihat Detail untuk melihat rincian alat, jumlah diminta, jumlah disetujui, catatan, dan status.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Gunakan Export CSV untuk mengunduh riwayat peminjaman sesuai filter yang sedang digunakan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Gunakan Export CSV untuk mengunduh riwayat peminjaman sesuai filter yang sedang digunakan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "6.1 Arti Status Peminjaman",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "6.1 Arti Status Peminjaman",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "7. Review Peminjaman",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "7. Review Peminjaman",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Menu Review Peminjaman digunakan oleh SP Tool, Mgr Tool, dan Super Admin untuk menyetujui atau menolak peminjaman.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Menu Review Peminjaman digunakan oleh SP Tool, Mgr Tool, dan Super Admin untuk menyetujui atau menolak peminjaman.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Buka menu Review Peminjaman.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Buka menu Review Peminjaman.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pilih data pengajuan yang berstatus pending.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pilih data pengajuan yang berstatus pending.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik detail atau tombol review pada pengajuan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik detail atau tombol review pada pengajuan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Periksa informasi peminjam, area, periode, pekerjaan, dan daftar alat.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Periksa informasi peminjam, area, periode, pekerjaan, dan daftar alat.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Isi jumlah yang disetujui pada masing-masing alat bila sistem menyediakan input jumlah.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Isi jumlah yang disetujui pada masing-masing alat bila sistem menyediakan input jumlah.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pilih Setujui untuk menyetujui atau Tolak untuk menolak.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pilih Setujui untuk menyetujui atau Tolak untuk menolak.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Jika menolak, isi alasan penolakan agar peminjam mengetahui penyebabnya.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Jika menolak, isi alasan penolakan agar peminjam mengetahui penyebabnya.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Setelah disetujui, data berpindah ke proses pengiriman. Setelah ditolak, pengajuan tidak dilanjutkan ke pengiriman.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Setelah disetujui, data berpindah ke proses pengiriman. Setelah ditolak, pengajuan tidak dilanjutkan ke pengiriman.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "8. Master Data Alat",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "8. Master Data Alat",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Menu Alat digunakan untuk melihat, menambah, mengubah, menghapus, import, dan export data alat sesuai hak akses.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Menu Alat digunakan untuk melihat, menambah, mengubah, menghapus, import, dan export data alat sesuai hak akses.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "8.1 Melihat dan Mencari Alat",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "8.1 Melihat dan Mencari Alat",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Gunakan kolom pencarian untuk mencari nama alat, jenis, klasifikasi, atau area.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Gunakan kolom pencarian untuk mencari nama alat, jenis, klasifikasi, atau area.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Gunakan filter area bila tersedia.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Gunakan filter area bila tersedia.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Perhatikan total aset atau stok yang ditampilkan sebelum melakukan transaksi.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Perhatikan total aset atau stok yang ditampilkan sebelum melakukan transaksi.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "8.2 Menambah Alat",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "8.2 Menambah Alat",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Buka menu Master Data lalu pilih Alat.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Buka menu Master Data lalu pilih Alat.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Tambah Alat.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Tambah Alat.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Isi nama alat, jenis alat, klasifikasi alat, total aset, dan area.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Isi nama alat, jenis alat, klasifikasi alat, total aset, dan area.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Simpan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Simpan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "8.3 Mengubah atau Menghapus Alat",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "8.3 Mengubah atau Menghapus Alat",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Cari data alat yang ingin diperbarui.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Cari data alat yang ingin diperbarui.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Edit untuk mengubah data, lalu Simpan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Edit untuk mengubah data, lalu Simpan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Hapus untuk menghapus data jika memang sudah tidak digunakan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Hapus untuk menghapus data jika memang sudah tidak digunakan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Penghapusan sebaiknya dilakukan hati-hati karena dapat memengaruhi riwayat dan ketersediaan data.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Penghapusan sebaiknya dilakukan hati-hati karena dapat memengaruhi riwayat dan ketersediaan data.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "8.4 Import Data Alat",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "8.4 Import Data Alat",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik tombol Import pada menu Alat.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik tombol Import pada menu Alat.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pilih file CSV atau XLSX.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pilih file CSV atau XLSX.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pastikan kolom file berisi nama alat, jenis alat, klasifikasi alat, total aset, dan kode atau slug area.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pastikan kolom file berisi nama alat, jenis alat, klasifikasi alat, total aset, dan kode atau slug area.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Import dan tunggu proses selesai.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Import dan tunggu proses selesai.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Jika gagal, baca pesan error yang menampilkan baris data bermasalah.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Jika gagal, baca pesan error yang menampilkan baris data bermasalah.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "8.5 Export Data Alat",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "8.5 Export Data Alat",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Export CSV untuk mengunduh data alat. File yang diunduh dapat digunakan untuk arsip, pengecekan, atau rekonsiliasi data.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Export CSV untuk mengunduh data alat. File yang diunduh dapat digunakan untuk arsip, pengecekan, atau rekonsiliasi data.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "9. Pengiriman dan Pengembalian",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "9. Pengiriman dan Pengembalian",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Menu Intra Area dan Antar Area digunakan oleh PIC Tools, Admin, dan Super Admin untuk memproses pengiriman serta pengembalian alat.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Menu Intra Area dan Antar Area digunakan oleh PIC Tools, Admin, dan Super Admin untuk memproses pengiriman serta pengembalian alat.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "9.1 Mengirim Alat",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "9.1 Mengirim Alat",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Buka menu Transaksi Alat lalu pilih Intra Area atau Antar Area.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Buka menu Transaksi Alat lalu pilih Intra Area atau Antar Area.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Buka tab Disetujui.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Buka tab Disetujui.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pilih transaksi yang akan dikirim.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pilih transaksi yang akan dikirim.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik tombol Kirim atau aksi pengiriman.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik tombol Kirim atau aksi pengiriman.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Isi data pengiriman dan unggah surat jalan bila diminta.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Isi data pengiriman dan unggah surat jalan bila diminta.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Simpan atau Kirim.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Simpan atau Kirim.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Setelah dikirim, status berubah menjadi Dikirim.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Setelah dikirim, status berubah menjadi Dikirim.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "9.2 Menerima Alat",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "9.2 Menerima Alat",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Buka tab Dikirim.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Buka tab Dikirim.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pilih transaksi yang sudah diterima fisiknya.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pilih transaksi yang sudah diterima fisiknya.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Terima.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Terima.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Konfirmasi aksi penerimaan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Konfirmasi aksi penerimaan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Setelah diterima, status berubah menjadi Diterima.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Setelah diterima, status berubah menjadi Diterima.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "9.3 Mengembalikan Alat",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "9.3 Mengembalikan Alat",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Buka transaksi berstatus Diterima atau Dikembalikan Parsial.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Buka transaksi berstatus Diterima atau Dikembalikan Parsial.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Kembalikan alat.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Kembalikan alat.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Isi nama pengirim dan jumlah alat yang dikembalikan untuk setiap item.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Isi nama pengirim dan jumlah alat yang dikembalikan untuk setiap item.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Unggah surat jalan pengembalian jika diminta.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Unggah surat jalan pengembalian jika diminta.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Ya, kembalikan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Ya, kembalikan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Jika jumlah yang dikembalikan belum seluruhnya, status menjadi Dikembalikan Partials. Jika seluruh alat sudah kembali, status menjadi Dikembalikan Semuanya.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Jika jumlah yang dikembalikan belum seluruhnya, status menjadi Dikembalikan Partials. Jika seluruh alat sudah kembali, status menjadi Dikembalikan Semuanya.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "9.4 Menyelesaikan Transaksi",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "9.4 Menyelesaikan Transaksi",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Setelah seluruh alat dikembalikan, PIC Tools/Admin/Super Admin dapat menandai transaksi sebagai Selesai.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Setelah seluruh alat dikembalikan, PIC Tools/Admin/Super Admin dapat menandai transaksi sebagai Selesai.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "9.5 Mengubah Periode Peminjaman",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "9.5 Mengubah Periode Peminjaman",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pada transaksi tertentu, PIC Tools/Admin/Super Admin dapat membuka aksi Ubah Periode, mengisi tanggal pinjam dan tanggal kembali baru, lalu menyimpan perubahan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pada transaksi tertentu, PIC Tools/Admin/Super Admin dapat membuka aksi Ubah Periode, mengisi tanggal pinjam dan tanggal kembali baru, lalu menyimpan perubahan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "10. Peminjaman Antar Area",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "10. Peminjaman Antar Area",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Peminjaman antar area digunakan saat alat dibutuhkan dari area lain.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Peminjaman antar area digunakan saat alat dibutuhkan dari area lain.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Buka menu Peminjaman Antar Area atau menu Antar Area sesuai tampilan akun.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Buka menu Peminjaman Antar Area atau menu Antar Area sesuai tampilan akun.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pilih area tujuan atau area pemilik alat.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pilih area tujuan atau area pemilik alat.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pilih alat yang akan dipinjam dan jumlahnya.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pilih alat yang akan dipinjam dan jumlahnya.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Isi pekerjaan serta periode peminjaman.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Isi pekerjaan serta periode peminjaman.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Kirim pengajuan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Kirim pengajuan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pengajuan antar area biasanya melewati review tambahan sebelum alat diproses oleh PIC Tools.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pengajuan antar area biasanya melewati review tambahan sebelum alat diproses oleh PIC Tools.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "11. Mutasi Alat",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "11. Mutasi Alat",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Menu Mutasi Alat digunakan untuk memantau perpindahan alat yang berkaitan dengan transaksi pengiriman dan pengembalian.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Menu Mutasi Alat digunakan untuk memantau perpindahan alat yang berkaitan dengan transaksi pengiriman dan pengembalian.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Lihat daftar riwayat pengiriman, penerimaan, dan pengembalian.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Lihat daftar riwayat pengiriman, penerimaan, dan pengembalian.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Gunakan detail transaksi untuk melihat alat, jumlah, status, dan surat jalan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Gunakan detail transaksi untuk melihat alat, jumlah, status, dan surat jalan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Badge pada menu dapat menunjukkan jumlah mutasi yang perlu diperhatikan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Badge pada menu dapat menunjukkan jumlah mutasi yang perlu diperhatikan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "12. Laporan Kerusakan dan Kehilangan",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "12. Laporan Kerusakan dan Kehilangan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Menu laporan digunakan untuk mencatat alat rusak atau hilang dan memproses status laporannya.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Menu laporan digunakan untuk mencatat alat rusak atau hilang dan memproses status laporannya.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "12.1 Membuat Laporan",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "12.1 Membuat Laporan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Buka menu Laporan Kerusakan atau Laporan Kehilangan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Buka menu Laporan Kerusakan atau Laporan Kehilangan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik tambah laporan jika tombol tersedia.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik tambah laporan jika tombol tersedia.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pilih alat yang dilaporkan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pilih alat yang dilaporkan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Isi jumlah dan deskripsi kejadian.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Isi jumlah dan deskripsi kejadian.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Unggah bukti atau dokumen pendukung jika diminta.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Unggah bukti atau dokumen pendukung jika diminta.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Simpan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Simpan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "12.2 Mengubah Status Laporan",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "12.2 Mengubah Status Laporan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pilih laporan yang akan diproses.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pilih laporan yang akan diproses.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik aksi status atau persetujuan laporan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik aksi status atau persetujuan laporan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pilih status Disetujui, Ditolak, atau Selesai sesuai kondisi.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pilih status Disetujui, Ditolak, atau Selesai sesuai kondisi.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Simpan Status.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Simpan Status.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Jika laporan disetujui, stok atau total aset dapat berkurang sesuai aturan sistem. Jika status selesai setelah sebelumnya disetujui, sistem dapat mengembalikan perhitungan stok sesuai logika aplikasi.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Jika laporan disetujui, stok atau total aset dapat berkurang sesuai aturan sistem. Jika status selesai setelah sebelumnya disetujui, sistem dapat mengembalikan perhitungan stok sesuai logika aplikasi.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "12.3 Export Laporan",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "12.3 Export Laporan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Export CSV pada halaman laporan untuk mengunduh data sesuai pencarian dan filter yang aktif.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Export CSV pada halaman laporan untuk mengunduh data sesuai pencarian dan filter yang aktif.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "13. Manajemen Pengguna",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "13. Manajemen Pengguna",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Menu Pengguna dapat diakses oleh Admin dan Super Admin untuk mengelola akun.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Menu Pengguna dapat diakses oleh Admin dan Super Admin untuk mengelola akun.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Buka menu Master Data lalu pilih Pengguna.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Buka menu Master Data lalu pilih Pengguna.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Tambah Pengguna untuk membuat akun baru.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Tambah Pengguna untuk membuat akun baru.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Isi nama, email, password, role, dan area.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Isi nama, email, password, role, dan area.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Simpan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Simpan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Gunakan Edit untuk memperbarui data akun.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Gunakan Edit untuk memperbarui data akun.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Gunakan Hapus untuk menonaktifkan atau menghapus akun sesuai kebutuhan operasional.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Gunakan Hapus untuk menonaktifkan atau menghapus akun sesuai kebutuhan operasional.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pastikan role dan area pengguna benar karena keduanya memengaruhi menu dan data yang bisa diakses.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pastikan role dan area pengguna benar karena keduanya memengaruhi menu dan data yang bisa diakses.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "14. Manajemen Area",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "14. Manajemen Area",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Menu Area hanya tersedia untuk Super Admin.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Menu Area hanya tersedia untuk Super Admin.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Buka menu Master Data lalu pilih Area.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Buka menu Master Data lalu pilih Area.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Tambah Area.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Tambah Area.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Isi nama area, slug, dan kode area sesuai standar perusahaan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Isi nama area, slug, dan kode area sesuai standar perusahaan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Klik Simpan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Klik Simpan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Gunakan Edit atau Hapus untuk memperbarui data area.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Gunakan Edit atau Hapus untuk memperbarui data area.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Perubahan area harus dilakukan hati-hati karena data alat dan user terhubung ke area.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Perubahan area harus dilakukan hati-hati karena data alat dan user terhubung ke area.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "15. Log Activity dan Log Alat",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "15. Log Activity dan Log Alat",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "15.1 Log Activity",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "15.1 Log Activity",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Log Activity mencatat aktivitas pengguna seperti pembuatan, perubahan, penghapusan, import, review, dan transaksi. Gunakan pencarian dan filter tanggal untuk menemukan aktivitas tertentu.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Log Activity mencatat aktivitas pengguna seperti pembuatan, perubahan, penghapusan, import, review, dan transaksi. Gunakan pencarian dan filter tanggal untuk menemukan aktivitas tertentu.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "15.2 Log Alat",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "15.2 Log Alat",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Log Alat menampilkan perubahan terkait alat, termasuk penambahan alat, perubahan stok, pengurangan stok, penghapusan, dan aktivitas import.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Log Alat menampilkan perubahan terkait alat, termasuk penambahan alat, perubahan stok, pengurangan stok, penghapusan, dan aktivitas import.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Gunakan Export CSV untuk mengunduh log.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Gunakan Export CSV untuk mengunduh log.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Gunakan filter tanggal untuk audit periode tertentu.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Gunakan filter tanggal untuk audit periode tertentu.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "16. Notifikasi dan Badge",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "16. Notifikasi dan Badge",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "IPTOOLS LITE menampilkan badge angka pada beberapa menu untuk membantu pengguna melihat item yang perlu tindakan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "IPTOOLS LITE menampilkan badge angka pada beberapa menu untuk membantu pengguna melihat item yang perlu tindakan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "17. Panduan Operasional Harian",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "17. Panduan Operasional Harian",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "17.1 User",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "17.1 User",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Login dan cek Dashboard.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Login dan cek Dashboard.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Buat peminjaman jika membutuhkan alat.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Buat peminjaman jika membutuhkan alat.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pantau status pada Riwayat Peminjaman.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pantau status pada Riwayat Peminjaman.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Cek Mutasi Alat untuk transaksi pengiriman atau pengembalian terkait.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Cek Mutasi Alat untuk transaksi pengiriman atau pengembalian terkait.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "17.2 SP Tool atau Mgr Tool",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "17.2 SP Tool atau Mgr Tool",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Cek badge Review Peminjaman.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Cek badge Review Peminjaman.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Review pengajuan pending.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Review pengajuan pending.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pantau laporan kerusakan dan kehilangan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pantau laporan kerusakan dan kehilangan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Gunakan Log Activity atau Log Alat untuk audit jika diperlukan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Gunakan Log Activity atau Log Alat untuk audit jika diperlukan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "17.3 PIC Tools",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "17.3 PIC Tools",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Cek data Alat dan pastikan stok valid.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Cek data Alat dan pastikan stok valid.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Proses pengiriman transaksi yang sudah disetujui.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Proses pengiriman transaksi yang sudah disetujui.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Proses penerimaan dan pengembalian alat.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Proses penerimaan dan pengembalian alat.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Tindak lanjuti laporan kerusakan atau kehilangan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Tindak lanjuti laporan kerusakan atau kehilangan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "17.4 Admin atau Super Admin",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "17.4 Admin atau Super Admin",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Kelola akun pengguna dan role.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Kelola akun pengguna dan role.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Kelola master alat dan area sesuai kewenangan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Kelola master alat dan area sesuai kewenangan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pantau transaksi, laporan, dan log.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pantau transaksi, laporan, dan log.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Lakukan export data jika dibutuhkan untuk laporan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Lakukan export data jika dibutuhkan untuk laporan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "18. Troubleshooting Pengguna",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "18. Troubleshooting Pengguna",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "19. Catatan Keamanan",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "19. Catatan Keamanan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Jangan membagikan password kepada pengguna lain.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Jangan membagikan password kepada pengguna lain.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Gunakan akun sesuai role dan tanggung jawab masing-masing.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Gunakan akun sesuai role dan tanggung jawab masing-masing.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Logout setelah selesai menggunakan aplikasi, terutama pada komputer bersama.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Logout setelah selesai menggunakan aplikasi, terutama pada komputer bersama.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Periksa kembali data sebelum menyetujui, menghapus, atau menyelesaikan transaksi.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Periksa kembali data sebelum menyetujui, menghapus, atau menyelesaikan transaksi.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "20. Penutup",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "20. Penutup",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Manual book ini disusun untuk membantu pengguna menjalankan proses operasional IPTOOLS LITE secara konsisten. Jika terdapat perbedaan tampilan dengan aplikasi, ikuti tampilan terbaru pada sistem dan lakukan pembaruan manual book sesuai perubahan fitur.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Manual book ini disusun untuk membantu pengguna menjalankan proses operasional IPTOOLS LITE secara konsisten. Jika terdapat perbedaan tampilan dengan aplikasi, ikuti tampilan terbaru pada sistem dan lakukan pembaruan manual book sesuai perubahan fitur.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0,
+          "color": null
+        }
+      ]
+    }
+  ],
+  "tables": [
+    {
+      "style": "Table Grid",
+      "rows": 9,
+      "cols": 2,
+      "first_row_widths_cm": [
+        4.233,
+        4.233
+      ],
+      "grid": [
+        [
+          "Istilah",
+          "Keterangan"
+        ],
+        [
+          "User",
+          "Pengguna yang membuat peminjaman, melihat riwayat, dan memantau mutasi alat."
+        ],
+        [
+          "SP Tool",
+          "Petugas yang melakukan review peminjaman dan memantau laporan."
+        ],
+        [
+          "PIC Tools",
+          "Petugas pengelola alat, pengiriman, pengembalian, dan laporan alat."
+        ],
+        [
+          "Mgr Tool",
+          "Manajer yang dapat melakukan review, monitoring mutasi, dan melihat laporan."
+        ],
+        [
+          "Admin",
+          "Pengelola user, data alat, transaksi, laporan, dan log."
+        ],
+        [
+          "Super Admin",
+          "Akun dengan akses paling lengkap, termasuk manajemen area."
+        ],
+        [
+          "Intra Area",
+          "Peminjaman alat dalam area yang sama."
+        ],
+        [
+          "Antar Area",
+          "Peminjaman atau pengiriman alat antar area."
+        ]
+      ]
+    },
+    {
+      "style": "Table Grid",
+      "rows": 15,
+      "cols": 2,
+      "first_row_widths_cm": [
+        4.233,
+        4.233
+      ],
+      "grid": [
+        [
+          "Menu",
+          "Role yang Dapat Mengakses"
+        ],
+        [
+          "Dashboard",
+          "User, SP Tool, PIC Tools, Mgr Tool, Admin, Super Admin"
+        ],
+        [
+          "Buat Peminjaman",
+          "User, Admin, Super Admin"
+        ],
+        [
+          "Riwayat Peminjaman",
+          "Semua role"
+        ],
+        [
+          "Mutasi Alat",
+          "User, Mgr Tool, Super Admin"
+        ],
+        [
+          "Review Peminjaman",
+          "SP Tool, Mgr Tool, Super Admin"
+        ],
+        [
+          "Master Alat",
+          "SP Tool, PIC Tools, Mgr Tool, Admin, Super Admin"
+        ],
+        [
+          "Pengiriman Intra Area",
+          "PIC Tools, Admin, Super Admin"
+        ],
+        [
+          "Pengiriman Antar Area",
+          "PIC Tools, Admin, Super Admin"
+        ],
+        [
+          "Laporan Kerusakan",
+          "SP Tool, PIC Tools, Mgr Tool, Admin, Super Admin"
+        ],
+        [
+          "Laporan Kehilangan",
+          "SP Tool, PIC Tools, Mgr Tool, Admin, Super Admin"
+        ],
+        [
+          "Pengguna",
+          "Admin, Super Admin"
+        ],
+        [
+          "Area",
+          "Super Admin"
+        ],
+        [
+          "Log Activity",
+          "SP Tool, Mgr Tool, Admin, Super Admin"
+        ],
+        [
+          "Log Alat",
+          "SP Tool, PIC Tools, Mgr Tool, Admin, Super Admin"
+        ]
+      ]
+    },
+    {
+      "style": "Table Grid",
+      "rows": 10,
+      "cols": 2,
+      "first_row_widths_cm": [
+        4.233,
+        4.233
+      ],
+      "grid": [
+        [
+          "Status",
+          "Arti"
+        ],
+        [
+          "Perlu Disetujui",
+          "Pengajuan menunggu persetujuan reviewer."
+        ],
+        [
+          "Perlu Direview",
+          "Pengajuan antar area menunggu review area peminjam atau role terkait."
+        ],
+        [
+          "Disetujui",
+          "Pengajuan disetujui dan siap diproses pengiriman."
+        ],
+        [
+          "Ditolak",
+          "Pengajuan ditolak oleh reviewer."
+        ],
+        [
+          "Dikirim",
+          "Alat sudah dikirim oleh PIC Tools."
+        ],
+        [
+          "Diterima",
+          "Alat sudah diterima oleh peminjam atau area tujuan."
+        ],
+        [
+          "Dikembalikan Partials",
+          "Sebagian alat sudah dikembalikan."
+        ],
+        [
+          "Dikembalikan Semuanya",
+          "Seluruh alat sudah dikembalikan."
+        ],
+        [
+          "Selesai",
+          "Transaksi sudah ditutup."
+        ]
+      ]
+    },
+    {
+      "style": "Table Grid",
+      "rows": 7,
+      "cols": 2,
+      "first_row_widths_cm": [
+        4.233,
+        4.233
+      ],
+      "grid": [
+        [
+          "Badge",
+          "Makna"
+        ],
+        [
+          "Review Peminjaman",
+          "Ada pengajuan yang menunggu review."
+        ],
+        [
+          "Intra Area",
+          "Ada transaksi intra area yang perlu diproses."
+        ],
+        [
+          "Antar Area",
+          "Ada transaksi antar area yang perlu diproses."
+        ],
+        [
+          "Mutasi Alat",
+          "Ada mutasi alat yang perlu diperhatikan."
+        ],
+        [
+          "Laporan Kerusakan",
+          "Ada laporan kerusakan pending."
+        ],
+        [
+          "Laporan Kehilangan",
+          "Ada laporan kehilangan pending."
+        ]
+      ]
+    },
+    {
+      "style": "Table Grid",
+      "rows": 7,
+      "cols": 2,
+      "first_row_widths_cm": [
+        4.233,
+        4.233
+      ],
+      "grid": [
+        [
+          "Masalah",
+          "Solusi"
+        ],
+        [
+          "Tidak bisa login",
+          "Periksa email dan password. Jika lupa, gunakan fitur Lupa Password atau hubungi Admin."
+        ],
+        [
+          "Menu tidak tampil",
+          "Pastikan role akun sudah benar. Hubungi Admin jika role tidak sesuai."
+        ],
+        [
+          "Data tidak muncul",
+          "Refresh halaman, cek filter pencarian, dan pastikan koneksi jaringan stabil."
+        ],
+        [
+          "Import alat gagal",
+          "Periksa format CSV/XLSX, nama kolom, nilai total aset, dan kode atau slug area."
+        ],
+        [
+          "Export tidak terunduh",
+          "Pastikan browser tidak memblokir download dan coba ulangi export."
+        ],
+        [
+          "Status tidak berubah",
+          "Refresh halaman. Jika masih sama, cek apakah aksi berhasil atau hubungi admin teknis."
+        ]
+      ]
+    }
+  ],
+  "headers": [
+    [
+      {
+        "text": "",
+        "style": "Normal",
+        "alignment": "None",
+        "space_before_pt": null,
+        "space_after_pt": null,
+        "line_spacing": "None",
+        "left_indent_cm": null,
+        "first_line_indent_cm": null,
+        "keep_with_next": null,
+        "page_break_before": null,
+        "runs": []
+      }
+    ]
+  ],
+  "footers": [
+    [
+      {
+        "text": "",
+        "style": "Normal",
+        "alignment": "None",
+        "space_before_pt": null,
+        "space_after_pt": null,
+        "line_spacing": "None",
+        "left_indent_cm": null,
+        "first_line_indent_cm": null,
+        "keep_with_next": null,
+        "page_break_before": null,
+        "runs": []
+      }
+    ]
+  ],
+  "style_counts": {
+    "Title": 1,
+    "Subtitle": 1,
+    "Normal": 151,
+    "Heading 1": 20,
+    "Heading 2": 27
+  },
+  "inline_shapes": 0,
+  "package_parts": [
+    {
+      "name": "[Content_Types].xml",
+      "size": 689,
+      "sha256": "188520dc749337cae54d190172c88755d1dcfd16ff2ca6db58b6d6aaeef15e56"
+    },
+    {
+      "name": "_rels/.rels",
+      "size": 297,
+      "sha256": "d8b0bad955075e5c5a427fe596520be989739fbcaddd9d837b319ea620740fde"
+    },
+    {
+      "name": "word/_rels/document.xml.rels",
+      "size": 415,
+      "sha256": "da64ce244e4e62a4fe9f8f97cf38a68c7ed54701c706d8fa3d0732940424e0a5"
+    },
+    {
+      "name": "word/document.xml",
+      "size": 66783,
+      "sha256": "e4672939adb1e026b4d802a3f3630758d45d616f0bef56e2540dae31496f4cbd"
+    },
+    {
+      "name": "word/styles.xml",
+      "size": 1849,
+      "sha256": "55ac1f655dad4d6adaa8d4d974a6f0e8ed3e41fcd6a18c68124bab2b86b603aa"
+    },
+    {
+      "name": "word/numbering.xml",
+      "size": 708,
+      "sha256": "c047036f5855778db2e9773291a467e91781f43234041271dcfc75a6d39d0ec9"
+    }
+  ],
+  "document_xml_text_node_count": 661,
+  "has_fields": false,
+  "has_textboxes": false,
+  "has_content_controls": false
+}

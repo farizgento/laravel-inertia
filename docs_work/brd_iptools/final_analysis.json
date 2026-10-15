@@ -1,0 +1,6489 @@
+{
+  "path": "D:\\WEB\\laravel-inertia\\outputs\\BRD-IPTOOLS-LITE.docx",
+  "size": 3928622,
+  "sha256": "d8e9abecfa2b8173a253f466d920c9c498d50557e61a35140789e1574f46f01d",
+  "core_properties": {
+    "title": "Business Requirements Document IPTOOLS LITE",
+    "subject": "Kebutuhan bisnis dan fungsional sistem pengelolaan alat dan peminjaman antar area",
+    "author": "Tim IPTOOLS LITE",
+    "created": "2013-12-23 23:15:00+00:00",
+    "modified": "2026-09-01 03:42:00+00:00"
+  },
+  "sections": [
+    {
+      "page_width_cm": 21.59,
+      "page_height_cm": 27.94,
+      "orientation": "PORTRAIT (0)",
+      "top_margin_cm": 1.651,
+      "bottom_margin_cm": 1.397,
+      "left_margin_cm": 1.778,
+      "right_margin_cm": 1.778,
+      "header_distance_cm": 0.559,
+      "footer_distance_cm": 0.635,
+      "start_type": "NEW_PAGE (2)",
+      "different_first_page_header_footer": true
+    }
+  ],
+  "paragraphs": [
+    {
+      "text": "Business Requirements Document",
+      "style": "Title",
+      "alignment": "CENTER (1)",
+      "space_before_pt": 28.0,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Business Requirements Document",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "BRD",
+      "style": "Normal",
+      "alignment": "CENTER (1)",
+      "space_before_pt": null,
+      "space_after_pt": 8.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": true,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "BRD",
+          "bold": true,
+          "italic": false,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0,
+          "color": "696969"
+        }
+      ]
+    },
+    {
+      "text": "SISTEM PENGELOLAAN ALAT DAN PEMINJAMAN ANTAR AREA",
+      "style": "Normal",
+      "alignment": "CENTER (1)",
+      "space_before_pt": 15.0,
+      "space_after_pt": 2.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "SISTEM PENGELOLAAN ALAT DAN PEMINJAMAN ANTAR AREA",
+          "bold": true,
+          "italic": false,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "MASTER ALAT, REVIEW, PENGIRIMAN, PENGEMBALIAN, MUTASI, LAPORAN, DAN AUDIT",
+      "style": "Normal",
+      "alignment": "CENTER (1)",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "MASTER ALAT, REVIEW, PENGIRIMAN, PENGEMBALIAN, MUTASI, LAPORAN, DAN AUDIT",
+          "bold": false,
+          "italic": false,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 10.0,
+          "color": "696969"
+        }
+      ]
+    },
+    {
+      "text": "PT PLN INDONESIA POWER UBH",
+      "style": "Normal",
+      "alignment": "CENTER (1)",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "PT PLN INDONESIA POWER UBH",
+          "bold": false,
+          "italic": false,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 10.0,
+          "color": "696969"
+        }
+      ]
+    },
+    {
+      "text": "VERSI 1.0  SEPTEMBER 2026",
+      "style": "Normal",
+      "alignment": "CENTER (1)",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "VERSI 1.0  SEPTEMBER 2026",
+          "bold": false,
+          "italic": false,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 10.0,
+          "color": "696969"
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "KONTROL DOKUMEN",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "KONTROL DOKUMEN",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Riwayat Perubahan",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Riwayat Perubahan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "Pemeriksaan dan Persetujuan Dokumen",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pemeriksaan dan Persetujuan Dokumen",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "Distribusi Dokumen",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Distribusi Dokumen",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "Catatan pengendalian: nilai TBD memerlukan keputusan pemilik proses dan tidak dianggap sebagai komitmen yang telah disetujui.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 4.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Catatan pengendalian: nilai TBD memerlukan keputusan pemilik proses dan tidak dianggap sebagai komitmen yang telah disetujui.",
+          "bold": false,
+          "italic": true,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 8.5,
+          "color": "696969"
+        }
+      ]
+    },
+    {
+      "text": "DAFTAR ISI",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": true,
+      "runs": [
+        {
+          "text": "DAFTAR ISI",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Daftar isi akan diperbarui otomatis.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 0.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Daftar isi akan diperbarui otomatis.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "1 DETAIL PROYEK RINGKASAN TUJUAN RUANG LINGKUP DAN PERAN",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": true,
+      "runs": [
+        {
+          "text": "1 DETAIL PROYEK RINGKASAN TUJUAN RUANG LINGKUP DAN PERAN",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "1.1 Detail Proyek",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "1.1 Detail Proyek",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "1.2 Ringkasan Eksekutif dan Kebutuhan Bisnis",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "1.2 Ringkasan Eksekutif dan Kebutuhan Bisnis",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "IPTOOLS LITE adalah aplikasi web internal untuk mengendalikan data alat dan seluruh siklus peminjaman, mulai dari pemilihan berdasarkan ketersediaan, review per area, pengiriman dan penerimaan, pengembalian sebagian atau seluruhnya, sampai penutupan transaksi. Aplikasi juga menangani laporan kerusakan dan kehilangan, dokumen surat jalan, notifikasi, dashboard operasional, dan jejak aktivitas.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 3.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "IPTOOLS LITE adalah aplikasi web internal untuk mengendalikan data alat dan seluruh siklus peminjaman, mulai dari pemilihan berdasarkan ketersediaan, review per area, pengiriman dan penerimaan, pengembalian sebagian atau seluruhnya, sampai penutupan transaksi. Aplikasi juga menangani laporan kerusakan dan kehilangan, dokumen surat jalan, notifikasi, dashboard operasional, dan jejak aktivitas.",
+          "bold": false,
+          "italic": false,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Sistem menggunakan akun lokal sebagai daftar pengguna yang diizinkan, sedangkan kredensial diverifikasi ke LDAP. Hak akses ditentukan oleh tujuh role dan konteks area. Transaksi penting memakai validasi server, transaksi basis data, row lock pada proses stok tertentu, serta pencatatan aktivitas agar perubahan dapat ditelusuri.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 3.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Sistem menggunakan akun lokal sebagai daftar pengguna yang diizinkan, sedangkan kredensial diverifikasi ke LDAP. Hak akses ditentukan oleh tujuh role dan konteks area. Transaksi penting memakai validasi server, transaksi basis data, row lock pada proses stok tertentu, serta pencatatan aktivitas agar perubahan dapat ditelusuri.",
+          "bold": false,
+          "italic": false,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "1.3 Tujuan dan Indikator Keberhasilan",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "1.3 Tujuan dan Indikator Keberhasilan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "1.4 Ruang Lingkup dan Peran",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "1.4 Ruang Lingkup dan Peran",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "2 KAJIAN KELAYAKAN OPERASI",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": true,
+      "runs": [
+        {
+          "text": "2 KAJIAN KELAYAKAN OPERASI",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "2.1 Permintaan dan Kebutuhan Perubahan",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "2.1 Permintaan dan Kebutuhan Perubahan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Pengelolaan alat melibatkan banyak area, role, status, jumlah item, bukti foto, dan dokumen surat jalan. Tanpa satu alur terpusat, ketersediaan alat mudah berbeda antar catatan, persetujuan sulit dibuktikan, dan perpindahan alat antar area tidak segera tercermin pada stok operasional.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 3.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pengelolaan alat melibatkan banyak area, role, status, jumlah item, bukti foto, dan dokumen surat jalan. Tanpa satu alur terpusat, ketersediaan alat mudah berbeda antar catatan, persetujuan sulit dibuktikan, dan perpindahan alat antar area tidak segera tercermin pada stok operasional.",
+          "bold": false,
+          "italic": false,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "IPTOOLS LITE dibutuhkan untuk menempatkan validasi stok, kewenangan area, review, dokumen, dan audit trail dalam satu transaksi bisnis. Sistem juga harus menjaga alur tetap berjalan ketika pengiriman email gagal; kegagalan komunikasi dicatat untuk tindak lanjut operasional.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 3.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "IPTOOLS LITE dibutuhkan untuk menempatkan validasi stok, kewenangan area, review, dokumen, dan audit trail dalam satu transaksi bisnis. Sistem juga harus menjaga alur tetap berjalan ketika pengiriman email gagal; kegagalan komunikasi dicatat untuk tindak lanjut operasional.",
+          "bold": false,
+          "italic": false,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "2.2 Alternatif Solusi dan Kelayakan Operasi",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "2.2 Alternatif Solusi dan Kelayakan Operasi",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "2.3 Rekomendasi Kelayakan Operasi",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "2.3 Rekomendasi Kelayakan Operasi",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "IPTOOLS LITE direkomendasikan sebagai solusi internal karena alur inti dan kontrol utama telah tersedia di source. Sebelum penerimaan formal, organisasi perlu menyetujui owner layanan, SLA, RPO, RTO, retensi dokumen/foto, konfigurasi queue dan scheduler, prosedur backup/restore, HTTPS, UAT, serta dukungan pasca implementasi.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 3.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "IPTOOLS LITE direkomendasikan sebagai solusi internal karena alur inti dan kontrol utama telah tersedia di source. Sebelum penerimaan formal, organisasi perlu menyetujui owner layanan, SLA, RPO, RTO, retensi dokumen/foto, konfigurasi queue dan scheduler, prosedur backup/restore, HTTPS, UAT, serta dukungan pasca implementasi.",
+          "bold": false,
+          "italic": false,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "3 KAJIAN KELAYAKAN FINANSIAL RISIKO DAN KESIMPULAN",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": true,
+      "runs": [
+        {
+          "text": "3 KAJIAN KELAYAKAN FINANSIAL RISIKO DAN KESIMPULAN",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "3.1 Analisis Biaya dan Manfaat",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "3.1 Analisis Biaya dan Manfaat",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "3.2 Identifikasi dan Analisis Risiko",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "3.2 Identifikasi dan Analisis Risiko",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "3.3 Kesimpulan Kajian Kelayakan",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "3.3 Kesimpulan Kajian Kelayakan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Inisiatif layak dilanjutkan. Source saat ini memiliki alur inti dan test otomatis yang mencakup fungsi penting, tetapi kelayakan produksi tetap bergantung pada keputusan operasional, uji keamanan, data awal, UAT bisnis, dan kesiapan infrastruktur.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 3.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Inisiatif layak dilanjutkan. Source saat ini memiliki alur inti dan test otomatis yang mencakup fungsi penting, tetapi kelayakan produksi tetap bergantung pada keputusan operasional, uji keamanan, data awal, UAT bisnis, dan kesiapan infrastruktur.",
+          "bold": false,
+          "italic": false,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "4 DESAIN PROSES KONDISI SAAT INI",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": true,
+      "runs": [
+        {
+          "text": "4 DESAIN PROSES KONDISI SAAT INI",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Bagian ini menggambarkan proses pembanding sebelum aplikasi atau proses manual yang hendak digantikan. Pemilik proses perlu memvalidasi detailnya.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 4.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Bagian ini menggambarkan proses pembanding sebelum aplikasi atau proses manual yang hendak digantikan. Pemilik proses perlu memvalidasi detailnya.",
+          "bold": false,
+          "italic": true,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 8.5,
+          "color": "696969"
+        }
+      ]
+    },
+    {
+      "text": "4.1 Gambaran Proses Saat Ini",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "4.1 Gambaran Proses Saat Ini",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "4.2 Diagram Proses Saat Ini",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "4.2 Diagram Proses Saat Ini",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "CENTER (1)",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "[IMAGE]",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "5 DESAIN PROSES KONDISI SASARAN",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": true,
+      "runs": [
+        {
+          "text": "5 DESAIN PROSES KONDISI SASARAN",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "5.1 Gambaran Proses Sasaran",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "5.1 Gambaran Proses Sasaran",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "5.2 Diagram Proses Sasaran",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "5.2 Diagram Proses Sasaran",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "CENTER (1)",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "[IMAGE]",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "6 ALUR PROSES BISNIS",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": true,
+      "runs": [
+        {
+          "text": "6 ALUR PROSES BISNIS",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "6.1 Alur Peminjaman Intra Area",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "6.1 Alur Peminjaman Intra Area",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "6.2 Alur Peminjaman Antar Area",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "6.2 Alur Peminjaman Antar Area",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "6.3 Aturan Bisnis pada Alur",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "6.3 Aturan Bisnis pada Alur",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "7 DESAIN STATUS MENU DAN HAK AKSES",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": true,
+      "runs": [
+        {
+          "text": "7 DESAIN STATUS MENU DAN HAK AKSES",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "7.1 Desain Status Proses",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "7.1 Desain Status Proses",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "7.2 Status Pendukung",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "7.2 Status Pendukung",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "7.3 Desain Menu dan Hak Akses",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "7.3 Desain Menu dan Hak Akses",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "7.4 Notifikasi dan Eskalasi",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "7.4 Notifikasi dan Eskalasi",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "8 KEBUTUHAN BISNIS DAN KEBUTUHAN FUNGSIONAL",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": true,
+      "runs": [
+        {
+          "text": "8 KEBUTUHAN BISNIS DAN KEBUTUHAN FUNGSIONAL",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "8.1 Kebutuhan Bisnis",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "8.1 Kebutuhan Bisnis",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "8.2 Kebutuhan Fungsional",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "8.2 Kebutuhan Fungsional",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "Prioritas memakai MoSCoW: Wajib setara Must, Penting setara Should. Tidak ada fitur Diinginkan yang dinyatakan sebagai komitmen pada versi ini.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 4.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Prioritas memakai MoSCoW: Wajib setara Must, Penting setara Should. Tidak ada fitur Diinginkan yang dinyatakan sebagai komitmen pada versi ini.",
+          "bold": false,
+          "italic": true,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 8.5,
+          "color": "696969"
+        }
+      ]
+    },
+    {
+      "text": "9 KEBUTUHAN NONFUNGSIONAL DATA INTEGRASI DAN PELAPORAN",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": true,
+      "runs": [
+        {
+          "text": "9 KEBUTUHAN NONFUNGSIONAL DATA INTEGRASI DAN PELAPORAN",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "9.1 Kebutuhan Nonfungsional",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "9.1 Kebutuhan Nonfungsional",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "9.2 Data dan Integrasi",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "9.2 Data dan Integrasi",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "9.3 Pelaporan Dashboard dan Keluaran",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "9.3 Pelaporan Dashboard dan Keluaran",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "10 DESAIN ANTARMUKA",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": true,
+      "runs": [
+        {
+          "text": "10 DESAIN ANTARMUKA",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Daftar layar berikut merepresentasikan fungsi yang ada pada source. Desain visual final mengikuti komponen Vue yang berlaku dan hasil UAT.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 4.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Daftar layar berikut merepresentasikan fungsi yang ada pada source. Desain visual final mengikuti komponen Vue yang berlaku dan hasil UAT.",
+          "bold": false,
+          "italic": true,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 8.5,
+          "color": "696969"
+        }
+      ]
+    },
+    {
+      "text": "10.1 Daftar Layar dan Halaman",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "10.1 Daftar Layar dan Halaman",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "10.2 Pola Interaksi Utama",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "10.2 Pola Interaksi Utama",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "10.3 Catatan Interaksi dan Validasi",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "10.3 Catatan Interaksi dan Validasi",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Field wajib ditandai dan selalu divalidasi di server.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Field wajib ditandai dan selalu divalidasi di server.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Tombol atau menu yang tidak sesuai role harus disembunyikan, tetapi server tetap menjadi kontrol utama.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Tombol atau menu yang tidak sesuai role harus disembunyikan, tetapi server tetap menjadi kontrol utama.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Pesan validasi menjelaskan field atau item yang perlu diperbaiki tanpa menampilkan stack trace atau credential.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pesan validasi menjelaskan field atau item yang perlu diperbaiki tanpa menampilkan stack trace atau credential.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Daftar yang panjang memakai pagination dan pencarian; state filter dipertahankan selama pengguna bekerja pada halaman.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Daftar yang panjang memakai pagination dan pencarian; state filter dipertahankan selama pengguna bekerja pada halaman.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Aksi hapus, review, kirim, terima, kembali, selesai, dan perubahan status memerlukan konfirmasi yang jelas.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Aksi hapus, review, kirim, terima, kembali, selesai, dan perubahan status memerlukan konfirmasi yang jelas.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Jumlah diminta, disetujui, telah kembali, sisa, total, dipinjam, dan tersedia harus selalu diberi label agar tidak tertukar.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Jumlah diminta, disetujui, telah kembali, sisa, total, dipinjam, dan tersedia harus selalu diberi label agar tidak tertukar.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Status ditampilkan dengan istilah yang sama pada daftar, detail, email, export, dan Surat Jalan.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Status ditampilkan dengan istilah yang sama pada daftar, detail, email, export, dan Surat Jalan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Antarmuka tidak boleh menawarkan reset password atau registrasi mandiri sebelum endpoint dan proses bisnisnya disetujui.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Antarmuka tidak boleh menawarkan reset password atau registrasi mandiri sebelum endpoint dan proses bisnisnya disetujui.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "11 PEMANGKU KEPENTINGAN RACI ASUMSI BATASAN DAN KETERGANTUNGAN",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": true,
+      "runs": [
+        {
+          "text": "11 PEMANGKU KEPENTINGAN RACI ASUMSI BATASAN DAN KETERGANTUNGAN",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "11.1 Daftar Pemangku Kepentingan",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "11.1 Daftar Pemangku Kepentingan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "11.2 Matriks RACI",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "11.2 Matriks RACI",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "R = Responsible, A = Accountable, C = Consulted, I = Informed. Nama pemegang peran ditetapkan pada persetujuan akhir.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 4.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "R = Responsible, A = Accountable, C = Consulted, I = Informed. Nama pemegang peran ditetapkan pada persetujuan akhir.",
+          "bold": false,
+          "italic": true,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 8.5,
+          "color": "696969"
+        }
+      ]
+    },
+    {
+      "text": "11.3 Asumsi Batasan dan Ketergantungan",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "11.3 Asumsi Batasan dan Ketergantungan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "12 UJI PENERIMAAN PENGGUNA KRITERIA PENERIMAAN DAN KETERTELUSURAN",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": true,
+      "runs": [
+        {
+          "text": "12 UJI PENERIMAAN PENGGUNA KRITERIA PENERIMAAN DAN KETERTELUSURAN",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "12.1 Skenario Uji Penerimaan Pengguna",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "12.1 Skenario Uji Penerimaan Pengguna",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "12.2 Kriteria Penerimaan",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "12.2 Kriteria Penerimaan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "12.3 Matriks Ketertelusuran Kebutuhan",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "12.3 Matriks Ketertelusuran Kebutuhan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "13 JADWAL IMPLEMENTASI DAN KESIAPAN IMPLEMENTASI",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": true,
+      "runs": [
+        {
+          "text": "13 JADWAL IMPLEMENTASI DAN KESIAPAN IMPLEMENTASI",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "13.1 Tahapan Implementasi",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "13.1 Tahapan Implementasi",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "13.2 Kesiapan Implementasi",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "13.2 Kesiapan Implementasi",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "13.3 Rencana Implementasi Produksi dan Pasca Implementasi",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "13.3 Rencana Implementasi Produksi dan Pasca Implementasi",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Bekukan kebutuhan perubahan dan ambil backup terverifikasi sebelum migration atau deployment.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Bekukan kebutuhan perubahan dan ambil backup terverifikasi sebelum migration atau deployment.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Pastikan konfigurasi Production terpisah dari QA dan credential tidak tersimpan di source.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pastikan konfigurasi Production terpisah dari QA dan credential tidak tersimpan di source.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Jalankan migration review, automated test, security gate, dan UAT pada build yang sama dengan kandidat rilis.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Jalankan migration review, automated test, security gate, dan UAT pada build yang sama dengan kandidat rilis.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Aktifkan worker database queue dengan Supervisor atau service manager serta Laravel scheduler.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Aktifkan worker database queue dengan Supervisor atau service manager serta Laravel scheduler.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Lakukan smoke test login LDAP, dashboard, master alat, peminjaman, review, Surat Jalan, email, laporan, export, dan log.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Lakukan smoke test login LDAP, dashboard, master alat, peminjaman, review, Surat Jalan, email, laporan, export, dan log.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Pantau Oracle, error log, failed jobs, scheduler, email, storage, dan kapasitas selama masa stabilisasi.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Pantau Oracle, error log, failed jobs, scheduler, email, storage, dan kapasitas selama masa stabilisasi.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Gunakan rollback plan jika smoke test gagal dan rekonsiliasi setiap perubahan data yang sudah terjadi.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Gunakan rollback plan jika smoke test gagal dan rekonsiliasi setiap perubahan data yang sudah terjadi.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Laksanakan post implementation review dan masukkan perubahan yang disetujui ke change log BRD.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Laksanakan post implementation review dan masukkan perubahan yang disetujui ke change log BRD.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "14 PERSETUJUAN AKHIR DAN PENGENDALIAN PERUBAHAN",
+      "style": "Heading 1",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": true,
+      "runs": [
+        {
+          "text": "14 PERSETUJUAN AKHIR DAN PENGENDALIAN PERUBAHAN",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "14.1 Pernyataan Persetujuan",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "14.1 Pernyataan Persetujuan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Dengan menandatangani bagian ini, para pihak menyatakan bahwa kebutuhan bisnis pada dokumen telah ditinjau dan disepakati sebagai acuan pelaksanaan IPTOOLS LITE. Perubahan setelah persetujuan mengikuti mekanisme pengendalian perubahan.",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 3.0,
+      "line_spacing": "1.0416666666666667",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Dengan menandatangani bagian ini, para pihak menyatakan bahwa kebutuhan bisnis pada dokumen telah ditinjau dan disepakati sebagai acuan pelaksanaan IPTOOLS LITE. Perubahan setelah persetujuan mengikuti mekanisme pengendalian perubahan.",
+          "bold": false,
+          "italic": false,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "14.2 Pengendalian Perubahan Kebutuhan",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "14.2 Pengendalian Perubahan Kebutuhan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "14.3 Keputusan yang Masih Terbuka",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "14.3 Keputusan yang Masih Terbuka",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "Nama pemilik proyek, manajer proyek, pemilik proses, dan approver BRD.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Nama pemilik proyek, manajer proyek, pemilik proses, dan approver BRD.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Tanggal go live, anggaran, kapasitas, serta sumber daya operasi dan dukungan.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Tanggal go live, anggaran, kapasitas, serta sumber daya operasi dan dukungan.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "SLA, RPO, RTO, jadwal backup, lokasi salinan, retensi database, foto, dokumen, dan log.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "SLA, RPO, RTO, jadwal backup, lokasi salinan, retensi database, foto, dokumen, dan log.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "DNS, sertifikat HTTPS, segmentasi jaringan, dan daftar browser yang didukung.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "DNS, sertifikat HTTPS, segmentasi jaringan, dan daftar browser yang didukung.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Konfigurasi queue production, Supervisor/service manager, scheduler, monitoring, serta eskalasi.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Konfigurasi queue production, Supervisor/service manager, scheduler, monitoring, serta eskalasi.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Daftar area, mapping role, owner data, data awal, dan hasil rekonsiliasi stok.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Daftar area, mapping role, owner data, data awal, dan hasil rekonsiliasi stok.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Hasil security review, concurrency test, UAT formal, restore drill, dan persetujuan risiko residual.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Hasil security review, concurrency test, UAT formal, restore drill, dan persetujuan risiko residual.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Keputusan apakah role Guest tetap dipakai untuk akun baca terbatas atau diganti namanya agar tidak dianggap akses publik.",
+      "style": "List Number",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.651,
+      "first_line_indent_cm": -0.3,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Keputusan apakah role Guest tetap dipakai untuk akun baca terbatas atau diganti namanya agar tidak dianggap akses publik.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Lampiran A Daftar Istilah",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Lampiran A Daftar Istilah",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "",
+      "style": "Normal",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 1.0,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": []
+    },
+    {
+      "text": "Lampiran B Sumber Penyusunan",
+      "style": "Heading 2",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "left_indent_cm": null,
+      "first_line_indent_cm": null,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Lampiran B Sumber Penyusunan",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null,
+          "color": null
+        }
+      ]
+    },
+    {
+      "text": "BRD InfraSight.docx sebagai referensi struktur dan tata letak.",
+      "style": "List Bullet",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.499,
+      "first_line_indent_cm": -0.22,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "BRD InfraSight.docx sebagai referensi struktur dan tata letak.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Source code IPTOOLS LITE pada repository laravel-inertia: route, controller, middleware, model, service, job, mail, command, migration, configuration, Vue page/component, dan test.",
+      "style": "List Bullet",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.499,
+      "first_line_indent_cm": -0.22,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Source code IPTOOLS LITE pada repository laravel-inertia: route, controller, middleware, model, service, job, mail, command, migration, configuration, Vue page/component, dan test.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Manual_Book_IPTOOLS_LITE.docx.08b626c3 sebagai sumber istilah dan gambaran penggunaan; fakta yang bertentangan dengan route/controller tidak dipakai.",
+      "style": "List Bullet",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.499,
+      "first_line_indent_cm": -0.22,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Manual_Book_IPTOOLS_LITE.docx.08b626c3 sebagai sumber istilah dan gambaran penggunaan; fakta yang bertentangan dengan route/controller tidak dipakai.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "Hasil test lokal pada 10 September 2026: 23 test lulus dengan 1.933 assertion.",
+      "style": "List Bullet",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.499,
+      "first_line_indent_cm": -0.22,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "Hasil test lokal pada 10 September 2026: 23 test lulus dengan 1.933 assertion.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    },
+    {
+      "text": "README produksi mengenai database queue dan rekomendasi Supervisor worker.",
+      "style": "List Bullet",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "left_indent_cm": 0.499,
+      "first_line_indent_cm": -0.22,
+      "keep_with_next": null,
+      "page_break_before": null,
+      "runs": [
+        {
+          "text": "README produksi mengenai database queue dan rekomendasi Supervisor worker.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 9.0,
+          "color": "000000"
+        }
+      ]
+    }
+  ],
+  "tables": [
+    {
+      "style": "Normal Table",
+      "rows": 1,
+      "cols": 1,
+      "first_row_widths_cm": [
+        18.034
+      ],
+      "grid": [
+        [
+          "IPTOOLS LITE"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 3,
+      "cols": 4,
+      "first_row_widths_cm": [
+        3.099,
+        4.8,
+        2.0,
+        8.1
+      ],
+      "grid": [
+        [
+          "Tanggal",
+          "Penyusun",
+          "Versi",
+          "Uraian Perubahan"
+        ],
+        [
+          "10/09/2026",
+          "Business Analyst dan Tim Pengembang IPTOOLS LITE",
+          "1.0",
+          "Penyusunan BRD berdasarkan aplikasi, source code, manual, route, model, service, migration, dan pengujian otomatis."
+        ],
+        [
+          "",
+          "",
+          "",
+          ""
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 4,
+      "cols": 4,
+      "first_row_widths_cm": [
+        3.2,
+        7.001,
+        2.701,
+        5.099
+      ],
+      "grid": [
+        [
+          "Peran",
+          "Nama atau Jabatan",
+          "Status",
+          "Tanggal dan Tanda Tangan"
+        ],
+        [
+          "Disusun oleh",
+          "Business Analyst dan Tim Pengembang IPTOOLS LITE",
+          "Draft",
+          ""
+        ],
+        [
+          "Diperiksa oleh",
+          "Pemilik Proses Pengelolaan Tool  TBD",
+          "Menunggu pemeriksaan",
+          ""
+        ],
+        [
+          "Disetujui oleh",
+          "Pemilik Proyek atau Pejabat Berwenang  TBD",
+          "Menunggu persetujuan",
+          ""
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 4,
+      "cols": 3,
+      "first_row_widths_cm": [
+        3.0,
+        8.301,
+        6.699
+      ],
+      "grid": [
+        [
+          "Nomor Salinan",
+          "Penerima atau Fungsi",
+          "Lokasi atau Media"
+        ],
+        [
+          "01",
+          "Pemilik Proses dan Mgr Tool",
+          "Repositori resmi proyek"
+        ],
+        [
+          "02",
+          "SP Tool dan PIC Tool",
+          "Salinan kerja terkendali"
+        ],
+        [
+          "03",
+          "Tim Aplikasi, Infrastruktur, dan Database",
+          "Salinan kerja terkendali"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 8,
+      "cols": 2,
+      "first_row_widths_cm": [
+        5.099,
+        12.899
+      ],
+      "grid": [
+        [
+          "Atribut",
+          "Isi"
+        ],
+        [
+          "Nama Proyek",
+          "IPTOOLS LITE"
+        ],
+        [
+          "Nama Modul atau Produk",
+          "Dashboard; master alat; template peminjaman; peminjaman intra area dan antar area; review; pengiriman; penerimaan; pengembalian; mutasi; laporan kerusakan dan kehilangan; pengguna; area; log."
+        ],
+        [
+          "Pemilik Proyek",
+          "TBD oleh organisasi"
+        ],
+        [
+          "Manajer Proyek",
+          "TBD oleh pemilik proyek"
+        ],
+        [
+          "Pemilik Proses Bisnis",
+          "Fungsi pengelolaan tool PT PLN Indonesia Power UBH  perlu konfirmasi"
+        ],
+        [
+          "Platform",
+          "Laravel 10 dan PHP 8.2; Inertia.js 2; Vue 3; Tailwind CSS 4; Oracle sebagai koneksi basis data default."
+        ],
+        [
+          "Periode Sasaran",
+          "Aplikasi berada dalam implementasi aktif pada 2026. Tanggal penerimaan formal dan go live ditetapkan setelah UAT."
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 7,
+      "cols": 4,
+      "first_row_widths_cm": [
+        1.0,
+        4.399,
+        7.2,
+        5.399
+      ],
+      "grid": [
+        [
+          "No",
+          "Tujuan Bisnis",
+          "Indikator atau Ukuran Keberhasilan",
+          "Sasaran"
+        ],
+        [
+          "1",
+          "Menyediakan satu sumber data alat per area",
+          "Kode alat unik per area, data dapat dicari, difilter, diimpor, dan diekspor",
+          "Seluruh master aktif tersimpan dan dapat ditelusuri"
+        ],
+        [
+          "2",
+          "Mengendalikan ketersediaan alat",
+          "Permintaan tidak melebihi stok tersedia setelah memperhitungkan transaksi aktif",
+          "Tidak ada alokasi melebihi stok pada skenario UAT"
+        ],
+        [
+          "3",
+          "Menstandarkan peminjaman intra dan antar area",
+          "Status dan review mengikuti kategori, area peminjam, dan area sumber",
+          "Seluruh skenario Wajib lulus UAT"
+        ],
+        [
+          "4",
+          "Menyediakan bukti serah terima",
+          "Surat jalan dan foto tersimpan serta dapat diunduh oleh pihak berwenang",
+          "Dokumen tersedia pada setiap pengiriman dan pengembalian"
+        ],
+        [
+          "5",
+          "Meningkatkan keterlacakan",
+          "Riwayat, log aktivitas, log alat, reviewer, jumlah, dan status dapat diaudit",
+          "Sampel transaksi dapat ditelusuri dari awal sampai selesai"
+        ],
+        [
+          "6",
+          "Mempercepat tindak lanjut",
+          "Badge, mailbox, email status, dan pengingat jatuh tempo tersedia",
+          "Pengguna menerima informasi sesuai perannya"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 7,
+      "cols": 3,
+      "first_row_widths_cm": [
+        7.2,
+        6.399,
+        4.399
+      ],
+      "grid": [
+        [
+          "Dalam Lingkup",
+          "Di Luar Lingkup Versi Saat Ini",
+          "Peran Utama"
+        ],
+        [
+          "Login LDAP untuk akun yang diizinkan; logout; session berbasis web",
+          "Registrasi mandiri, reset password lokal, dan pengelolaan password LDAP",
+          "Semua role; Admin untuk allow list pengguna"
+        ],
+        [
+          "Master area dan alat, kode/lokasi/jenis/klasifikasi/stok; import dan export",
+          "Pengadaan, depresiasi finansial, barcode, RFID, dan IoT",
+          "Super Admin; PIC Tool; Admin; pembaca sesuai role"
+        ],
+        [
+          "Peminjaman intra area dan antar area, template, review per item",
+          "Reservasi eksternal di luar jaringan atau integrasi vendor",
+          "User; PIC Tool; SP Tool; Mgr Tool; Admin; Super Admin"
+        ],
+        [
+          "Pengiriman, penerimaan, pengembalian, surat jalan XLSX, dan foto",
+          "Pelacakan ekspedisi melalui API kurir",
+          "PIC Tool; peminjam; Admin; Super Admin"
+        ],
+        [
+          "Laporan kerusakan/kehilangan dan penyesuaian stok",
+          "Work order perbaikan, klaim asuransi, dan proses penggantian aset",
+          "SP Tool; PIC Tool; Mgr Tool; Admin; Super Admin"
+        ],
+        [
+          "Dashboard, notifikasi, email, log, export CSV, dan scheduler",
+          "Data warehouse, aplikasi mobile native, dan analitik prediktif",
+          "Semua role sesuai matriks akses; tim aplikasi"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 7,
+      "cols": 4,
+      "first_row_widths_cm": [
+        3.3,
+        4.701,
+        5.5,
+        4.5
+      ],
+      "grid": [
+        [
+          "Aspek",
+          "Alternatif 1 Proses Manual",
+          "Alternatif 2 IPTOOLS LITE",
+          "Alternatif 3 Produk Eksternal"
+        ],
+        [
+          "Proses bisnis",
+          "Spreadsheet, pesan, dan dokumen terpisah",
+          "Workflow terintegrasi dengan status dan area",
+          "Konfigurasi produk dan migrasi proses"
+        ],
+        [
+          "Kontrol stok",
+          "Rekonsiliasi manual",
+          "Perhitungan availability, transaksi, dan row lock",
+          "Tergantung modul vendor"
+        ],
+        [
+          "Hak akses",
+          "Kontrol berbasis kepemilikan file",
+          "Role dan area diverifikasi di route dan controller",
+          "Tergantung lisensi dan konfigurasi"
+        ],
+        [
+          "Dokumen",
+          "Surat jalan dibuat dan disimpan manual",
+          "XLSX dibuat dari template bersama foto pengiriman/pengembalian",
+          "Fitur standar mungkin perlu penyesuaian"
+        ],
+        [
+          "Integrasi",
+          "Tidak terintegrasi",
+          "LDAP, Oracle, SMTP, storage, queue, scheduler",
+          "Perlu integrasi baru"
+        ],
+        [
+          "Biaya dan waktu",
+          "Rendah di awal tetapi tinggi untuk koreksi",
+          "Memanfaatkan source yang telah tersedia; perlu operasi dan UAT",
+          "Pengadaan, konfigurasi, lisensi, dan migrasi"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 6,
+      "cols": 4,
+      "first_row_widths_cm": [
+        2.799,
+        6.2,
+        3.6,
+        5.399
+      ],
+      "grid": [
+        [
+          "Kategori",
+          "Komponen",
+          "Estimasi atau Dampak",
+          "Keterangan"
+        ],
+        [
+          "Biaya",
+          "Analisis, development, QA, security review, UAT, dokumentasi",
+          "TBD",
+          "Perlu estimasi resmi jam kerja dan perubahan tersisa"
+        ],
+        [
+          "Biaya",
+          "Oracle, web server, storage surat jalan/foto, backup, SMTP, DNS/sertifikat",
+          "TBD",
+          "Gunakan kapasitas existing jika disetujui"
+        ],
+        [
+          "Biaya Berulang",
+          "Operasi aplikasi, queue worker, scheduler, monitoring, patching, dukungan",
+          "TBD per tahun",
+          "Masukkan ke biaya layanan aplikasi"
+        ],
+        [
+          "Manfaat Tak Berwujud",
+          "Waktu pencarian dan rekonsiliasi berkurang",
+          "Perlu baseline",
+          "Ukur waktu proses sebelum dan sesudah penggunaan"
+        ],
+        [
+          "Manfaat Tak Berwujud",
+          "Kontrol stok, bukti transaksi, dan audit membaik",
+          "Perlu sampling",
+          "Ukur selisih stok dan temuan audit"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 13,
+      "cols": 6,
+      "first_row_widths_cm": [
+        1.0,
+        2.3,
+        3.701,
+        3.401,
+        3.3,
+        4.3
+      ],
+      "grid": [
+        [
+          "ID",
+          "Sasaran",
+          "Kejadian Risiko",
+          "Penyebab",
+          "Dampak",
+          "Mitigasi"
+        ],
+        [
+          "R-01",
+          "Ketersediaan",
+          "Aplikasi tidak dapat mengakses Oracle",
+          "Gangguan jaringan atau koneksi idle",
+          "Transaksi dan queue berhenti",
+          "Health check, retry, worker dikelola Supervisor, monitoring koneksi"
+        ],
+        [
+          "R-02",
+          "Autentikasi",
+          "LDAP tidak tersedia",
+          "Gangguan AD, DNS, CA, atau jaringan",
+          "Pengguna gagal login",
+          "Timeout, koordinasi tim AD, dan prosedur insiden"
+        ],
+        [
+          "R-03",
+          "Otorisasi",
+          "Role atau area salah",
+          "Master pengguna tidak akurat",
+          "Akses data yang tidak sesuai",
+          "Review akses berkala, validasi backend, prinsip least privilege"
+        ],
+        [
+          "R-04",
+          "Integritas stok",
+          "Alokasi melebihi stok atau stok antar area salah",
+          "Transaksi bersamaan atau data lama",
+          "Operasi dan laporan tidak akurat",
+          "Transaksi DB, row lock, constraint, rekonsiliasi berkala"
+        ],
+        [
+          "R-05",
+          "Import",
+          "File import mengubah data yang salah",
+          "Format atau area tidak valid",
+          "Master alat tercemar",
+          "Template resmi, validasi seluruh baris, log hasil, pembatasan role"
+        ],
+        [
+          "R-06",
+          "Dokumen",
+          "Foto atau surat jalan hilang",
+          "Storage penuh atau file terhapus",
+          "Bukti serah terima tidak tersedia",
+          "Storage privat, backup, monitoring kapasitas, uji download"
+        ],
+        [
+          "R-07",
+          "Komunikasi",
+          "Email terlambat atau gagal",
+          "SMTP atau worker tidak aktif",
+          "Review dan pengembalian terlambat",
+          "Log kegagalan, badge dalam aplikasi, monitoring queue dan scheduler"
+        ],
+        [
+          "R-08",
+          "Data laporan",
+          "Status kerusakan/kehilangan mengubah stok tidak sesuai",
+          "Transisi status salah atau proses ganda",
+          "Total aset keliru",
+          "Row lock, UAT transisi ulang, audit log, rekonsiliasi"
+        ],
+        [
+          "R-09",
+          "Privasi",
+          "Foto atau data pegawai diakses pihak tak berwenang",
+          "URL atau storage salah konfigurasi",
+          "Kebocoran data",
+          "Route terautorisasi, retensi, pembatasan akses, audit"
+        ],
+        [
+          "R-10",
+          "Transport",
+          "Akses melalui HTTP",
+          "HTTPS/DNS belum final",
+          "Credential dapat disadap",
+          "Wajib HTTPS dan sertifikat tepercaya sebelum perluasan akses"
+        ],
+        [
+          "R-11",
+          "Operasi",
+          "Scheduler tidak berjalan",
+          "Task scheduler belum dikonfigurasi",
+          "LDAP dan reminder tidak diperbarui",
+          "Monitoring job 01.00 dan 07.00, runbook, alert kegagalan"
+        ],
+        [
+          "R-12",
+          "Perubahan",
+          "Release menyebabkan regresi",
+          "Tidak ada gate QA/UAT/rollback",
+          "Downtime atau data rusak",
+          "CI/test, backup pra-rilis, migration review, smoke test, rollback"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 7,
+      "cols": 6,
+      "first_row_widths_cm": [
+        1.101,
+        2.701,
+        4.3,
+        3.0,
+        3.0,
+        3.9
+      ],
+      "grid": [
+        [
+          "Tahap",
+          "Aktor atau Fungsi",
+          "Aktivitas",
+          "Masukan",
+          "Keluaran",
+          "Kendala"
+        ],
+        [
+          "1",
+          "Pemohon",
+          "Menyampaikan kebutuhan alat dan periode",
+          "Kebutuhan pekerjaan",
+          "Permintaan",
+          "Format tidak selalu seragam"
+        ],
+        [
+          "2",
+          "Pengelola alat",
+          "Memeriksa stok pada catatan area",
+          "Master atau spreadsheet",
+          "Konfirmasi stok",
+          "Data dapat berbeda antar sumber"
+        ],
+        [
+          "3",
+          "Atasan atau reviewer",
+          "Memberi persetujuan melalui komunikasi terpisah",
+          "Permintaan",
+          "Persetujuan",
+          "Alasan dan waktu sulit ditelusuri"
+        ],
+        [
+          "4",
+          "PIC area",
+          "Menyerahkan atau mengirim alat serta bukti",
+          "Daftar alat",
+          "Surat jalan dan foto",
+          "Bukti tersebar"
+        ],
+        [
+          "5",
+          "Pemegang alat",
+          "Mengembalikan alat",
+          "Alat dan bukti",
+          "Konfirmasi kembali",
+          "Pengembalian sebagian sulit direkap"
+        ],
+        [
+          "6",
+          "Pengelola",
+          "Merekap mutasi, kerusakan, kehilangan, dan stok",
+          "Dokumen terpisah",
+          "Laporan",
+          "Rekonsiliasi lambat"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 9,
+      "cols": 6,
+      "first_row_widths_cm": [
+        1.0,
+        2.799,
+        4.701,
+        3.5,
+        3.2,
+        4.0
+      ],
+      "grid": [
+        [
+          "Tahap",
+          "Aktor atau Fungsi",
+          "Aktivitas Sasaran",
+          "Sistem atau Media",
+          "Keluaran",
+          "Kontrol"
+        ],
+        [
+          "1",
+          "Pengguna",
+          "Login dengan username dan password LDAP",
+          "IPTOOLS LITE dan LDAP",
+          "Session sesuai role",
+          "Akun harus ada pada allow list lokal"
+        ],
+        [
+          "2",
+          "Pemohon atau PIC",
+          "Pilih alat dan periode berdasarkan availability",
+          "Katalog alat dan template",
+          "Draft permintaan",
+          "Area dan stok divalidasi server"
+        ],
+        [
+          "3",
+          "Sistem",
+          "Menyimpan pengajuan dan menentukan tahap review",
+          "Oracle",
+          "Perlu Disetujui atau Perlu Direview",
+          "Kategori intra atau antar area"
+        ],
+        [
+          "4",
+          "SP Tool atau Mgr Tool",
+          "Review seluruh item dan jumlah",
+          "Review Peminjaman",
+          "Disetujui, ditolak, atau lanjut review",
+          "Area reviewer dan jumlah maksimum"
+        ],
+        [
+          "5",
+          "PIC area sumber",
+          "Siapkan, foto, buat Surat Jalan, dan kirim",
+          "Storage privat dan XLSX",
+          "Dikirim",
+          "Minimal satu foto, maksimal delapan"
+        ],
+        [
+          "6",
+          "Peminjam atau PIC area peminjam",
+          "Konfirmasi penerimaan",
+          "Mutasi atau transaksi",
+          "Diterima",
+          "Antar area membentuk stok sementara"
+        ],
+        [
+          "7",
+          "Pemegang alat",
+          "Kembalikan sebagian atau seluruh alat dan bukti",
+          "Form pengembalian",
+          "Dikembalikan Partials atau Semuanya",
+          "Jumlah tidak melebihi sisa"
+        ],
+        [
+          "8",
+          "PIC area sumber",
+          "Verifikasi dan tutup transaksi",
+          "Transaksi",
+          "Selesai",
+          "Hanya setelah seluruh alat kembali"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 7,
+      "cols": 4,
+      "first_row_widths_cm": [
+        1.199,
+        3.401,
+        9.601,
+        3.799
+      ],
+      "grid": [
+        [
+          "Urutan",
+          "Aktor",
+          "Kegiatan",
+          "Status Hasil"
+        ],
+        [
+          "1",
+          "User, Admin, atau Super Admin",
+          "Mengisi periode, pekerjaan, area, dan item dengan jumlah lebih dari nol",
+          "Perlu Disetujui"
+        ],
+        [
+          "2",
+          "SP Tool, Mgr Tool, atau Super Admin",
+          "Review semua item; dapat menyetujui jumlah parsial atau menolak dengan alasan",
+          "Disetujui atau Ditolak"
+        ],
+        [
+          "3",
+          "PIC Tool, Admin, atau Super Admin",
+          "Mengisi pengirim, resi opsional, dan 1 sampai 8 foto; sistem membuat Surat Jalan",
+          "Dikirim"
+        ],
+        [
+          "4",
+          "Peminjam, PIC Tool, Admin, atau Super Admin",
+          "Mengonfirmasi alat diterima sesuai kewenangan",
+          "Diterima"
+        ],
+        [
+          "5",
+          "Peminjam, Admin, atau Super Admin",
+          "Mengembalikan item dan foto; dapat sekaligus melaporkan kerusakan/kehilangan",
+          "Dikembalikan Partials atau Dikembalikan Semuanya"
+        ],
+        [
+          "6",
+          "PIC Tool, Admin, atau Super Admin",
+          "Menutup transaksi setelah seluruh alat kembali",
+          "Selesai"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 8,
+      "cols": 4,
+      "first_row_widths_cm": [
+        1.199,
+        3.5,
+        9.5,
+        3.799
+      ],
+      "grid": [
+        [
+          "Urutan",
+          "Aktor",
+          "Kegiatan",
+          "Status Hasil"
+        ],
+        [
+          "1",
+          "PIC Tool, Admin, atau Super Admin",
+          "Memilih area sumber yang berbeda dari area peminjam, periode, dan alat tersedia",
+          "Perlu Direview"
+        ],
+        [
+          "2",
+          "Reviewer area peminjam",
+          "Menilai kebutuhan dan jumlah semua item",
+          "Perlu Disetujui atau Ditolak"
+        ],
+        [
+          "3",
+          "Reviewer area sumber",
+          "Menilai kembali jumlah tanpa melebihi hasil review pertama",
+          "Disetujui atau Ditolak"
+        ],
+        [
+          "4",
+          "PIC area sumber",
+          "Mengirim alat dengan foto dan Surat Jalan",
+          "Dikirim"
+        ],
+        [
+          "5",
+          "PIC area peminjam",
+          "Mengonfirmasi penerimaan; sistem mencatat stok sementara berdasarkan transaksi sumber",
+          "Diterima"
+        ],
+        [
+          "6",
+          "PIC area peminjam",
+          "Mengembalikan sebagian atau seluruh alat dengan foto dan dokumen",
+          "Dikembalikan Partials atau Semuanya"
+        ],
+        [
+          "7",
+          "PIC area sumber",
+          "Menutup transaksi setelah seluruh alat diterima kembali",
+          "Selesai"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 16,
+      "cols": 4,
+      "first_row_widths_cm": [
+        1.199,
+        7.999,
+        4.0,
+        4.8
+      ],
+      "grid": [
+        [
+          "ID",
+          "Aturan Bisnis",
+          "Pemicu atau Kondisi",
+          "Aksi atau Hasil"
+        ],
+        [
+          "AB-01",
+          "Hanya akun lokal yang diizinkan dan kredensial LDAP yang valid dapat login.",
+          "Login",
+          "Session dibuat dan diregenerasi; akses lain ditolak."
+        ],
+        [
+          "AB-02",
+          "Role dan area diperiksa pada route dan controller.",
+          "Setiap aksi",
+          "Data dan aksi dibatasi sesuai konteks pengguna."
+        ],
+        [
+          "AB-03",
+          "Tanggal kembali harus sama atau setelah tanggal pinjam.",
+          "Pengajuan atau ubah periode",
+          "Input tidak valid ditolak."
+        ],
+        [
+          "AB-04",
+          "Jumlah diminta minimal satu dan tidak boleh melebihi availability.",
+          "Simpan peminjaman",
+          "Stok diperiksa di dalam transaksi."
+        ],
+        [
+          "AB-05",
+          "Semua item harus direview; jumlah disetujui tidak melebihi jumlah yang tersedia pada tahap sebelumnya.",
+          "Review",
+          "Status item dan alasan penolakan disimpan."
+        ],
+        [
+          "AB-06",
+          "Peminjaman antar area melalui review area peminjam lalu area sumber.",
+          "Kategori Antar Area",
+          "Status berpindah dari Perlu Direview ke Perlu Disetujui."
+        ],
+        [
+          "AB-07",
+          "Pengiriman hanya dari status Disetujui dan penerimaan hanya dari status Dikirim.",
+          "Aksi kirim atau terima",
+          "Transisi di luar urutan ditolak."
+        ],
+        [
+          "AB-08",
+          "Pengiriman dan pengembalian memerlukan 1 sampai 8 gambar JPG, PNG, atau WebP maksimal 5 MB dan 6000 x 6000 piksel per gambar.",
+          "Unggah bukti",
+          "Gambar dikompresi; Surat Jalan XLSX dibuat."
+        ],
+        [
+          "AB-09",
+          "Pengembalian tidak boleh melebihi jumlah yang belum kembali.",
+          "Kembalikan",
+          "Status parsial dipertahankan sampai seluruh jumlah kembali."
+        ],
+        [
+          "AB-10",
+          "Antar area membentuk stok sementara saat diterima dan menguranginya saat dikembalikan.",
+          "Terima atau kembali",
+          "AreaAlatStock mengikuti sumber peminjaman."
+        ],
+        [
+          "AB-11",
+          "Kode alat unik dalam satu area; jika kosong, sistem membuat kode dari awalan area dan nomor urut.",
+          "Tambah atau ubah alat",
+          "Duplikasi kode dalam area ditolak."
+        ],
+        [
+          "AB-12",
+          "Import alat menerima CSV, TXT, atau XLSX maksimal 5 MB dan diproses sebagai job.",
+          "Import",
+          "Status pending, processing, completed, atau failed tersedia."
+        ],
+        [
+          "AB-13",
+          "Laporan kerusakan/kehilangan memerlukan jumlah, deskripsi maksimal 1000 karakter, dan satu foto maksimal 5 MB.",
+          "Buat laporan",
+          "Status awal Dilaporkan."
+        ],
+        [
+          "AB-14",
+          "Perubahan laporan ke Disetujui mengurangi stok; keluar dari Disetujui mengembalikan stok sesuai konteks area.",
+          "Ubah status laporan",
+          "Penyesuaian dilakukan dalam transaksi dan row lock."
+        ],
+        [
+          "AB-15",
+          "Bulk delete tertentu memerlukan verifikasi password LDAP dan kewenangan admin.",
+          "Hapus data area",
+          "Aksi berisiko tidak dapat dijalankan tanpa autentikasi ulang."
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 10,
+      "cols": 5,
+      "first_row_widths_cm": [
+        3.099,
+        5.001,
+        3.2,
+        4.0,
+        3.701
+      ],
+      "grid": [
+        [
+          "Status",
+          "Definisi",
+          "Pemicu Masuk",
+          "Aksi yang Diizinkan",
+          "Status Berikutnya"
+        ],
+        [
+          "Perlu Direview",
+          "Antar area menunggu review area peminjam",
+          "Pengajuan antar area",
+          "Review semua item",
+          "Perlu Disetujui atau Ditolak"
+        ],
+        [
+          "Perlu Disetujui",
+          "Menunggu review area sumber atau reviewer intra area",
+          "Pengajuan intra atau review pertama",
+          "Setujui jumlah atau tolak",
+          "Disetujui atau Ditolak"
+        ],
+        [
+          "Disetujui",
+          "Ada item disetujui dan siap dikirim",
+          "Review final",
+          "Kirim",
+          "Dikirim"
+        ],
+        [
+          "Ditolak",
+          "Tidak ada item yang diteruskan",
+          "Review",
+          "Lihat riwayat",
+          "Final"
+        ],
+        [
+          "Dikirim",
+          "Alat dan Surat Jalan telah dikirim",
+          "Kirim",
+          "Terima",
+          "Diterima"
+        ],
+        [
+          "Diterima",
+          "Alat berada pada pemegang atau area peminjam",
+          "Konfirmasi penerimaan",
+          "Ubah periode intra area atau kembalikan",
+          "Dikembalikan Partials atau Semuanya"
+        ],
+        [
+          "Dikembalikan Partials",
+          "Sebagian alat telah dikembalikan",
+          "Pengembalian",
+          "Kembalikan sisa",
+          "Dikembalikan Semuanya"
+        ],
+        [
+          "Dikembalikan Semuanya",
+          "Semua jumlah disetujui telah kembali",
+          "Pengembalian final",
+          "Selesaikan",
+          "Selesai"
+        ],
+        [
+          "Selesai",
+          "Transaksi ditutup",
+          "Verifikasi PIC",
+          "Lihat riwayat dan dokumen",
+          "Final"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 6,
+      "cols": 3,
+      "first_row_widths_cm": [
+        3.2,
+        6.2,
+        8.8
+      ],
+      "grid": [
+        [
+          "Objek",
+          "Status",
+          "Makna"
+        ],
+        [
+          "Item review",
+          "Menunggu Review; Disetujui; Ditolak",
+          "Keputusan dan jumlah pada tingkat item."
+        ],
+        [
+          "Laporan alat",
+          "Dilaporkan; Disetujui; Ditolak; Selesai",
+          "Siklus laporan kerusakan atau kehilangan dan dampak stok."
+        ],
+        [
+          "Import alat",
+          "pending; processing; completed; failed",
+          "Status pekerjaan import dan hasil pemrosesan."
+        ],
+        [
+          "Surat Jalan",
+          "peminjaman; pengembalian",
+          "Jenis dokumen dengan urutan untuk pengembalian berulang."
+        ],
+        [
+          "Stok area",
+          "active true atau false",
+          "Ketersediaan alat yang berasal dari transaksi antar area."
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 15,
+      "cols": 3,
+      "first_row_widths_cm": [
+        4.2,
+        7.1,
+        6.9
+      ],
+      "grid": [
+        [
+          "Menu",
+          "Role yang Dapat Mengakses",
+          "Kewenangan Utama"
+        ],
+        [
+          "Dashboard",
+          "Semua role",
+          "Ringkasan area; insight operasional untuk role tertentu"
+        ],
+        [
+          "Buat Peminjaman",
+          "User, Admin, Super Admin",
+          "Buat peminjaman intra area"
+        ],
+        [
+          "Peminjaman Antar Area",
+          "PIC Tool, Admin, Super Admin",
+          "Buat permintaan antar area"
+        ],
+        [
+          "Review Peminjaman",
+          "SP Tool, Mgr Tool, Super Admin",
+          "Review sesuai area dan tahap"
+        ],
+        [
+          "Alat",
+          "Guest, SP Tool, PIC Tool, Mgr Tool, Admin, Super Admin",
+          "Baca; CRUD/import khusus PIC Tool, Admin, Super Admin"
+        ],
+        [
+          "Template Peminjaman",
+          "PIC Tool, Admin, Super Admin",
+          "Buat, ubah, hapus template; template dapat dibaca role terautentikasi"
+        ],
+        [
+          "Intra Area dan Antar Area",
+          "PIC Tool, Admin, Super Admin",
+          "Pengiriman, penerimaan, pengembalian, periode, selesai"
+        ],
+        [
+          "Mutasi Alat",
+          "Guest, User, Mgr Tool, Super Admin",
+          "Pantau mutasi; User melakukan aksi atas transaksi miliknya"
+        ],
+        [
+          "Riwayat Peminjaman",
+          "Semua role",
+          "Lihat/filter/export; edit/hapus dibatasi Admin dan Super Admin"
+        ],
+        [
+          "Laporan Kerusakan dan Kehilangan",
+          "Guest, SP Tool, PIC Tool, Mgr Tool, Admin, Super Admin",
+          "Guest hanya baca; role operasional dapat membuat dan mengubah status"
+        ],
+        [
+          "Pengguna",
+          "SP Tool, Mgr Tool, Admin, Super Admin",
+          "SP/Mgr melihat; LDAP lookup dan CRUD hanya Admin/Super Admin"
+        ],
+        [
+          "Area",
+          "Super Admin",
+          "Kelola master area"
+        ],
+        [
+          "Log Activity",
+          "Guest, SP Tool, Mgr Tool, Admin, Super Admin",
+          "Lihat dan export sesuai cakupan"
+        ],
+        [
+          "Log Alat",
+          "Guest, SP Tool, PIC Tool, Mgr Tool, Admin, Super Admin",
+          "Lihat dan export perubahan alat"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 9,
+      "cols": 4,
+      "first_row_widths_cm": [
+        4.399,
+        5.5,
+        3.099,
+        5.2
+      ],
+      "grid": [
+        [
+          "Peristiwa",
+          "Penerima",
+          "Kanal",
+          "Waktu atau Kondisi"
+        ],
+        [
+          "Pengajuan perlu review",
+          "SP Tool pada area yang sedang mereview",
+          "Email dan badge",
+          "Setelah pengajuan atau review tahap pertama"
+        ],
+        [
+          "Peminjaman siap dikirim",
+          "PIC Tool area sumber",
+          "Email dan badge",
+          "Setelah review final menghasilkan Disetujui"
+        ],
+        [
+          "Alat dikirim",
+          "Peminjam intra area atau PIC Tool area peminjam",
+          "Email dan mailbox",
+          "Setelah status Dikirim"
+        ],
+        [
+          "Pengingat pengembalian",
+          "Pemegang alat",
+          "Email",
+          "H-1, hari tenggat, lalu setiap 6 hari setelah terlambat"
+        ],
+        [
+          "Alat dikembalikan",
+          "PIC Tool area sumber",
+          "Email dan badge",
+          "Setelah pengembalian parsial atau seluruhnya"
+        ],
+        [
+          "Transaksi selesai",
+          "Peminjam awal",
+          "Email",
+          "Setelah status Selesai"
+        ],
+        [
+          "Laporan pending",
+          "Role operasional sesuai area",
+          "Badge dan mailbox",
+          "Selama status Dilaporkan"
+        ],
+        [
+          "Email gagal",
+          "Tim aplikasi",
+          "Log aplikasi",
+          "Pada exception; workflow inti tidak dibatalkan"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 11,
+      "cols": 5,
+      "first_row_widths_cm": [
+        1.3,
+        5.399,
+        3.799,
+        2.2,
+        5.3
+      ],
+      "grid": [
+        [
+          "ID",
+          "Kebutuhan Bisnis",
+          "Sumber atau Pemilik",
+          "Prioritas",
+          "Kriteria Keberhasilan"
+        ],
+        [
+          "KB-01",
+          "Satu sumber data alat dan stok per area",
+          "Pemilik data alat",
+          "Wajib",
+          "Kode unik, area, lokasi, jenis, klasifikasi, total, dipinjam, dan tersedia dapat diperiksa"
+        ],
+        [
+          "KB-02",
+          "Siklus peminjaman intra area terkontrol",
+          "Pemilik proses",
+          "Wajib",
+          "Pengajuan sampai selesai mengikuti status dan actor yang benar"
+        ],
+        [
+          "KB-03",
+          "Siklus peminjaman antar area terkontrol",
+          "Pemilik proses",
+          "Wajib",
+          "Dua tahap review dan stok area sementara dapat ditelusuri"
+        ],
+        [
+          "KB-04",
+          "Pemisahan akses berdasarkan role dan area",
+          "Pemilik aplikasi",
+          "Wajib",
+          "Menu dan API menolak akses di luar kewenangan"
+        ],
+        [
+          "KB-05",
+          "Bukti pengiriman dan pengembalian tersimpan",
+          "PIC Tool",
+          "Wajib",
+          "Foto dan Surat Jalan dapat diunduh oleh pihak berwenang"
+        ],
+        [
+          "KB-06",
+          "Kerusakan dan kehilangan terhubung ke stok",
+          "Pengelola alat",
+          "Wajib",
+          "Transisi status menghasilkan penyesuaian stok yang konsisten"
+        ],
+        [
+          "KB-07",
+          "Informasi tindak lanjut tersedia tepat waktu",
+          "Operasional",
+          "Penting",
+          "Badge, mailbox, email, dan reminder sesuai kejadian"
+        ],
+        [
+          "KB-08",
+          "Data dapat dimuat dan dikeluarkan secara terkendali",
+          "Admin data",
+          "Penting",
+          "Import tervalidasi serta export mengikuti filter dan area"
+        ],
+        [
+          "KB-09",
+          "Aktivitas dan perubahan alat dapat diaudit",
+          "Audit dan manajemen",
+          "Wajib",
+          "Log menyimpan actor, area, aksi, nilai lama/baru, route, IP, dan waktu"
+        ],
+        [
+          "KB-10",
+          "Solusi dapat dioperasikan dan dipulihkan",
+          "Tim aplikasi/infrastruktur",
+          "Wajib",
+          "Queue, scheduler, backup, monitoring, dan prosedur restore disetujui"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 33,
+      "cols": 6,
+      "first_row_widths_cm": [
+        1.199,
+        3.099,
+        7.4,
+        3.099,
+        2.0,
+        2.2
+      ],
+      "grid": [
+        [
+          "ID",
+          "Fitur atau Fungsi",
+          "Deskripsi",
+          "Aktor",
+          "Prioritas",
+          "Referensi KB"
+        ],
+        [
+          "KF-01",
+          "Login dan Logout LDAP",
+          "Validasi username/password ke LDAP untuk akun lokal yang diizinkan; regenerasi session dan invalidasi logout.",
+          "Semua role",
+          "Wajib",
+          "KB-04"
+        ],
+        [
+          "KF-02",
+          "Sinkronisasi LDAP",
+          "Sinkronkan user direktori ke cache lokal setiap hari pukul 01.00 tanpa tumpang tindih.",
+          "Sistem",
+          "Penting",
+          "KB-04"
+        ],
+        [
+          "KF-03",
+          "Manajemen Pengguna",
+          "Cari user LDAP; tetapkan role dan area; ubah atau hapus sesuai kewenangan Admin/Super Admin.",
+          "Admin, Super Admin",
+          "Wajib",
+          "KB-04"
+        ],
+        [
+          "KF-04",
+          "Manajemen Area",
+          "Tambah, ubah, hapus, cari, dan paginasi area dengan nama, slug, dan kode.",
+          "Super Admin",
+          "Wajib",
+          "KB-01"
+        ],
+        [
+          "KF-05",
+          "Dashboard Area",
+          "Tampilkan total peminjaman, total aset/jenis, review, transaksi berjalan, selesai, dan laporan aktif.",
+          "Semua role",
+          "Penting",
+          "KB-01, KB-07"
+        ],
+        [
+          "KF-06",
+          "Insight Operasional",
+          "Tampilkan kerusakan dan kehilangan per bulan serta total lintas area untuk role tertentu.",
+          "Guest, SP, PIC, Mgr, Super Admin",
+          "Penting",
+          "KB-07"
+        ],
+        [
+          "KF-07",
+          "Daftar Alat",
+          "Cari, filter area, paginasi, dan hitung total, dipinjam, tersedia, serta sumber stok antar area.",
+          "Role terautentikasi sesuai route",
+          "Wajib",
+          "KB-01"
+        ],
+        [
+          "KF-08",
+          "CRUD Alat",
+          "Kelola kode, nama, jenis, klasifikasi, lokasi, total aset, dan area.",
+          "PIC Tool, Admin, Super Admin",
+          "Wajib",
+          "KB-01"
+        ],
+        [
+          "KF-09",
+          "Import Alat",
+          "Unduh template; unggah CSV/TXT/XLSX maksimal 5 MB; proses job dan tampilkan hasil.",
+          "PIC Tool, Admin, Super Admin",
+          "Penting",
+          "KB-08"
+        ],
+        [
+          "KF-10",
+          "Export Alat",
+          "Export CSV berdasarkan pencarian, filter, dan cakupan area.",
+          "Role pembaca alat",
+          "Penting",
+          "KB-08"
+        ],
+        [
+          "KF-11",
+          "Template Peminjaman",
+          "Kelola template item dan jumlah untuk intra area atau antar area.",
+          "PIC Tool, Admin, Super Admin",
+          "Penting",
+          "KB-02, KB-03"
+        ],
+        [
+          "KF-12",
+          "Buat Peminjaman Intra",
+          "Validasi periode, pekerjaan, area, item, availability, lalu simpan Perlu Disetujui.",
+          "User, Admin, Super Admin",
+          "Wajib",
+          "KB-02"
+        ],
+        [
+          "KF-13",
+          "Buat Peminjaman Antar Area",
+          "Pilih area sumber berbeda, cek stok, lalu simpan Perlu Direview.",
+          "PIC Tool, Admin, Super Admin",
+          "Wajib",
+          "KB-03"
+        ],
+        [
+          "KF-14",
+          "Review Area Peminjam",
+          "Review semua item antar area dan batasi jumlah yang diteruskan.",
+          "SP Tool, Mgr Tool, Super Admin",
+          "Wajib",
+          "KB-03"
+        ],
+        [
+          "KF-15",
+          "Review Area Sumber",
+          "Setujui atau tolak setiap item dengan jumlah dan alasan; kirim notifikasi siap kirim.",
+          "SP Tool, Mgr Tool, Super Admin",
+          "Wajib",
+          "KB-02, KB-03"
+        ],
+        [
+          "KF-16",
+          "Riwayat dan Export Peminjaman",
+          "Cari, filter, lihat detail, dokumen, dan export CSV.",
+          "Semua role",
+          "Wajib",
+          "KB-02, KB-03, KB-08"
+        ],
+        [
+          "KF-17",
+          "Pengiriman",
+          "Validasi status, pengirim, resi, dan foto; kompres foto dan buat Surat Jalan XLSX.",
+          "PIC Tool, Admin, Super Admin",
+          "Wajib",
+          "KB-05"
+        ],
+        [
+          "KF-18",
+          "Penerimaan",
+          "Konfirmasi penerimaan oleh peminjam intra atau PIC area peminjam antar area.",
+          "User, PIC Tool, Admin, Super Admin",
+          "Wajib",
+          "KB-02, KB-03"
+        ],
+        [
+          "KF-19",
+          "Pengembalian",
+          "Terima jumlah parsial/seluruh, foto, laporan opsional, dan buat Surat Jalan pengembalian.",
+          "User, PIC requester, Admin, Super Admin",
+          "Wajib",
+          "KB-05, KB-06"
+        ],
+        [
+          "KF-20",
+          "Ubah Periode",
+          "Ubah tanggal kembali untuk peminjaman intra area berstatus Diterima.",
+          "PIC Tool, Admin, Super Admin",
+          "Penting",
+          "KB-02"
+        ],
+        [
+          "KF-21",
+          "Penyelesaian",
+          "Tutup transaksi hanya dari Dikembalikan Semuanya.",
+          "PIC Tool, Admin, Super Admin",
+          "Wajib",
+          "KB-02, KB-03"
+        ],
+        [
+          "KF-22",
+          "Mutasi Alat",
+          "Tampilkan riwayat pengiriman, penerimaan, pengembalian, item, dan Surat Jalan.",
+          "Role sesuai menu",
+          "Wajib",
+          "KB-05, KB-09"
+        ],
+        [
+          "KF-23",
+          "Laporan Kerusakan",
+          "Buat laporan dengan alat, jumlah, deskripsi, foto, dan area.",
+          "SP, PIC, Mgr, Admin, Super Admin",
+          "Wajib",
+          "KB-06"
+        ],
+        [
+          "KF-24",
+          "Laporan Kehilangan",
+          "Buat laporan dengan alat, jumlah, deskripsi, foto, dan area.",
+          "SP, PIC, Mgr, Admin, Super Admin",
+          "Wajib",
+          "KB-06"
+        ],
+        [
+          "KF-25",
+          "Status Laporan",
+          "Ubah status ke Disetujui, Ditolak, atau Selesai serta sesuaikan stok atomik.",
+          "SP, PIC, Mgr, Admin, Super Admin",
+          "Wajib",
+          "KB-06"
+        ],
+        [
+          "KF-26",
+          "Export dan Template Laporan",
+          "Unduh template surat dan export CSV berdasarkan filter.",
+          "Role pembaca laporan",
+          "Penting",
+          "KB-08"
+        ],
+        [
+          "KF-27",
+          "Notifikasi Dalam Aplikasi",
+          "Tampilkan badge dan mailbox untuk review, kirim, mutasi, kerusakan, dan kehilangan.",
+          "Sesuai role dan area",
+          "Penting",
+          "KB-07"
+        ],
+        [
+          "KF-28",
+          "Email Transaksional",
+          "Kirim email review, siap kirim, dikirim, dikembalikan, selesai, dan reminder.",
+          "Sistem",
+          "Penting",
+          "KB-07"
+        ],
+        [
+          "KF-29",
+          "Pengingat Pengembalian",
+          "Jalankan pukul 07.00 untuk H-1, hari H, dan setiap enam hari keterlambatan.",
+          "Sistem",
+          "Penting",
+          "KB-07"
+        ],
+        [
+          "KF-30",
+          "Activity Log",
+          "Cari, filter, paginasi, dan export aktivitas menurut kewenangan.",
+          "Role audit sesuai route",
+          "Wajib",
+          "KB-09"
+        ],
+        [
+          "KF-31",
+          "Log Alat",
+          "Tampilkan dan export perubahan master/stok alat beserta delta dan actor.",
+          "Role pembaca log alat",
+          "Wajib",
+          "KB-09"
+        ],
+        [
+          "KF-32",
+          "Download Dokumen",
+          "Izinkan download Surat Jalan hanya untuk user/role/area yang terkait.",
+          "Pihak berwenang",
+          "Wajib",
+          "KB-05, KB-04"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 12,
+      "cols": 3,
+      "first_row_widths_cm": [
+        3.2,
+        9.999,
+        4.8
+      ],
+      "grid": [
+        [
+          "Kategori",
+          "Kebutuhan atau Sasaran",
+          "Metode Verifikasi"
+        ],
+        [
+          "Kinerja",
+          "Pencarian, pagination, availability, import, export, dan dashboard tetap responsif pada volume produksi.",
+          "Uji beban dengan volume data representatif; target angka TBD."
+        ],
+        [
+          "Ketersediaan",
+          "Web, Oracle, storage, worker, scheduler, LDAP, dan SMTP dipantau sebagai satu layanan.",
+          "Health check, restart test, dan monitoring; SLA TBD."
+        ],
+        [
+          "Keamanan",
+          "LDAP allow list, session regeneration, CSRF, RBAC, area scoping, validasi file, dan route terautorisasi.",
+          "Security review, test akses silang role/area, dependency audit."
+        ],
+        [
+          "Privasi",
+          "Atribut pegawai, foto, alamat IP, user agent, dan dokumen hanya dipakai untuk proses dan audit.",
+          "Review data model, akses storage, retensi, dan masking bila diperlukan."
+        ],
+        [
+          "Integritas",
+          "Stok dan status diperbarui atomik pada operasi kritis; jumlah tidak negatif atau melebihi sisa.",
+          "Concurrency test, constraint review, dan rekonsiliasi sampel."
+        ],
+        [
+          "Kompatibilitas",
+          "Antarmuka Vue/Inertia berjalan pada browser desktop modern yang disetujui organisasi.",
+          "UAT pada Chrome/Edge versi organisasi; matriks resmi TBD."
+        ],
+        [
+          "Auditabilitas",
+          "Actor, role, area, route, metode, IP, nilai lama/baru, dan waktu tersedia untuk transaksi penting.",
+          "Sampling Activity Log dan Log Alat."
+        ],
+        [
+          "Pemulihan",
+          "Database, dokumen, dan foto dapat dipulihkan sesuai RPO/RTO.",
+          "Backup terjadwal dan drill restore; target RPO/RTO TBD."
+        ],
+        [
+          "Maintainability",
+          "Source berada dalam Git, memakai migration, test otomatis, konfigurasi environment, dan dependency lock.",
+          "Review repository, pipeline, dan prosedur release."
+        ],
+        [
+          "Operabilitas",
+          "Queue worker memakai Supervisor atau service manager; scheduler aktif; kegagalan tercatat.",
+          "Reboot test, stop-worker test, retry job, dan review log."
+        ],
+        [
+          "Transport",
+          "Akses produksi memakai DNS resmi dan HTTPS dengan sertifikat tepercaya.",
+          "TLS scan dan validasi browser sebelum akses diperluas."
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 9,
+      "cols": 6,
+      "first_row_widths_cm": [
+        3.099,
+        3.401,
+        4.399,
+        4.0,
+        3.0,
+        3.099
+      ],
+      "grid": [
+        [
+          "Objek atau Sistem",
+          "Sumber",
+          "Tujuan",
+          "Metode",
+          "Frekuensi",
+          "Pemilik"
+        ],
+        [
+          "Identitas pengguna",
+          "Active Directory/LDAP",
+          "Login dan sinkronisasi cache user",
+          "LDAPRecord bind dan query; jadwal 01.00",
+          "Real time saat login; harian untuk sinkronisasi",
+          "Tim AD dan pemilik aplikasi"
+        ],
+        [
+          "Data aplikasi",
+          "Oracle",
+          "Master, transaksi, log, jobs, dan status",
+          "Eloquent/OCI8, migration, transaksi",
+          "Per transaksi",
+          "DBA dan tim aplikasi"
+        ],
+        [
+          "Antarmuka",
+          "Laravel Inertia dan Vue",
+          "Menyajikan page dan memanggil API",
+          "Session web, Axios, JSON",
+          "Saat akses",
+          "Tim aplikasi"
+        ],
+        [
+          "Email",
+          "SMTP",
+          "Review, pengiriman, pengembalian, selesai, reminder",
+          "Laravel Mail; queue sesuai environment",
+          "Per kejadian dan 07.00",
+          "Tim email dan aplikasi"
+        ],
+        [
+          "Dokumen",
+          "Storage lokal/private dan public terbatas",
+          "Surat Jalan XLSX, foto, template laporan",
+          "Filesystem Laravel dan route download",
+          "Per transaksi",
+          "Tim aplikasi/infrastruktur"
+        ],
+        [
+          "Import/Export",
+          "CSV, TXT, XLSX",
+          "Pertukaran master alat dan laporan",
+          "PhpSpreadsheet, streamed CSV, job import",
+          "Ad hoc",
+          "Admin data"
+        ],
+        [
+          "Scheduler",
+          "Laravel scheduler",
+          "LDAP sync dan reminder pengembalian",
+          "Task Scheduler atau cron",
+          "01.00 dan 07.00",
+          "Administrator server"
+        ],
+        [
+          "Audit",
+          "Activity Log",
+          "Jejak request dan perubahan model",
+          "Observer dan ActivityLogger",
+          "Per kejadian",
+          "Pemilik aplikasi/audit"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 11,
+      "cols": 6,
+      "first_row_widths_cm": [
+        1.199,
+        3.401,
+        3.799,
+        7.001,
+        2.6,
+        2.401
+      ],
+      "grid": [
+        [
+          "ID",
+          "Laporan atau Dashboard",
+          "Pengguna",
+          "Isi atau KPI",
+          "Frekuensi",
+          "Format"
+        ],
+        [
+          "LP-01",
+          "Dashboard Area",
+          "Semua role",
+          "Total peminjaman, aset, jenis alat, review, berjalan, selesai, laporan aktif",
+          "Saat akses",
+          "Web"
+        ],
+        [
+          "LP-02",
+          "Insight Tahunan",
+          "Guest, SP, PIC, Mgr, Super Admin",
+          "Kerusakan dan kehilangan per bulan serta total aset lintas area",
+          "Saat akses",
+          "Web"
+        ],
+        [
+          "LP-03",
+          "Master Alat",
+          "Role pembaca alat",
+          "Kode, nama, jenis, klasifikasi, lokasi, area, total, dipinjam, tersedia",
+          "Ad hoc",
+          "Web/CSV"
+        ],
+        [
+          "LP-04",
+          "Riwayat Peminjaman",
+          "Semua role",
+          "Peminjam, area, periode, item, jumlah, review, status, dokumen",
+          "Ad hoc",
+          "Web/CSV"
+        ],
+        [
+          "LP-05",
+          "Mutasi Alat",
+          "Role sesuai menu",
+          "Pengiriman, penerimaan, pengembalian, sisa, Surat Jalan",
+          "Ad hoc",
+          "Web/XLSX download"
+        ],
+        [
+          "LP-06",
+          "Laporan Kerusakan",
+          "Role laporan",
+          "Alat, jumlah, deskripsi, foto, area, pelapor, status",
+          "Ad hoc",
+          "Web/CSV/DOCX template"
+        ],
+        [
+          "LP-07",
+          "Laporan Kehilangan",
+          "Role laporan",
+          "Alat, jumlah, deskripsi, foto, area, pelapor, status",
+          "Ad hoc",
+          "Web/CSV/DOCX template"
+        ],
+        [
+          "LP-08",
+          "Activity Log",
+          "Role audit",
+          "Actor, role, area, aksi, subject, route, IP, perubahan, waktu",
+          "Ad hoc",
+          "Web/CSV"
+        ],
+        [
+          "LP-09",
+          "Log Alat",
+          "Role pembaca log",
+          "Perubahan alat, stok, delta, import, actor, waktu",
+          "Ad hoc",
+          "Web/CSV"
+        ],
+        [
+          "LP-10",
+          "Status Import",
+          "Pengunggah atau admin berwenang",
+          "Jumlah diproses, dibuat, diubah, pesan gagal",
+          "Saat import",
+          "Web/file sumber"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 16,
+      "cols": 5,
+      "first_row_widths_cm": [
+        1.199,
+        3.5,
+        7.301,
+        4.0,
+        2.6
+      ],
+      "grid": [
+        [
+          "ID",
+          "Nama Layar",
+          "Tujuan",
+          "Aktor",
+          "Kebutuhan Terkait"
+        ],
+        [
+          "UI-01",
+          "Login",
+          "Masuk memakai username/password LDAP",
+          "Pengguna belum login",
+          "KF-01"
+        ],
+        [
+          "UI-02",
+          "Dashboard",
+          "Ringkasan area, kartu status, dan grafik insight",
+          "Semua role",
+          "KF-05, KF-06"
+        ],
+        [
+          "UI-03",
+          "Buat Peminjaman",
+          "Cari alat, keranjang, template, periode, dan checkout",
+          "User, Admin, Super Admin",
+          "KF-11, KF-12"
+        ],
+        [
+          "UI-04",
+          "Peminjaman Antar Area",
+          "Pilih area sumber, alat, template, periode, dan kirim",
+          "PIC, Admin, Super Admin",
+          "KF-11, KF-13"
+        ],
+        [
+          "UI-05",
+          "Review Peminjaman",
+          "Daftar pending, detail, keputusan item, jumlah, alasan",
+          "SP, Mgr, Super Admin",
+          "KF-14, KF-15"
+        ],
+        [
+          "UI-06",
+          "Alat",
+          "Daftar/filter/CRUD/import/export master alat",
+          "Role sesuai menu",
+          "KF-07 sampai KF-10"
+        ],
+        [
+          "UI-07",
+          "Template Peminjaman",
+          "Kelola kumpulan item intra atau antar area",
+          "PIC, Admin, Super Admin",
+          "KF-11"
+        ],
+        [
+          "UI-08",
+          "Transaksi Intra Area",
+          "Tab pengiriman dan pengembalian",
+          "PIC, Admin, Super Admin",
+          "KF-17 sampai KF-21"
+        ],
+        [
+          "UI-09",
+          "Transaksi Antar Area",
+          "Tab pengiriman/pengembalian lintas area",
+          "PIC, Admin, Super Admin",
+          "KF-17 sampai KF-21"
+        ],
+        [
+          "UI-10",
+          "Mutasi Alat",
+          "Riwayat dan aksi penerimaan/pengembalian terkait",
+          "Role sesuai menu",
+          "KF-18, KF-19, KF-22"
+        ],
+        [
+          "UI-11",
+          "Riwayat Peminjaman",
+          "Cari/filter/detail/export dan dokumen",
+          "Semua role",
+          "KF-16"
+        ],
+        [
+          "UI-12",
+          "Laporan Kerusakan dan Kehilangan",
+          "Daftar, tambah, foto, status, export, template",
+          "Role laporan",
+          "KF-23 sampai KF-26"
+        ],
+        [
+          "UI-13",
+          "Pengguna",
+          "Daftar, pencarian LDAP, role, area, CRUD",
+          "SP/Mgr baca; Admin/Super kelola",
+          "KF-03"
+        ],
+        [
+          "UI-14",
+          "Area",
+          "Daftar, cari, tambah, ubah, hapus",
+          "Super Admin",
+          "KF-04"
+        ],
+        [
+          "UI-15",
+          "Activity Log dan Log Alat",
+          "Filter, detail perubahan, dan export",
+          "Role audit",
+          "KF-30, KF-31"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 7,
+      "cols": 3,
+      "first_row_widths_cm": [
+        4.0,
+        5.5,
+        8.5
+      ],
+      "grid": [
+        [
+          "Pola",
+          "Penerapan",
+          "Ketentuan"
+        ],
+        [
+          "Pencarian dan filter",
+          "Alat, peminjaman, laporan, pengguna, area, log",
+          "Query server mengikuti area dan role; filter aktif ikut pada export jika didukung."
+        ],
+        [
+          "Keranjang dan checkout",
+          "Peminjaman intra area",
+          "Jumlah divalidasi ulang melalui endpoint availability sebelum penyimpanan."
+        ],
+        [
+          "Modal detail/review",
+          "Peminjaman dan pengiriman",
+          "Menampilkan item, status, jumlah, catatan, reviewer, dokumen, dan tindakan yang masih berlaku."
+        ],
+        [
+          "Unggah bukti",
+          "Pengiriman, pengembalian, kerusakan, kehilangan",
+          "Tipe, ukuran, dimensi, dan jumlah file divalidasi server."
+        ],
+        [
+          "Badge dan mailbox",
+          "Sidebar/header",
+          "Hanya menampilkan pekerjaan yang relevan dengan role dan area aktif."
+        ],
+        [
+          "Download",
+          "CSV, XLSX, DOCX template",
+          "Nama file dan akses ditentukan server; dokumen privat melalui route terautorisasi."
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 11,
+      "cols": 4,
+      "first_row_widths_cm": [
+        4.2,
+        7.001,
+        5.5,
+        1.799
+      ],
+      "grid": [
+        [
+          "Pemangku Kepentingan",
+          "Peran atau Kontribusi",
+          "Kebutuhan atau Tujuan",
+          "Pengaruh"
+        ],
+        [
+          "Pemilik Proyek",
+          "Sponsor, keputusan prioritas, biaya, risiko, dan penerimaan",
+          "Tujuan, kewenangan, dan keberlanjutan layanan jelas",
+          "Tinggi"
+        ],
+        [
+          "Pemilik Proses atau Mgr Tool",
+          "Menetapkan aturan dan menyetujui kebutuhan",
+          "Alur sesuai operasi alat",
+          "Tinggi"
+        ],
+        [
+          "SP Tool",
+          "Mereview peminjaman dan memantau laporan",
+          "Data permintaan dan stok akurat",
+          "Tinggi"
+        ],
+        [
+          "PIC Tool",
+          "Mengelola alat, template, pengiriman, penerimaan, pengembalian",
+          "Transaksi cepat dan bukti lengkap",
+          "Tinggi"
+        ],
+        [
+          "User atau Peminjam",
+          "Mengajukan, menerima, mengembalikan, dan memantau",
+          "Status dan kewajiban mudah dipahami",
+          "Sedang"
+        ],
+        [
+          "Admin dan Super Admin",
+          "Kelola user, data, transaksi, area, dan audit",
+          "Kontrol lengkap tetapi tetap terbatas area/role",
+          "Tinggi"
+        ],
+        [
+          "Tim AD, Email, Jaringan",
+          "Menyediakan LDAP, SMTP, DNS, dan sertifikat",
+          "Integrasi stabil dan terpantau",
+          "Tinggi"
+        ],
+        [
+          "DBA dan Administrator Server",
+          "Oracle, storage, worker, scheduler, backup, monitoring",
+          "Ketersediaan dan pemulihan",
+          "Tinggi"
+        ],
+        [
+          "Tim Pengembang, QA, Keamanan",
+          "Analisis, perubahan, test, review, release",
+          "Perubahan terkendali tanpa regresi",
+          "Tinggi"
+        ],
+        [
+          "Audit atau Manajemen",
+          "Menggunakan dashboard, laporan, dan log",
+          "Data lengkap dan dapat ditelusuri",
+          "Sedang"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 10,
+      "cols": 7,
+      "first_row_widths_cm": [
+        5.399,
+        2.2,
+        2.3,
+        2.0,
+        2.0,
+        1.7,
+        2.401
+      ],
+      "grid": [
+        [
+          "Aktivitas",
+          "Pemilik Proyek",
+          "Pemilik Proses",
+          "SP Tool",
+          "PIC Tool",
+          "User",
+          "Tim TI"
+        ],
+        [
+          "Definisi kebutuhan dan prioritas",
+          "A",
+          "R",
+          "C",
+          "C",
+          "I",
+          "C"
+        ],
+        [
+          "Validasi master alat dan area",
+          "I",
+          "A",
+          "C",
+          "R",
+          "C",
+          "C"
+        ],
+        [
+          "Pengembangan dan automated test",
+          "I",
+          "C",
+          "I",
+          "C",
+          "I",
+          "R/A"
+        ],
+        [
+          "UAT proses peminjaman",
+          "I",
+          "A",
+          "R",
+          "R",
+          "R",
+          "C"
+        ],
+        [
+          "Security review dan akses",
+          "I",
+          "C",
+          "I",
+          "C",
+          "I",
+          "R/A"
+        ],
+        [
+          "Kesiapan Oracle, LDAP, SMTP, storage",
+          "I",
+          "C",
+          "I",
+          "C",
+          "I",
+          "R/A"
+        ],
+        [
+          "Release, backup, dan rollback",
+          "A",
+          "C",
+          "I",
+          "C",
+          "I",
+          "R"
+        ],
+        [
+          "Operasi harian dan rekonsiliasi",
+          "I",
+          "A",
+          "R",
+          "R",
+          "C",
+          "C"
+        ],
+        [
+          "Approval BRD dan perubahan lingkup",
+          "A",
+          "R",
+          "C",
+          "C",
+          "C",
+          "C"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 13,
+      "cols": 4,
+      "first_row_widths_cm": [
+        2.3,
+        7.999,
+        5.699,
+        2.0
+      ],
+      "grid": [
+        [
+          "Jenis",
+          "Uraian",
+          "Dampak jika Tidak Terpenuhi",
+          "Pemilik"
+        ],
+        [
+          "Asumsi",
+          "LDAP menyediakan username, nama, email, dan atribut yang dibutuhkan.",
+          "Login, sinkronisasi, atau email tidak lengkap.",
+          "Tim AD"
+        ],
+        [
+          "Asumsi",
+          "Setiap pengguna yang boleh login telah dibuat pada master user dengan role dan area yang benar.",
+          "Akses ditolak atau data salah cakupan.",
+          "Admin"
+        ],
+        [
+          "Asumsi",
+          "Data alat awal dan total aset telah direkonsiliasi oleh pemilik data.",
+          "Availability dan laporan tidak akurat.",
+          "Pemilik data"
+        ],
+        [
+          "Asumsi",
+          "SMTP menerima email aplikasi dan alamat penerima valid.",
+          "Notifikasi email gagal.",
+          "Tim Email"
+        ],
+        [
+          "Batasan",
+          "Kredensial tetap dikelola LDAP; aplikasi tidak mengubah password.",
+          "Reset password mengikuti proses organisasi.",
+          "Pemilik aplikasi"
+        ],
+        [
+          "Batasan",
+          "Role Guest tetap merupakan akun terautentikasi dengan hak baca terbatas.",
+          "Istilah guest dapat disalahartikan sebagai publik.",
+          "Pemilik proses"
+        ],
+        [
+          "Batasan",
+          "Anggaran, SLA, RPO, RTO, retensi, kapasitas, dan tanggal go live belum tersedia.",
+          "BRD belum dapat ditandatangani final.",
+          "Pemilik proyek"
+        ],
+        [
+          "Ketergantungan",
+          "Oracle dan yajra/laravel-oci8 tersedia dengan konfigurasi yang benar.",
+          "Aplikasi dan database queue tidak berjalan.",
+          "DBA"
+        ],
+        [
+          "Ketergantungan",
+          "LDAP/AD, DNS, CA trust, dan konektivitas internal tersedia.",
+          "Login dan sinkronisasi gagal.",
+          "Tim AD/Jaringan"
+        ],
+        [
+          "Ketergantungan",
+          "Storage template Surat Jalan dan laporan tersedia serta dapat ditulis.",
+          "Dokumen gagal dibuat atau diunduh.",
+          "Administrator server"
+        ],
+        [
+          "Ketergantungan",
+          "Queue worker dan scheduler dikelola sebagai service.",
+          "Import, email, sinkronisasi, dan reminder terlambat.",
+          "Administrator server"
+        ],
+        [
+          "Ketergantungan",
+          "Lingkungan QA dan proses release/rollback tersedia.",
+          "Perubahan berisiko mengganggu produksi.",
+          "DevOps/Pemilik proyek"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 25,
+      "cols": 6,
+      "first_row_widths_cm": [
+        1.3,
+        3.2,
+        3.6,
+        4.0,
+        5.399,
+        2.0
+      ],
+      "grid": [
+        [
+          "ID",
+          "Skenario",
+          "Prasyarat",
+          "Langkah Ringkas",
+          "Hasil yang Diharapkan",
+          "Status"
+        ],
+        [
+          "UAT-01",
+          "Login akun diizinkan",
+          "Akun lokal aktif dan LDAP valid",
+          "Login username/password",
+          "Dashboard tampil sesuai role",
+          "TBD UAT"
+        ],
+        [
+          "UAT-02",
+          "Tolak akun tidak diizinkan",
+          "LDAP valid tetapi tidak ada di master user",
+          "Login",
+          "Akses ditolak tanpa membuka data",
+          "TBD UAT"
+        ],
+        [
+          "UAT-03",
+          "Akses lintas role dan area",
+          "Akun tiap role pada dua area",
+          "Buka URL dan panggil API terlarang",
+          "Server mengembalikan forbidden atau redirect aman",
+          "TBD UAT"
+        ],
+        [
+          "UAT-04",
+          "CRUD dan kode alat",
+          "PIC/Admin login",
+          "Tambah, ubah, cari, dan coba kode duplikat",
+          "Data benar; duplikat dalam area ditolak",
+          "TBD UAT"
+        ],
+        [
+          "UAT-05",
+          "Import alat berhasil",
+          "File CSV/XLSX valid",
+          "Upload dan pantau status",
+          "Completed; jumlah created/updated benar; log tersedia",
+          "TBD UAT"
+        ],
+        [
+          "UAT-06",
+          "Import alat gagal aman",
+          "File salah format atau area",
+          "Upload",
+          "Failed gagal dengan pesan baris; data tidak setengah terproses",
+          "TBD UAT"
+        ],
+        [
+          "UAT-07",
+          "Peminjaman intra area",
+          "Stok tersedia",
+          "Pilih item, tanggal, pekerjaan, ajukan",
+          "Perlu Disetujui dan stok terpesan sesuai aturan",
+          "TBD UAT"
+        ],
+        [
+          "UAT-08",
+          "Cegah overbooking",
+          "Dua permintaan bersamaan",
+          "Ajukan melebihi sisa",
+          "Salah satu ditolak; availability tidak negatif",
+          "TBD UAT"
+        ],
+        [
+          "UAT-09",
+          "Review item parsial",
+          "Pengajuan pending",
+          "Setujui sebagian dan tolak item lain",
+          "Jumlah dan alasan tersimpan; status benar",
+          "TBD UAT"
+        ],
+        [
+          "UAT-10",
+          "Peminjaman antar area",
+          "Dua area dan stok sumber tersedia",
+          "Ajukan, review peminjam, review sumber",
+          "Dua reviewer/area tercatat dan jumlah tidak meningkat",
+          "TBD UAT"
+        ],
+        [
+          "UAT-11",
+          "Pengiriman dengan bukti",
+          "Status Disetujui",
+          "Unggah foto, pengirim, resi lalu kirim",
+          "Dikirim; foto dan Surat Jalan XLSX dapat diunduh",
+          "TBD UAT"
+        ],
+        [
+          "UAT-12",
+          "Validasi foto",
+          "Status Disetujui",
+          "Unggah tipe/ukuran/jumlah di luar batas",
+          "Ditolak dengan pesan validasi",
+          "TBD UAT"
+        ],
+        [
+          "UAT-13",
+          "Penerimaan intra area",
+          "Dikirim dan user pemilik",
+          "Klik terima",
+          "Diterima; user lain tidak dapat menerima",
+          "TBD UAT"
+        ],
+        [
+          "UAT-14",
+          "Penerimaan antar area",
+          "Dikirim lintas area",
+          "PIC area peminjam menerima",
+          "Diterima; stok sementara terbentuk",
+          "TBD UAT"
+        ],
+        [
+          "UAT-15",
+          "Pengembalian parsial",
+          "Ada sisa item",
+          "Kembalikan sebagian dengan foto",
+          "Dikembalikan Partials; sisa dan Surat Jalan benar",
+          "TBD UAT"
+        ],
+        [
+          "UAT-16",
+          "Pengembalian seluruhnya",
+          "Ada sisa item",
+          "Kembalikan semua lalu selesaikan",
+          "Dikembalikan Semuanya lalu Selesai",
+          "TBD UAT"
+        ],
+        [
+          "UAT-17",
+          "Laporan saat kembali",
+          "Item kembali",
+          "Catat rusak/hilang beserta foto",
+          "Laporan terbentuk dan dapat diproses",
+          "TBD UAT"
+        ],
+        [
+          "UAT-18",
+          "Status laporan dan stok",
+          "Laporan Dilaporkan",
+          "Setujui, ubah ke selesai/ditolak",
+          "Stok berkurang/terpulih tanpa duplikasi",
+          "TBD UAT"
+        ],
+        [
+          "UAT-19",
+          "Reminder jatuh tempo",
+          "Status Diterima/Partials",
+          "Jalankan dry-run H-1, H, H+6, H+12",
+          "Target penerima dan deduplikasi harian benar",
+          "TBD UAT"
+        ],
+        [
+          "UAT-20",
+          "Badge dan mailbox",
+          "Data tindakan pada beberapa area",
+          "Login tiap role",
+          "Hitungan hanya memuat item yang relevan",
+          "TBD UAT"
+        ],
+        [
+          "UAT-21",
+          "Export",
+          "Filter aktif",
+          "Export alat, peminjaman, laporan, dan log",
+          "Isi sesuai filter/area dan encoding dapat dibaca",
+          "TBD UAT"
+        ],
+        [
+          "UAT-22",
+          "Audit trail",
+          "Transaksi contoh lengkap",
+          "Telusuri Activity Log dan Log Alat",
+          "Actor, perubahan, area, waktu, dan subject konsisten",
+          "TBD UAT"
+        ],
+        [
+          "UAT-23",
+          "Restart operasional",
+          "Worker dan scheduler dikonfigurasi",
+          "Restart server dan proses",
+          "Web, worker, scheduler, dan job kembali aktif",
+          "TBD UAT"
+        ],
+        [
+          "UAT-24",
+          "Backup dan restore",
+          "Backup produksi tiruan tersedia",
+          "Pulihkan ke lingkungan terpisah",
+          "Data, dokumen, foto, dan relasi dapat dibaca",
+          "TBD UAT"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 10,
+      "cols": 4,
+      "first_row_widths_cm": [
+        1.401,
+        8.5,
+        5.6,
+        3.0
+      ],
+      "grid": [
+        [
+          "ID",
+          "Kriteria Penerimaan",
+          "Bukti atau Metode Verifikasi",
+          "Penanggung Jawab"
+        ],
+        [
+          "KP-01",
+          "Seluruh kebutuhan Wajib yang disetujui lulus UAT.",
+          "Berita acara UAT dan bukti uji",
+          "Pemilik Proses"
+        ],
+        [
+          "KP-02",
+          "Tidak ada defect kritis atau tinggi terbuka pada workflow produksi.",
+          "Defect register dan keputusan risiko",
+          "QA dan Keamanan"
+        ],
+        [
+          "KP-03",
+          "Test otomatis lulus pada build rilis; baseline saat penyusunan adalah 23 test dan 1.933 assertion lulus.",
+          "Log pipeline/test rilis",
+          "Tim Pengembang"
+        ],
+        [
+          "KP-04",
+          "Hak akses seluruh role dan area telah diuji pada UI dan API.",
+          "Matriks akses dan bukti negatif",
+          "QA dan Pemilik Akses"
+        ],
+        [
+          "KP-05",
+          "Stok, status, dokumen, foto, dan log konsisten pada sampel intra/antar area.",
+          "Sampling database dan berkas",
+          "Pemilik Data"
+        ],
+        [
+          "KP-06",
+          "Oracle, LDAP, SMTP, queue, scheduler, storage, dan monitoring lulus integration check.",
+          "Checklist integrasi dan operasional",
+          "Tim Infrastruktur"
+        ],
+        [
+          "KP-07",
+          "Backup dan restore berhasil; RPO/RTO disetujui.",
+          "Laporan drill restore",
+          "Pemilik Layanan"
+        ],
+        [
+          "KP-08",
+          "HTTPS/DNS, retensi, dukungan, eskalasi, dan runbook tersedia.",
+          "Checklist go live",
+          "Pemilik Proyek"
+        ],
+        [
+          "KP-09",
+          "BRD dan perubahan lingkup telah disetujui pihak berwenang.",
+          "Tanda tangan atau approval resmi",
+          "Pemilik Proyek"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 11,
+      "cols": 5,
+      "first_row_widths_cm": [
+        2.6,
+        4.0,
+        3.701,
+        5.2,
+        4.5
+      ],
+      "grid": [
+        [
+          "Kebutuhan Bisnis",
+          "Kebutuhan Fungsional",
+          "Desain atau Proses",
+          "UAT",
+          "Status"
+        ],
+        [
+          "KB-01",
+          "KF-04 sampai KF-10",
+          "Master alat dan dashboard",
+          "UAT-04 sampai UAT-06, UAT-21",
+          "Source tersedia; UAT formal TBD"
+        ],
+        [
+          "KB-02",
+          "KF-11, KF-12, KF-15 sampai KF-21",
+          "Siklus intra area",
+          "UAT-07 sampai UAT-09, UAT-11, UAT-13, UAT-15, UAT-16",
+          "Source tersedia; UAT formal TBD"
+        ],
+        [
+          "KB-03",
+          "KF-11, KF-13 sampai KF-19, KF-21",
+          "Siklus antar area",
+          "UAT-10, UAT-14 sampai UAT-16",
+          "Source tersedia; UAT formal TBD"
+        ],
+        [
+          "KB-04",
+          "KF-01 sampai KF-04, KF-32",
+          "Autentikasi dan akses",
+          "UAT-01 sampai UAT-03",
+          "Source tersedia; LDAP/UAT TBD"
+        ],
+        [
+          "KB-05",
+          "KF-17 sampai KF-19, KF-22, KF-32",
+          "Bukti dan mutasi",
+          "UAT-11 sampai UAT-16",
+          "Source tersedia; UAT formal TBD"
+        ],
+        [
+          "KB-06",
+          "KF-23 sampai KF-26",
+          "Laporan dan stok",
+          "UAT-17, UAT-18",
+          "Source tersedia; UAT formal TBD"
+        ],
+        [
+          "KB-07",
+          "KF-05, KF-06, KF-27 sampai KF-29",
+          "Dashboard/notifikasi",
+          "UAT-19, UAT-20",
+          "Source tersedia; SMTP/scheduler TBD"
+        ],
+        [
+          "KB-08",
+          "KF-09, KF-10, KF-16, KF-26, KF-30, KF-31",
+          "Import/export",
+          "UAT-05, UAT-06, UAT-21",
+          "Source tersedia; UAT formal TBD"
+        ],
+        [
+          "KB-09",
+          "KF-16, KF-22, KF-30, KF-31",
+          "Audit dan riwayat",
+          "UAT-22",
+          "Source tersedia; sampling TBD"
+        ],
+        [
+          "KB-10",
+          "NFR operabilitas dan pemulihan",
+          "Kesiapan produksi",
+          "UAT-23, UAT-24",
+          "Keputusan operasional terbuka"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 9,
+      "cols": 5,
+      "first_row_widths_cm": [
+        3.0,
+        6.2,
+        3.701,
+        3.099,
+        4.0
+      ],
+      "grid": [
+        [
+          "Tahap",
+          "Kegiatan Utama",
+          "Penanggung Jawab",
+          "Waktu atau Status",
+          "Keluaran"
+        ],
+        [
+          "1 Review Baseline",
+          "Konfirmasi fitur pada source, test, dan manual",
+          "Tim Pengembang",
+          "Selesai untuk baseline 10 Sep 2026",
+          "Daftar fitur dan hasil test"
+        ],
+        [
+          "2 Validasi BRD",
+          "Review kebutuhan, role, area, status, owner, lingkup, dan prioritas",
+          "Pemilik Proses",
+          "TBD",
+          "BRD disetujui"
+        ],
+        [
+          "3 Persiapan Data",
+          "Cleansing area, user allow list, master alat, kode, dan stok awal",
+          "Pemilik Data",
+          "TBD",
+          "Data migrasi tervalidasi"
+        ],
+        [
+          "4 QA dan Keamanan",
+          "Regression, access matrix, concurrency, file upload, dependency review",
+          "QA/Keamanan",
+          "TBD",
+          "Laporan test dan defect"
+        ],
+        [
+          "5 UAT",
+          "Jalankan UAT-01 sampai UAT-24 dan tutup temuan",
+          "Key User",
+          "TBD",
+          "Berita acara UAT"
+        ],
+        [
+          "6 Kesiapan Infrastruktur",
+          "Oracle, LDAP, SMTP, HTTPS, storage, queue, scheduler, backup, monitoring",
+          "Tim Infrastruktur",
+          "TBD",
+          "Checklist go live"
+        ],
+        [
+          "7 Release Produksi",
+          "Backup, migration, deploy, smoke test, dan keputusan go/no-go",
+          "DevOps/Pemilik Proyek",
+          "TBD",
+          "Rilis terverifikasi"
+        ],
+        [
+          "8 Stabilisasi",
+          "Pantau error, job, email, kapasitas, data, dan feedback",
+          "Tim Operasi",
+          "TBD",
+          "Laporan stabilisasi"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 9,
+      "cols": 4,
+      "first_row_widths_cm": [
+        3.0,
+        7.301,
+        2.799,
+        6.699
+      ],
+      "grid": [
+        [
+          "Area Kesiapan",
+          "Kriteria",
+          "Status",
+          "Bukti atau Catatan"
+        ],
+        [
+          "Fungsi",
+          "Route, controller, model, service, UI, migration, mail, dan command tersedia",
+          "Sebagian siap",
+          "Baseline test lokal: 23 test dan 1.933 assertion lulus pada 10 Sep 2026"
+        ],
+        [
+          "Proses",
+          "Role, status, review, pengiriman, kembali, laporan, dan audit terdokumentasi",
+          "Perlu validasi",
+          "Owner proses dan SOP final TBD"
+        ],
+        [
+          "Pengguna",
+          "Tujuh role terdefinisi",
+          "Perlu UAT/pelatihan",
+          "Daftar user, area, dan materi training TBD"
+        ],
+        [
+          "Data",
+          "Migration dan import alat tersedia",
+          "Perlu verifikasi",
+          "Cleansing dan rekonsiliasi data awal belum dibuktikan"
+        ],
+        [
+          "Teknologi",
+          "Laravel/Vue, Oracle, LDAP, mail, storage, queue, scheduler",
+          "Perlu gate produksi",
+          "Konfigurasi environment, kapasitas, dan konektivitas perlu diuji"
+        ],
+        [
+          "Keamanan",
+          "Session, CSRF, RBAC, scoping, file validation tersedia",
+          "Perlu review formal",
+          "HTTPS, pentest, retensi, dan access review TBD"
+        ],
+        [
+          "Operasi",
+          "Scheduler LDAP/reminder dan contoh Supervisor worker tersedia",
+          "Perlu implementasi",
+          "Monitoring, backup, restore, on-call, dan eskalasi TBD"
+        ],
+        [
+          "Dokumentasi",
+          "Manual Book dan BRD draft tersedia",
+          "Draft",
+          "Runbook, SOP, dan sign-off perlu diselesaikan"
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 4,
+      "cols": 5,
+      "first_row_widths_cm": [
+        4.2,
+        5.699,
+        3.0,
+        2.401,
+        3.0
+      ],
+      "grid": [
+        [
+          "Peran",
+          "Nama atau Jabatan",
+          "Keputusan",
+          "Tanggal",
+          "Tanda Tangan"
+        ],
+        [
+          "Pemilik Proyek atau Penanggung Jawab Utama",
+          "[Nama]",
+          "[Setuju atau Tidak]",
+          "",
+          ""
+        ],
+        [
+          "Pemilik Proses Bisnis",
+          "[Nama]",
+          "[Setuju atau Tidak]",
+          "",
+          ""
+        ],
+        [
+          "Fungsi TI atau Solusi",
+          "[Nama]",
+          "[Setuju atau Tidak]",
+          "",
+          ""
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 3,
+      "cols": 6,
+      "first_row_widths_cm": [
+        2.2,
+        2.401,
+        2.701,
+        5.8,
+        4.099,
+        2.799
+      ],
+      "grid": [
+        [
+          "ID Perubahan",
+          "Tanggal",
+          "Pemohon",
+          "Uraian Perubahan",
+          "Dampak",
+          "Keputusan"
+        ],
+        [
+          "CR-001",
+          "[Tanggal]",
+          "[Pemohon]",
+          "[Perubahan]",
+          "[Lingkup, waktu, biaya, risiko]",
+          "[Setuju, tolak, tunda]"
+        ],
+        [
+          "CR-002",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ]
+      ]
+    },
+    {
+      "style": "Normal Table",
+      "rows": 15,
+      "cols": 2,
+      "first_row_widths_cm": [
+        4.0,
+        14.0
+      ],
+      "grid": [
+        [
+          "Istilah",
+          "Definisi"
+        ],
+        [
+          "Activity Log",
+          "Catatan aktivitas aplikasi yang menyimpan actor, route, area, perubahan, dan metadata request."
+        ],
+        [
+          "Alat",
+          "Jenis/perangkat yang dikelola per area, dengan kode, klasifikasi, lokasi, dan total aset."
+        ],
+        [
+          "AreaAlatStock",
+          "Stok sementara di area peminjam yang berasal dari transaksi antar area."
+        ],
+        [
+          "LDAP",
+          "Lightweight Directory Access Protocol yang dipakai untuk verifikasi kredensial dan sinkronisasi user."
+        ],
+        [
+          "PIC Tool",
+          "Petugas pengelola alat, pengiriman, penerimaan, dan pengembalian pada area."
+        ],
+        [
+          "SP Tool",
+          "Role reviewer peminjaman dan pengelola proses tertentu sesuai area."
+        ],
+        [
+          "Mgr Tool",
+          "Role manajerial untuk review, monitoring, dan audit sesuai akses."
+        ],
+        [
+          "Availability",
+          "Jumlah yang masih dapat dipinjam setelah mengurangi kuantitas pada status pemegang stok."
+        ],
+        [
+          "Intra Area",
+          "Peminjaman dalam area yang sama."
+        ],
+        [
+          "Antar Area",
+          "Peminjaman dengan area peminjam berbeda dari area sumber."
+        ],
+        [
+          "Surat Jalan",
+          "Dokumen XLSX yang dihasilkan untuk pengiriman atau pengembalian dan dapat memuat lampiran foto."
+        ],
+        [
+          "RACI",
+          "Responsible, Accountable, Consulted, dan Informed."
+        ],
+        [
+          "RPO dan RTO",
+          "Recovery Point Objective dan Recovery Time Objective."
+        ],
+        [
+          "UAT",
+          "User Acceptance Test atau uji penerimaan pengguna."
+        ]
+      ]
+    }
+  ],
+  "headers": [
+    [
+      {
+        "text": "\t",
+        "style": "Header",
+        "alignment": "None",
+        "space_before_pt": null,
+        "space_after_pt": null,
+        "line_spacing": "None",
+        "left_indent_cm": null,
+        "first_line_indent_cm": null,
+        "keep_with_next": null,
+        "page_break_before": null,
+        "runs": [
+          {
+            "text": "[IMAGE]",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": null,
+            "color": null
+          },
+          {
+            "text": "[IMAGE]",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": null,
+            "color": null
+          },
+          {
+            "text": "[IMAGE]",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": null,
+            "color": null
+          },
+          {
+            "text": "[IMAGE]",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": null,
+            "color": null
+          },
+          {
+            "text": "\t",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": null,
+            "color": null
+          }
+        ]
+      },
+      {
+        "text": "",
+        "style": "Header",
+        "alignment": "None",
+        "space_before_pt": null,
+        "space_after_pt": null,
+        "line_spacing": "None",
+        "left_indent_cm": null,
+        "first_line_indent_cm": null,
+        "keep_with_next": null,
+        "page_break_before": null,
+        "runs": []
+      },
+      {
+        "text": "",
+        "style": "Header",
+        "alignment": "None",
+        "space_before_pt": null,
+        "space_after_pt": null,
+        "line_spacing": "None",
+        "left_indent_cm": null,
+        "first_line_indent_cm": null,
+        "keep_with_next": null,
+        "page_break_before": null,
+        "runs": [
+          {
+            "text": "[IMAGE]",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": null,
+            "color": null
+          }
+        ]
+      }
+    ]
+  ],
+  "footers": [
+    [
+      {
+        "text": "Halaman 2 dari 3",
+        "style": "Footer",
+        "alignment": "CENTER (1)",
+        "space_before_pt": null,
+        "space_after_pt": null,
+        "line_spacing": "None",
+        "left_indent_cm": null,
+        "first_line_indent_cm": null,
+        "keep_with_next": null,
+        "page_break_before": null,
+        "runs": [
+          {
+            "text": "Halaman ",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": 8.0,
+            "color": "5A5A5A"
+          },
+          {
+            "text": "",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": 8.0,
+            "color": null
+          },
+          {
+            "text": "",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": 8.0,
+            "color": null
+          },
+          {
+            "text": "",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": 8.0,
+            "color": null
+          },
+          {
+            "text": "2",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": 8.0,
+            "color": null
+          },
+          {
+            "text": "",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": 8.0,
+            "color": null
+          },
+          {
+            "text": " ",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": 8.0,
+            "color": null
+          },
+          {
+            "text": "dari",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": 8.0,
+            "color": null
+          },
+          {
+            "text": " ",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": 8.0,
+            "color": null
+          },
+          {
+            "text": "",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": 8.0,
+            "color": null
+          },
+          {
+            "text": "",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": 8.0,
+            "color": null
+          },
+          {
+            "text": "",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": 8.0,
+            "color": null
+          },
+          {
+            "text": "3",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": 8.0,
+            "color": null
+          },
+          {
+            "text": "",
+            "bold": null,
+            "italic": null,
+            "underline": null,
+            "font": null,
+            "size_pt": 8.0,
+            "color": null
+          }
+        ]
+      }
+    ]
+  ],
+  "style_counts": {
+    "Title": 1,
+    "Normal": 57,
+    "Heading 1": 16,
+    "Heading 2": 46,
+    "List Number": 24,
+    "List Bullet": 5
+  },
+  "inline_shapes": 2,
+  "style_definitions": {
+    "Normal": {
+      "font": "Arial",
+      "size_pt": 9.0,
+      "bold": null,
+      "italic": null,
+      "color": "000000",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 3.0,
+      "line_spacing": "1.0416666666666667",
+      "keep_with_next": null
+    },
+    "Title": {
+      "font": "Arial",
+      "size_pt": 24.0,
+      "bold": true,
+      "italic": null,
+      "color": "000000",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 5.0,
+      "line_spacing": "1.0",
+      "keep_with_next": null
+    },
+    "Subtitle": {
+      "font": null,
+      "size_pt": 12.0,
+      "bold": null,
+      "italic": true,
+      "color": "4F81BD",
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "keep_with_next": null
+    },
+    "Heading 1": {
+      "font": "Arial",
+      "size_pt": 14.0,
+      "bold": true,
+      "italic": null,
+      "color": "000000",
+      "alignment": "None",
+      "space_before_pt": 5.0,
+      "space_after_pt": 4.0,
+      "line_spacing": "None",
+      "keep_with_next": true
+    },
+    "Heading 2": {
+      "font": "Arial",
+      "size_pt": 11.0,
+      "bold": true,
+      "italic": null,
+      "color": "000000",
+      "alignment": "None",
+      "space_before_pt": 4.0,
+      "space_after_pt": 2.0,
+      "line_spacing": "None",
+      "keep_with_next": true
+    },
+    "List Paragraph": {
+      "font": "Arial",
+      "size_pt": null,
+      "bold": null,
+      "italic": null,
+      "color": null,
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": null,
+      "line_spacing": "None",
+      "keep_with_next": null
+    },
+    "Header": {
+      "font": "Arial",
+      "size_pt": null,
+      "bold": null,
+      "italic": null,
+      "color": null,
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 0.0,
+      "line_spacing": "1.0",
+      "keep_with_next": null
+    },
+    "Footer": {
+      "font": "Arial",
+      "size_pt": null,
+      "bold": null,
+      "italic": null,
+      "color": null,
+      "alignment": "None",
+      "space_before_pt": null,
+      "space_after_pt": 0.0,
+      "line_spacing": "1.0",
+      "keep_with_next": null
+    }
+  },
+  "package_parts": [
+    {
+      "name": "[Content_Types].xml",
+      "size": 2146,
+      "sha256": "43eecf2b4a725ba4af4376943e06ebda9022875e6bd4d64ff453b3960d383ef9"
+    },
+    {
+      "name": "_rels/.rels",
+      "size": 589,
+      "sha256": "a76c44cf6b278166bfc93edce0a98846be30e584462153ba97fa683469ff5916"
+    },
+    {
+      "name": "docProps/app.xml",
+      "size": 1114,
+      "sha256": "0ba1924eb661db6992a1ad2c5969848ccd25f25a70d2412a4fff3b0b599f7588"
+    },
+    {
+      "name": "docProps/core.xml",
+      "size": 1021,
+      "sha256": "4c12e636210818f1d71bc1c2d78dd489100e8fd37858f047db63a20106b7171f"
+    },
+    {
+      "name": "word/document.xml",
+      "size": 885698,
+      "sha256": "8bf00dcc7c0ef0ee361829ce675b23b75c0b0018712adbd8912a42cd0dc89358"
+    },
+    {
+      "name": "word/_rels/document.xml.rels",
+      "size": 2411,
+      "sha256": "57ef59082ec281d5b77a57253006d9e7a2f3281ab421e6df72fa72b89b82901f"
+    },
+    {
+      "name": "word/media/image1.png",
+      "size": 163964,
+      "sha256": "3b99e739ea85ec5dd56e8516c08c25cc8de2430670a399b1b35e2b9df5158406"
+    },
+    {
+      "name": "word/footer1.xml",
+      "size": 3971,
+      "sha256": "c022225ee6d4f5e03436d54ddf514eae4f838d002eeef9262a78aa5297974da0"
+    },
+    {
+      "name": "word/styles.xml",
+      "size": 346205,
+      "sha256": "d1bbed8b0e1a1a4d0ad1118f4ffaec6348e459703b1213fbbe2a23fb5769aa89"
+    },
+    {
+      "name": "word/endnotes.xml",
+      "size": 3152,
+      "sha256": "c47f89a286dadf86ae18c5457d268e3a7c186e5fb3257d9dd0269fb98e145679"
+    },
+    {
+      "name": "word/header1.xml",
+      "size": 26574,
+      "sha256": "dc7850317f4f130b7d0195c0449db260511f32572251324472967f24eac0bb09"
+    },
+    {
+      "name": "word/_rels/header1.xml.rels",
+      "size": 288,
+      "sha256": "8ddb2c25ee5b720e6233b699d85e47529aa3e164d3e47d8909a298d0bde66efb"
+    },
+    {
+      "name": "word/media/image5.png",
+      "size": 81346,
+      "sha256": "d92b14d6b6a106e7f978bd00837ff95fa67f1beada42b437bfaf83731f7012ee"
+    },
+    {
+      "name": "word/numbering.xml",
+      "size": 22656,
+      "sha256": "f7b98f207875a110797881786c93e754011555771666872dee5ea5a6ebb34c1b"
+    },
+    {
+      "name": "customXml/item1.xml",
+      "size": 260,
+      "sha256": "fd38bf9d14299ec0909557ff8b08b38816a6860d488f11a7c53dc63eb13ee44f"
+    },
+    {
+      "name": "customXml/_rels/item1.xml.rels",
+      "size": 295,
+      "sha256": "1ca6c9a64edcebe24ee703a54403611b322d96da33371779e742d2d3f7ed7a6c"
+    },
+    {
+      "name": "customXml/itemProps1.xml",
+      "size": 341,
+      "sha256": "4c998dc0bc6eb6f38ecc20856255fff6891d5b6345a7260698c53063da4bc5f2"
+    },
+    {
+      "name": "word/footnotes.xml",
+      "size": 3158,
+      "sha256": "25f9bf28881ed84ec67a9d4ebfac5a5940ba20faacf786d0d7b50b1e50e1361b"
+    },
+    {
+      "name": "word/media/image4.png",
+      "size": 1539061,
+      "sha256": "2a6e931c91ed4ef5d8411d8afeee3aadf8a2638277efc6d38d28ff6e5b0bcd38"
+    },
+    {
+      "name": "word/webSettings.xml",
+      "size": 1060,
+      "sha256": "246ca94e5cbe02df81802f83f143f829966fdef93bc242fa568e1de2497ecdea"
+    },
+    {
+      "name": "word/theme/theme1.xml",
+      "size": 7643,
+      "sha256": "b2295d3198893d2c03f5e584c749a15751b798aefdcd9bee2889f13903d68cb2"
+    },
+    {
+      "name": "word/media/image3.png",
+      "size": 1023977,
+      "sha256": "ad26a3d1e2e6c724d0e436c42f49b766ada858e9ddf38ba7a2143dbcf7a86a6e"
+    },
+    {
+      "name": "word/settings.xml",
+      "size": 4661,
+      "sha256": "b3d1212ea4e3c8699ba872b72a6515c51447721df0daee4034e671b54239a4c3"
+    },
+    {
+      "name": "word/media/image2.png",
+      "size": 1137804,
+      "sha256": "4aecad82eb42ada7426bf1cb5dc002977110dece5b295c8d8140cc75b3249c95"
+    },
+    {
+      "name": "word/fontTable.xml",
+      "size": 3728,
+      "sha256": "53cf69bbd036db0815c3af29d1d4096ff37ec4f9aebda00a14f15e4e816398b1"
+    },
+    {
+      "name": "word/media/image6.png",
+      "size": 38603,
+      "sha256": "2e11417f60c065a50e00ae8f606922eb8c2a502ea48a66019bfadc0e979b28bd"
+    },
+    {
+      "name": "word/media/image7.png",
+      "size": 67942,
+      "sha256": "98e424956b12b7a1d680c987301a4944874dc4168624ba2a37f2635aefb4c4f1"
+    }
+  ],
+  "document_xml_text_node_count": 11535,
+  "has_fields": true,
+  "has_textboxes": false,
+  "has_content_controls": false
+}

@@ -8,9 +8,12 @@
             <div class="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <h3 class="text-lg font-semibold text-slate-900">Persetujuan Laporan</h3>
+                        <h3 class="text-lg font-semibold text-slate-900">
+                            {{ isKoreksi ? 'Koreksi Status Laporan' : 'Persetujuan Laporan' }}
+                        </h3>
                         <p class="mt-1 text-sm text-slate-500">
-                            Ubah status laporan {{ reportLabel }} untuk {{ report?.alatNama ?? '-' }}.
+                            {{ isKoreksi ? 'Perbaiki status laporan' : 'Ubah status laporan' }}
+                            {{ reportLabel }} untuk {{ report?.alatNama ?? '-' }}.
                         </p>
                     </div>
                     <button
@@ -37,11 +40,15 @@
                         <label
                             v-for="option in statusOptions"
                             :key="option.value"
-                            class="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 p-4 transition hover:border-blue-300"
-                            :class="modelValue === option.value ? 'border-blue-500 bg-blue-50' : 'bg-white'"
+                            class="flex items-start gap-3 rounded-2xl border border-slate-200 p-4 transition"
+                            :class="[
+                                option.isCurrent ? 'cursor-not-allowed bg-slate-50 opacity-70' : 'cursor-pointer hover:border-blue-300',
+                                modelValue === option.value && !option.isCurrent ? 'border-blue-500 bg-blue-50' : '',
+                            ]"
                         >
                             <input
                                 :checked="modelValue === option.value"
+                                :disabled="option.isCurrent"
                                 class="mt-1"
                                 type="radio"
                                 name="laporan-status"
@@ -49,7 +56,12 @@
                                 @change="emit('update:modelValue', option.value)"
                             />
                             <div>
-                                <p class="text-sm font-semibold text-slate-900">{{ option.label }}</p>
+                                <p class="text-sm font-semibold text-slate-900">
+                                    {{ option.label }}
+                                    <span v-if="option.isCurrent" class="ml-1 text-xs font-normal text-slate-500">
+                                        (status saat ini)
+                                    </span>
+                                </p>
                                 <p class="mt-1 text-xs text-slate-500">{{ option.description }}</p>
                             </div>
                         </label>
@@ -71,7 +83,7 @@
                     <button
                         class="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                         type="button"
-                        :disabled="isSubmitting || !modelValue"
+                        :disabled="isSubmitting || !modelValue || modelValue === report?.status"
                         @click="emit('submit')"
                     >
                         {{ isSubmitting ? 'Menyimpan...' : 'Simpan Status' }}
@@ -90,7 +102,7 @@ const approvalOptions = [
     {
         value: 'Disetujui',
         label: 'Disetujui',
-        description: 'Total aset alat akan berkurang sesuai jumlah laporan.',
+        description: 'Status akhir laporan. Total aset alat akan berkurang sesuai jumlah laporan.',
     },
     {
         value: 'Ditolak',
@@ -99,13 +111,12 @@ const approvalOptions = [
     },
 ];
 
-const completionOptions = [
-    {
-        value: 'Selesai',
-        label: 'Selesai',
-        description: 'Jika sebelumnya disetujui, total aset alat akan dikembalikan.',
-    },
-];
+// Pilihan tambahan saat mengoreksi laporan yang statusnya sudah final.
+const koreksiOption = {
+    value: 'Dilaporkan',
+    label: 'Dilaporkan',
+    description: 'Kembalikan ke daftar menunggu persetujuan. Stok yang sudah dipotong akan dikembalikan.',
+};
 
 const props = defineProps({
     open: {
@@ -134,12 +145,15 @@ const props = defineProps({
     },
 });
 
-const statusOptions = computed(() => {
-    if (props.report?.status === 'Disetujui') {
-        return completionOptions;
-    }
+const isKoreksi = computed(() => (props.report?.status ?? 'Dilaporkan') !== 'Dilaporkan');
 
-    return approvalOptions;
+const statusOptions = computed(() => {
+    const options = isKoreksi.value ? [koreksiOption, ...approvalOptions] : approvalOptions;
+
+    return options.map((option) => ({
+        ...option,
+        isCurrent: option.value === props.report?.status,
+    }));
 });
 
 const emit = defineEmits(['close', 'submit', 'update:modelValue']);
