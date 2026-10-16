@@ -83,13 +83,14 @@ class AlatImportService
         }
 
         $alatMap = $this->loadExistingAlatMap($validatedRows);
+        $kodeMap = $this->loadExistingKodeMap($validatedRows);
         $created = 0;
         $updated = 0;
         $processed = 0;
         $activityPayloads = [];
 
         foreach (array_chunk($validatedRows, self::IMPORT_WRITE_CHUNK) as $chunk) {
-            DB::transaction(function () use ($chunk, $import, &$alatMap, &$created, &$updated, &$processed, &$activityPayloads) {
+            DB::transaction(function () use ($chunk, $import, &$alatMap, &$kodeMap, &$created, &$updated, &$processed, &$activityPayloads) {
                 foreach ($chunk as $row) {
                     $lookup = $row['lookup'];
                     $lookupKey = $row['lookup_key'];
@@ -97,7 +98,15 @@ class AlatImportService
                     $lokasi = trim((string) ($row['lokasi'] ?? ''));
                     $kode = trim((string) ($row['kode'] ?? ''));
                     $maxDemand = $row['max_demand'] ?? null;
-                    $alat = $alatMap[$lookupKey] ?? null;
+                    $kodeKey = $kode !== '' ? $this->makeKodeKey((int) $lookup['area_id'], $kode) : null;
+
+                    // Kode adalah identitas alat. Bila kolom Kode diisi, baris
+                    // dicocokkan lewat kode saja supaya dua alat bernama sama di
+                    // lokasi berbeda tidak saling menimpa. Baris tanpa kode tetap
+                    // dicocokkan lewat nama + jenis + klasifikasi seperti semula.
+                    $alat = $kodeKey !== null
+                        ? ($kodeMap[$kodeKey] ?? null)
+                        : ($alatMap[$lookupKey] ?? null);
 
                     if ($alat instanceof Alat) {
                         $updated += 1;
@@ -113,14 +122,28 @@ class AlatImportService
                         // Lokasi mengikuti isi berkas apa adanya: dikosongkan berarti
                         // lokasi ikut dikosongkan (null), bukan dipertahankan.
                         $lokasiBaru = $lokasi !== '' ? $lokasi : null;
+                        // Saat dicocokkan lewat kode, identitas alat adalah kodenya,
+                        // sehingga nama/jenis/klasifikasi ikut isi berkas.
+                        $oldNama = (string) $alat->nama;
+                        $oldJenis = (string) $alat->jenis_alat;
+                        $oldKlasifikasi = (string) $alat->klasifikasi_alat;
+                        $namaBaru = (string) $lookup['nama'];
+                        $jenisBaru = (string) $lookup['jenis_alat'];
+                        $klasifikasiBaru = (string) $lookup['klasifikasi_alat'];
 
                         if ($oldTotalAset !== $totalAset
                             || $oldLokasi !== $lokasiBaru
                             || $oldKode !== $kodeBaru
                             || $oldMaxDemand !== $maxDemandBaru
+                            || $oldNama !== $namaBaru
+                            || $oldJenis !== $jenisBaru
+                            || $oldKlasifikasi !== $klasifikasiBaru
                         ) {
-                            Alat::withoutEvents(function () use ($alat, $totalAset, $lokasiBaru, $kodeBaru, $maxDemandBaru) {
+                            Alat::withoutEvents(function () use ($alat, $totalAset, $lokasiBaru, $kodeBaru, $maxDemandBaru, $namaBaru, $jenisBaru, $klasifikasiBaru) {
                                 $alat->forceFill([
+                                    'nama' => $namaBaru,
+                                    'jenis_alat' => $jenisBaru,
+                                    'klasifikasi_alat' => $klasifikasiBaru,
                                     'total_aset' => $totalAset,
                                     'lokasi' => $lokasiBaru,
                                     'kode' => $kodeBaru,
@@ -130,11 +153,17 @@ class AlatImportService
                             });
 
                             $activityPayloads[] = $this->buildImportedAlatActivityPayload('update', $alat, [
+                                'nama' => $oldNama,
+                                'jenis_alat' => $oldJenis,
+                                'klasifikasi_alat' => $oldKlasifikasi,
                                 'total_aset' => $oldTotalAset,
                                 'lokasi' => $oldLokasi,
                                 'kode' => $oldKode,
                                 'max_demand' => $oldMaxDemand,
                             ], [
+                                'nama' => $namaBaru,
+                                'jenis_alat' => $jenisBaru,
+                                'klasifikasi_alat' => $klasifikasiBaru,
                                 'total_aset' => $totalAset,
                                 'lokasi' => $lokasiBaru,
                                 'kode' => $kodeBaru,
@@ -142,6 +171,9 @@ class AlatImportService
                             ], $import);
                         }
 
+                        $alat->nama = $namaBaru;
+                        $alat->jenis_alat = $jenisBaru;
+                        $alat->klasifikasi_alat = $klasifikasiBaru;
                         $alat->total_aset = $totalAset;
                         $alat->lokasi = $lokasiBaru;
                         $alat->kode = $kodeBaru;
@@ -160,6 +192,9 @@ class AlatImportService
                         ]));
 
                         $alatMap[$lookupKey] = $alat;
+                        if ($kodeKey !== null) {
+                            $kodeMap[$kodeKey] = $alat;
+                        }
                         $created += 1;
                         $activityPayloads[] = $this->buildImportedAlatActivityPayload('create', $alat, [], [
                             'kode' => $alat->kode,
@@ -309,11 +344,16 @@ class AlatImportService
      * @param  array<int, array<string, mixed>>  $validatedRows
      * @return array<int, string>
      */
+    /**
+     * Kode adalah identitas alat, jadi kode yang sudah ada di database berarti
+     * baris tersebut memperbarui alat itu, bukan bentrok. Yang tetap salah
+     * hanyalah kode yang dipakai lebih dari sekali di dalam satu berkas, karena
+     * tidak jelas baris mana yang dimaksud.
+     */
     private function validateKodeUniqueness(array $validatedRows): array
     {
         $errors = [];
         $terpakaiDiBerkas = [];
-        $kodePerArea = [];
 
         foreach ($validatedRows as $row) {
             $kode = trim((string) ($row['kode'] ?? ''));
@@ -321,8 +361,7 @@ class AlatImportService
                 continue;
             }
 
-            $areaId = (int) $row['lookup']['area_id'];
-            $kunci = $areaId.'|'.mb_strtolower($kode);
+            $kunci = $this->makeKodeKey((int) $row['lookup']['area_id'], $kode);
 
             if (isset($terpakaiDiBerkas[$kunci])) {
                 $errors[] = "Baris {$row['row_number']}: kode {$kode} dipakai lebih dari sekali pada berkas ini.";
@@ -331,56 +370,6 @@ class AlatImportService
             }
 
             $terpakaiDiBerkas[$kunci] = true;
-            $kodePerArea[$areaId][] = $kode;
-        }
-
-        foreach ($kodePerArea as $areaId => $daftarKode) {
-            $bentrok = Alat::query()
-                ->where('area_id', $areaId)
-                ->whereIn('kode', $daftarKode)
-                ->pluck('kode', 'id');
-
-            if ($bentrok->isEmpty()) {
-                continue;
-            }
-
-            // Kode yang ternyata milik alat yang sedang diperbarui baris ini
-            // bukan bentrok, jadi dikeluarkan dari daftar.
-            $milikSendiri = Alat::query()
-                ->where('area_id', $areaId)
-                ->whereIn('kode', $daftarKode)
-                ->get(['id', 'kode', 'nama', 'jenis_alat', 'klasifikasi_alat', 'area_id'])
-                ->filter(function (Alat $alat) use ($validatedRows) {
-                    $kunciAlat = $this->makeAlatLookupKey(
-                        (string) $alat->nama,
-                        (string) $alat->jenis_alat,
-                        (string) $alat->klasifikasi_alat,
-                        (int) $alat->area_id,
-                    );
-
-                    foreach ($validatedRows as $row) {
-                        if ($row['lookup_key'] === $kunciAlat && trim((string) ($row['kode'] ?? '')) === (string) $alat->kode) {
-                            return true;
-                        }
-                    }
-
-                    return false;
-                })
-                ->pluck('kode')
-                ->all();
-
-            foreach ($bentrok as $kode) {
-                if (in_array($kode, $milikSendiri, true)) {
-                    continue;
-                }
-
-                $barisBentrok = collect($validatedRows)
-                    ->first(fn (array $row) => (int) $row['lookup']['area_id'] === (int) $areaId
-                        && trim((string) ($row['kode'] ?? '')) === (string) $kode);
-
-                $nomorBaris = $barisBentrok['row_number'] ?? '?';
-                $errors[] = "Baris {$nomorBaris}: kode {$kode} sudah dipakai alat lain di area ini.";
-            }
         }
 
         return $errors;
@@ -389,6 +378,47 @@ class AlatImportService
     private function makeAlatLookupKey(string $nama, string $jenisAlat, string $klasifikasiAlat, int $areaId): string
     {
         return implode('|', [$areaId, $nama, $jenisAlat, $klasifikasiAlat]);
+    }
+
+    /**
+     * Peta alat berdasarkan kode per area. Kode adalah identitas alat, jadi
+     * baris berkode akan memperbarui alat berkode sama walau namanya berbeda.
+     *
+     * @return array<string, Alat>
+     */
+    private function loadExistingKodeMap(array $validatedRows): array
+    {
+        $kodePerArea = [];
+        foreach ($validatedRows as $row) {
+            $kode = trim((string) ($row['kode'] ?? ''));
+            if ($kode === '') {
+                continue;
+            }
+
+            $kodePerArea[(int) $row['lookup']['area_id']][] = $kode;
+        }
+
+        if (! $kodePerArea) {
+            return [];
+        }
+
+        $kodeMap = [];
+        foreach ($kodePerArea as $areaId => $daftarKode) {
+            Alat::query()
+                ->where('area_id', $areaId)
+                ->whereIn('kode', array_unique($daftarKode))
+                ->get(['id', 'kode', 'nama', 'jenis_alat', 'klasifikasi_alat', 'lokasi', 'total_aset', 'max_demand', 'area_id'])
+                ->each(function (Alat $alat) use (&$kodeMap) {
+                    $kodeMap[$this->makeKodeKey((int) $alat->area_id, (string) $alat->kode)] = $alat;
+                });
+        }
+
+        return $kodeMap;
+    }
+
+    private function makeKodeKey(int $areaId, string $kode): string
+    {
+        return $areaId.'|'.mb_strtolower(trim($kode));
     }
 
     private function loadExistingAlatMap(array $validatedRows): array
