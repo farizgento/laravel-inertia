@@ -11,11 +11,26 @@ return new class extends Migration
     {
         Schema::create('peminjaman_templates', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('area_id')->constrained('areas')->cascadeOnDelete();
-            $table->foreignId('source_area_id')->nullable()->constrained('areas')->nullOnDelete();
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+
+            $table->foreignId('area_id')
+                ->constrained('areas')
+                ->cascadeOnDelete();
+
+            $table->foreignId('source_area_id')
+                ->nullable()
+                ->constrained('areas')
+                ->nullOnDelete();
+
+            $table->foreignId('created_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
             $table->string('nama');
-            $table->string('kategori')->default(Peminjaman::KATEGORI_INTRA_AREA);
+
+            $table->string('kategori')
+                ->default(Peminjaman::KATEGORI_INTRA_AREA);
+
             $table->timestamps();
 
             $table->index(['area_id', 'kategori']);
@@ -24,14 +39,23 @@ return new class extends Migration
 
         Schema::create('peminjaman_template_items', function (Blueprint $table) {
             $table->id();
+
             $table->foreignId('peminjaman_template_id')
                 ->constrained('peminjaman_templates')
                 ->cascadeOnDelete();
-            $table->foreignId('alat_id')->constrained('alats')->cascadeOnDelete();
+
+            $table->foreignId('alat_id')
+                ->constrained('alats')
+                ->cascadeOnDelete();
+
             $table->unsignedInteger('qty')->default(1);
+
             $table->timestamps();
 
-            $table->unique(['peminjaman_template_id', 'alat_id'], 'template_items_template_alat_unique');
+            $table->unique(
+                ['peminjaman_template_id', 'alat_id'],
+                'tmpl_item_uq'
+            );
         });
     }
 

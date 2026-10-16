@@ -78,6 +78,24 @@
                     {{ isExporting ? 'Mengunduh...' : 'Export CSV' }}
                 </button>
                 <button
+                    v-if="canPurge"
+                    class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    type="button"
+                    :disabled="isDeleting || isLoading || pagination.total === 0"
+                    :title="pagination.total === 0
+                        ? 'Tidak ada entri log yang cocok dengan filter aktif'
+                        : `Hapus ${pagination.total} entri sesuai filter aktif`"
+                    aria-label="Hapus log sesuai filter aktif"
+                    @click="openPurgeModal"
+                >
+                    <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        <path d="M10 11v6M14 11v6" />
+                    </svg>
+                </button>
+                <button
                     class="relative inline-flex h-11 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2"
                     type="button"
                     title="Terapkan pencarian dan filter"
@@ -103,6 +121,29 @@
                     Reset
                 </button>
             </div>
+        </div>
+
+        <!-- Hasil penghapusan -->
+        <div
+            v-if="purgeNotice"
+            class="mt-3 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3"
+            role="status"
+        >
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 6 9 17l-5-5" />
+            </svg>
+            <p class="min-w-0 flex-1 text-sm text-emerald-800">{{ purgeNotice }}</p>
+            <button
+                class="shrink-0 rounded-lg p-1 text-emerald-600 transition hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200"
+                type="button"
+                title="Tutup pemberitahuan"
+                aria-label="Tutup pemberitahuan"
+                @click="purgeNotice = ''"
+            >
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+            </button>
         </div>
 
         <!-- Filter aktif -->
@@ -456,11 +497,125 @@
             </nav>
         </div>
     </section>
+
+    <!-- Konfirmasi hapus sesuai filter -->
+    <div
+        v-if="isPurgeModalOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="purge-title"
+        @click.self="closePurgeModal"
+    >
+        <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+            <div class="flex items-start gap-3">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 9v4M12 17h.01" />
+                        <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+                    </svg>
+                </span>
+                <div class="min-w-0 flex-1">
+                    <h2 id="purge-title" class="text-base font-semibold text-slate-900">
+                        Hapus log activity sesuai filter?
+                    </h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Tindakan ini permanen dan tidak dapat dibatalkan.
+                    </p>
+                </div>
+            </div>
+
+            <dl class="mt-4 space-y-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                <div class="flex items-start justify-between gap-3">
+                    <dt class="text-slate-500">Jumlah akan dihapus</dt>
+                    <dd class="text-right font-semibold text-rose-700">{{ pagination.total }} entri</dd>
+                </div>
+                <div class="flex items-start justify-between gap-3">
+                    <dt class="shrink-0 text-slate-500">Filter aktif</dt>
+                    <dd class="min-w-0 text-right font-medium text-slate-700">{{ purgeFilterSummary }}</dd>
+                </div>
+            </dl>
+
+            <p class="mt-3 text-xs text-slate-500">
+                Catatan login dan logout tidak ikut terhapus karena tidak pernah ditampilkan di halaman ini.
+            </p>
+
+            <div class="mt-4">
+                <label for="purge-password" class="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    Kata sandi akun Anda
+                </label>
+                <div class="relative">
+                    <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="4" y="11" width="16" height="10" rx="2" />
+                            <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                        </svg>
+                    </span>
+                    <input
+                        id="purge-password"
+                        ref="purgePasswordInput"
+                        v-model="purgePassword"
+                        class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-11 text-sm text-slate-700 placeholder:text-slate-400 focus:border-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-100"
+                        :type="isPasswordVisible ? 'text' : 'password'"
+                        autocomplete="current-password"
+                        placeholder="Masukkan kata sandi untuk konfirmasi"
+                        @keyup.enter="purgeLogs"
+                    />
+                    <button
+                        class="absolute inset-y-0 right-2 my-auto flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200"
+                        type="button"
+                        :title="isPasswordVisible ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'"
+                        :aria-label="isPasswordVisible ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'"
+                        @click="isPasswordVisible = !isPasswordVisible"
+                    >
+                        <svg v-if="isPasswordVisible" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 3l18 18" />
+                            <path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c5 0 9 4.5 10 7-.4 1-1.4 2.5-2.9 3.8" />
+                            <path d="M6.6 6.6C4.6 8 3.4 9.9 2 12c1 2.5 5 7 10 7 1.7 0 3.2-.5 4.5-1.2" />
+                            <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+                        </svg>
+                        <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <p v-if="purgeError" class="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                {{ purgeError }}
+            </p>
+
+            <div class="mt-5 flex justify-end gap-2">
+                <button
+                    class="inline-flex h-11 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    type="button"
+                    :disabled="isDeleting"
+                    @click="closePurgeModal"
+                >
+                    Batal
+                </button>
+                <button
+                    class="inline-flex h-11 items-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-semibold text-white transition hover:bg-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    type="button"
+                    :disabled="!isPurgeConfirmed || isDeleting"
+                    @click="purgeLogs"
+                >
+                    <svg v-if="isDeleting" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" class="opacity-25" />
+                        <path d="M21 12a9 9 0 0 1-9 9" class="opacity-75" />
+                    </svg>
+                    {{ isDeleting ? 'Menghapus...' : 'Hapus Permanen' }}
+                </button>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script setup>
 import axios from 'axios';
-import { computed, inject, onMounted, reactive, ref, watch } from 'vue';
+import { usePage } from '@inertiajs/vue3';
+import { computed, inject, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ActivityChangeList from '../../Components/ActivityChangeList.vue';
 
@@ -477,13 +632,29 @@ defineOptions({
         ),
 });
 
+const page = usePage();
 const isAreaSwitcherRole = inject('isAreaSwitcherRole', ref(false));
 const activeAreaId = inject('activeAreaId', ref(null));
+const activeAreaName = inject('activeAreaName', ref(''));
 const setAreaSwitching = inject('setAreaSwitching', null);
 const logs = ref([]);
 const isLoading = ref(false);
 const isExporting = ref(false);
 const loadError = ref('');
+
+// Penghapusan log audit tidak bisa dibatalkan, jadi hanya super admin yang
+// melihat tombolnya. Pembatasan sebenarnya tetap ditegakkan di server.
+const canPurge = computed(
+    () => String(page.props.auth?.user?.role?.key ?? '').toLowerCase() === 'super_admin'
+);
+
+const isDeleting = ref(false);
+const isPurgeModalOpen = ref(false);
+const purgePassword = ref('');
+const purgePasswordInput = ref(null);
+const isPasswordVisible = ref(false);
+const purgeError = ref('');
+const purgeNotice = ref('');
 
 const filters = reactive({
     search: '',
@@ -604,6 +775,81 @@ const exportCsv = async () => {
         loadError.value = 'Gagal mengunduh file CSV.';
     } finally {
         isExporting.value = false;
+    }
+};
+
+// Ringkasan ini mengikuti buildParams() supaya yang tertulis di modal persis
+// filter yang dikirim ke server.
+const purgeFilterSummary = computed(() => {
+    const bagian = [];
+
+    if (filters.search.trim()) {
+        bagian.push(`pencarian "${filters.search.trim()}"`);
+    }
+    if (filters.action !== 'Semua') {
+        bagian.push(`aksi ${actionOptionLabel(filters.action)}`);
+    }
+    if (isAreaSwitcherRole.value && activeAreaId.value) {
+        bagian.push(`area ${activeAreaName.value || activeAreaId.value}`);
+    }
+
+    return bagian.length > 0 ? bagian.join(', ') : 'tanpa filter, seluruh area';
+});
+
+const isPurgeConfirmed = computed(() => purgePassword.value !== '');
+
+const openPurgeModal = () => {
+    purgePassword.value = '';
+    isPasswordVisible.value = false;
+    purgeError.value = '';
+    purgeNotice.value = '';
+    isPurgeModalOpen.value = true;
+    nextTick(() => purgePasswordInput.value?.focus());
+};
+
+const closePurgeModal = () => {
+    if (isDeleting.value) {
+        return;
+    }
+
+    isPurgeModalOpen.value = false;
+    purgePassword.value = '';
+    isPasswordVisible.value = false;
+    purgeError.value = '';
+};
+
+const purgeLogs = async () => {
+    if (!isPurgeConfirmed.value || isDeleting.value) {
+        return;
+    }
+
+    isDeleting.value = true;
+    purgeError.value = '';
+
+    try {
+        // Filter dikirim sebagai query string karena server membacanya lewat
+        // $request->query(); kata sandi dikirim di body, bukan di URL, supaya
+        // tidak tercatat di log akses nginx.
+        const response = await axios.delete('/api/activity-logs', {
+            params: buildParams(),
+            data: { password: purgePassword.value },
+        });
+
+        isPurgeModalOpen.value = false;
+        purgePassword.value = '';
+        isPasswordVisible.value = false;
+        purgeNotice.value = response.data?.message ?? 'Log activity berhasil dihapus.';
+
+        await loadLogs(1);
+    } catch (error) {
+        // Kata sandi salah dikembalikan sebagai galat validasi 422 pada field
+        // password; sisanya memakai pesan umum dari server.
+        purgeError.value =
+            error.response?.data?.errors?.password?.[0] ??
+            error.response?.data?.message ??
+            'Gagal menghapus log activity.';
+    } finally {
+        isDeleting.value = false;
     }
 };
 

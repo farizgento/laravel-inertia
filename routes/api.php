@@ -77,6 +77,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/activity-logs/export', [ActivityLogController::class, 'export']);
     });
 
+    // Penghapusan log audit tidak bisa dibatalkan, jadi dipisah dari grup di
+    // atas dan dibatasi ke super admin saja.
+    Route::middleware('role:'.Role::KEY_SUPER_ADMIN)->group(function () {
+        Route::delete('/activity-logs', [ActivityLogController::class, 'destroyFiltered']);
+    });
+
     Route::middleware('role:'.implode(',', [
         Role::KEY_GUEST,
         Role::KEY_SP_TOOL,

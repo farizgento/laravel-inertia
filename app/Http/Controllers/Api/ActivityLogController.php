@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\LdapLoginException;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Alat;
@@ -9,10 +10,14 @@ use App\Models\Area;
 use App\Models\Peminjaman;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ActivityLogger;
+use App\Services\LdapLoginService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class ActivityLogController extends Controller
 {
@@ -141,6 +146,164 @@ class ActivityLogController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
+    }
+
+    /**
+     * Menghapus seluruh entri log yang cocok dengan filter yang sedang aktif.
+     *
+     * Memakai buildFilteredQuery() yang sama dengan index() dan export(), jadi
+     * yang terhapus persis yang sedang dilihat pengguna - termasuk pengecualian
+     * action login/logout, yang memang tidak pernah ditampilkan dan karenanya
+     * tidak pernah ikut terhapus.
+     */
+    public function destroyFiltered(Request $request, LdapLoginService $ldapLoginService): array
+    {
+        $actor = $this->authorizeActor($request);
+
+        // Penghapusan log audit tidak bisa dibatalkan, jadi dibatasi ke super
+        // admin saja meski peran lain boleh melihat dan mengekspornya.
+        abort_unless($actor->role?->key === Role::KEY_SUPER_ADMIN, 403);
+
+        $validated = $request->validate([
+            'password' => ['required', 'string'],
+        ], [
+            'password.required' => 'Kata sandi wajib diisi untuk mengonfirmasi penghapusan.',
+        ]);
+
+        $this->confirmActorPassword($actor, $validated['password'], $ldapLoginService);
+
+        // reorder() melepas ORDER BY milik buildFilteredQuery; Oracle menolak
+        // ORDER BY pada DELETE maupun pada subquery yang dipakai di sini.
+        $query = $this->buildFilteredQuery($request, $actor)->reorder();
+
+        $total = (clone $query)->count();
+        $deleted = 0;
+
+        // Dihapus bertahap supaya daftar IN tidak melewati batas 1000 ekspresi
+        // Oracle dan transaksinya tidak menahan puluhan ribu baris sekaligus.
+        while (true) {
+            $ids = (clone $query)->limit(500)->pluck('activity_logs.id')->all();
+
+            if ($ids === []) {
+                break;
+            }
+
+            $terhapus = ActivityLog::query()->whereIn('id', $ids)->delete();
+
+            // Penjaga agar tidak berputar tanpa akhir bila sebuah batch gagal
+            // terhapus karena alasan di luar dugaan.
+            if ($terhapus === 0) {
+                break;
+            }
+
+            $deleted += $terhapus;
+        }
+
+        $ringkasanFilter = $this->describeFilters($request, $actor);
+
+        // Penghapusannya sendiri dicatat. Entri ini dibuat setelah DELETE
+        // selesai sehingga tidak ikut terhapus oleh proses yang mencatatnya.
+        ActivityLogger::log('delete', null, [
+            'actor' => $actor,
+            'area_id' => $this->resolveFilterAreaId($request, $actor),
+            'subject_type' => 'ActivityLog',
+            'subject_label' => $deleted.' entri log',
+            'description' => "Menghapus {$deleted} entri log activity ({$ringkasanFilter}).",
+            'properties' => [
+                'deleted_count' => $deleted,
+                'matched_count' => $total,
+                'filter_search' => trim((string) $request->query('search', '')) ?: null,
+                'filter_action' => trim((string) $request->query('action', '')) ?: null,
+                'filter_area_id' => $this->resolveFilterAreaId($request, $actor),
+            ],
+        ]);
+
+        return [
+            'deleted' => $deleted,
+            'matched' => $total,
+            'filter_summary' => $ringkasanFilter,
+            'message' => $deleted === 0
+                ? 'Tidak ada entri log yang cocok dengan filter ini.'
+                : "Berhasil menghapus {$deleted} entri log activity.",
+        ];
+    }
+
+    /**
+     * Memverifikasi ulang kata sandi pelaku sebelum penghapusan dijalankan.
+     *
+     * Memakai LdapLoginService yang sama dengan proses login supaya kedua jenis
+     * akun terlayani: akun statis diperiksa lewat hash lokal, akun LDAP lewat
+     * bind ke direktori. Hash::check saja tidak cukup karena kolom password
+     * akun LDAP memang null.
+     */
+    private function confirmActorPassword(
+        User $actor,
+        #[\SensitiveParameter] string $password,
+        LdapLoginService $ldapLoginService
+    ): void {
+        $username = trim((string) $actor->username);
+
+        if ($username === '') {
+            abort(403, 'Akun ini tidak punya username, kata sandi tidak dapat diverifikasi.');
+        }
+
+        try {
+            $terverifikasi = $ldapLoginService->attempt($username, $password);
+        } catch (LdapLoginException $exception) {
+            throw ValidationException::withMessages([
+                'password' => [$exception->getMessage()],
+            ]);
+        } catch (Throwable $exception) {
+            // Direktori tidak dapat dihubungi bukan berarti kata sandinya salah;
+            // dibedakan supaya pengguna tidak mengira sandinya yang bermasalah.
+            abort(503, 'Direktori LDAP tidak dapat dihubungi, verifikasi kata sandi gagal. Coba lagi beberapa saat lagi.');
+        }
+
+        // Penjaga tambahan: pastikan yang terverifikasi benar-benar pelaku yang
+        // sedang login, bukan akun lain yang kebetulan punya username serupa.
+        if ($terverifikasi->getKey() !== $actor->getKey()) {
+            abort(403);
+        }
+    }
+
+    /**
+     * Area yang sedang difilter, mengikuti aturan peran di buildFilteredQuery().
+     */
+    private function resolveFilterAreaId(Request $request, User $actor): ?int
+    {
+        $areaId = (int) $request->query('area_id', 0);
+
+        if ($actor->role?->key === Role::KEY_SUPER_ADMIN) {
+            return $areaId > 0 ? $areaId : null;
+        }
+
+        return $actor->area_id;
+    }
+
+    /**
+     * Ringkasan filter dalam bahasa manusia untuk dicatat di deskripsi log.
+     */
+    private function describeFilters(Request $request, User $actor): string
+    {
+        $bagian = [];
+
+        $search = trim((string) $request->query('search', ''));
+        if ($search !== '') {
+            $bagian[] = 'pencarian "'.$search.'"';
+        }
+
+        $action = trim((string) $request->query('action', ''));
+        if ($action !== '' && strtolower($action) !== 'semua') {
+            $bagian[] = 'aksi '.$action;
+        }
+
+        $areaId = $this->resolveFilterAreaId($request, $actor);
+        if ($areaId !== null) {
+            $namaArea = Area::query()->whereKey($areaId)->value('name');
+            $bagian[] = 'area '.($namaArea ?? $areaId);
+        }
+
+        return $bagian === [] ? 'tanpa filter, seluruh area' : implode(', ', $bagian);
     }
 
     public function alatIndex(Request $request): array
