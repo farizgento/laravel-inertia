@@ -211,4 +211,34 @@ return [
 
     'partitioned' => false,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Idle & Absolute Timeout
+    |--------------------------------------------------------------------------
+    |
+    | Keduanya dalam menit dan ditegakkan oleh EnforceSessionTimeout, bukan
+    | oleh masa berlaku cookie. "idle_timeout" dihitung dari aktivitas nyata
+    | pengguna sehingga polling badge notifikasi tidak ikut memperpanjang
+    | sesi, sedangkan "absolute_timeout" dihitung sejak login supaya sesi
+    | tidak bisa hidup selamanya walau tab dibiarkan terbuka. Isi 0
+    | untuk mematikan salah satu pemeriksaan.
+    |
+    */
+
+    'idle_timeout' => (int) env('SESSION_IDLE_TIMEOUT', 30),
+
+    'absolute_timeout' => (int) env('SESSION_ABSOLUTE_TIMEOUT', 720),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Peringatan Sebelum Sesi Berakhir
+    |--------------------------------------------------------------------------
+    |
+    | Berapa detik sebelum sesi berakhir modal peringatan ditampilkan agar
+    | pengguna masih punya kesempatan memperpanjang sesinya.
+    |
+    */
+
+    'warning_lead_time' => (int) env('SESSION_WARNING_LEAD_TIME', 120),
+
 ];

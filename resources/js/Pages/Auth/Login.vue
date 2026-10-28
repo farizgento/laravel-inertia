@@ -12,22 +12,8 @@
         <div class="relative z-10 flex min-h-screen items-center justify-center px-4 py-12">
             <div class="w-full max-w-md">
                 <div class="text-center">
-                    <div
-                        class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 shadow-lg shadow-blue-200"
-                    >
-                        <svg
-                            class="h-7 w-7 text-white"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" />
-                        </svg>
-                    </div>
-                    <h1 class="mt-4 text-2xl font-semibold text-slate-900">IP TOOLS Lite <i>BETA</i></h1>
+                    <AppLogo tinggi="h-14" ukuran-cadangan="h-14 w-14 rounded-2xl" class="mx-auto" />
+                    <h1 class="mt-5 text-2xl font-semibold text-slate-900">IP TOOLS Lite <i>BETA</i></h1>
                     <p class="mt-1 text-sm text-slate-500">Sistem Peminjaman General Tools Area UBH</p>
                 </div>
 
@@ -37,6 +23,17 @@
                         <p class="mt-1 text-sm text-slate-500">
                             Silakan masukkan username dan password Anda
                         </p>
+                    </div>
+
+                    <div
+                        v-if="noticeMessage"
+                        class="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-sm text-amber-700"
+                    >
+                        <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M12 7v5l3 2" />
+                        </svg>
+                        <span>{{ noticeMessage }}</span>
                     </div>
 
                     <form class="mt-6 space-y-4" @submit.prevent="submit">
@@ -144,7 +141,8 @@
 <script setup>
 import { Head, router } from '@inertiajs/vue3';
 import axios from 'axios';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import AppLogo from '../../Components/AppLogo.vue';
 
 const form = ref({
     username: '',
@@ -154,6 +152,24 @@ const form = ref({
 const errors = ref({});
 const processing = ref(false);
 const showPassword = ref(false);
+
+// Alasan keluar dikirim EnforceSessionTimeout lewat query string agar pengguna
+// tidak bingung kenapa tiba-tiba kembali ke halaman login.
+const expiredReason =
+    typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('expired')
+        : null;
+const sessionNotice =
+    expiredReason === 'absolute'
+        ? 'Sesi Anda sudah mencapai batas waktu maksimal. Silakan masuk kembali.'
+        : expiredReason === 'idle'
+          ? 'Sesi Anda berakhir karena tidak ada aktivitas. Silakan masuk kembali.'
+          : '';
+
+// Gangguan di sisi layanan (direktori LDAP tidak bisa dihubungi) ditampilkan
+// terpisah dari error field, supaya tidak terbaca sebagai salah username.
+const serviceNotice = ref('');
+const noticeMessage = computed(() => serviceNotice.value || sessionNotice);
 const roleRoutes = {
     guest: '/dashboard',
     user: '/dashboard',
@@ -180,6 +196,7 @@ const normalizeErrors = (payload) => {
 
 const submit = async () => {
     errors.value = {};
+    serviceNotice.value = '';
     processing.value = true;
 
     try {
@@ -191,6 +208,16 @@ const submit = async () => {
     } catch (err) {
         if (err.response?.status === 422) {
             errors.value = normalizeErrors(err.response.data.errors);
+        } else if (err.response?.status === 503) {
+            serviceNotice.value =
+                err.response?.data?.message ??
+                'Layanan autentikasi sedang tidak tersedia. Hubungi administrator sistem.';
+        } else if (err.response?.status === 429) {
+            const retryAfter = Number(err.response.headers?.['retry-after'] ?? 0);
+            const waitLabel = retryAfter > 0 ? ` Coba lagi dalam ${retryAfter} detik.` : '';
+            errors.value = {
+                general: `Terlalu banyak percobaan masuk.${waitLabel}`,
+            };
         } else {
             errors.value = {
                 general: err.response?.data?.message ?? 'Gagal masuk. Coba lagi.',

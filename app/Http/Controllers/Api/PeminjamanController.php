@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Exceptions\LdapLoginException;
+use App\Http\Controllers\Concerns\MemuatLaporanAlatPeminjaman;
 use App\Http\Controllers\Controller;
 use App\Models\Alat;
 use App\Models\AreaAlatStock;
@@ -24,6 +25,8 @@ use Throwable;
 
 class PeminjamanController extends Controller
 {
+    use MemuatLaporanAlatPeminjaman;
+
     private function relatedToArea(Peminjaman $peminjaman, int $areaId): bool
     {
         return (int) $peminjaman->area_id === $areaId
@@ -67,7 +70,7 @@ class PeminjamanController extends Controller
         $kategori = trim((string) $request->query('kategori', ''));
 
         $query = Peminjaman::query()
-            ->with(['items.alat.area', 'suratJalans.photos', 'user', 'reviewer', 'requesterReviewer', 'area', 'requesterArea'])
+            ->with(['items.alat.area', 'suratJalans.photos', 'user', 'reviewer', 'requesterReviewer', 'area', 'requesterArea', 'bidangPekerjaan'])
             ->orderByDesc('created_at');
 
         if ($isGuest) {
@@ -118,7 +121,7 @@ class PeminjamanController extends Controller
         if ($search !== '') {
             $query->where(function ($sub) use ($search) {
                 $sub->where('pekerjaan', 'like', '%'.$search.'%')
-                    ->orWhere('id', $search);
+                    ->when(ctype_digit($search), fn ($idQuery) => $idQuery->orWhere('id', (int) $search));
             });
         }
 
@@ -135,29 +138,7 @@ class PeminjamanController extends Controller
 
     private function transformPeminjaman(Peminjaman $peminjaman): array
     {
-        $alatIds = $peminjaman->items
-            ->pluck('alat_id')
-            ->filter()
-            ->map(fn ($id) => (int) $id)
-            ->values();
-
-        $laporansByAlat = LaporanAlat::query()
-            ->with('alat.area')
-            ->where('user_id', $peminjaman->user_id)
-            ->when($alatIds->isNotEmpty(), function ($reportQuery) use ($alatIds) {
-                $reportQuery->whereIn('alat_id', $alatIds->all());
-            }, function ($reportQuery) {
-                $reportQuery->whereRaw('1 = 0');
-            })
-            ->when($peminjaman->created_at && $peminjaman->updated_at, function ($reportQuery) use ($peminjaman) {
-                $reportQuery->whereBetween('created_at', [
-                    $peminjaman->created_at,
-                    $peminjaman->updated_at,
-                ]);
-            })
-            ->orderByDesc('created_at')
-            ->get()
-            ->groupBy('alat_id');
+        $laporansByAlat = $this->laporanAlatUntuk($peminjaman);
 
         $tools = $peminjaman->items->map(function (PeminjamanItem $item) use ($laporansByAlat) {
             $alat = $item->alat;
@@ -242,6 +223,8 @@ class PeminjamanController extends Controller
         return [
             'id' => $peminjaman->id,
             'title' => $peminjaman->pekerjaan,
+            'bidang_pekerjaan_id' => $peminjaman->bidang_pekerjaan_id,
+            'bidang_pekerjaan' => $peminjaman->bidangPekerjaan?->nama,
             'resi' => $peminjaman->resi,
             'user_name' => $peminjaman->user?->name ?? '-',
             'area_id' => $peminjaman->area_id,
@@ -323,6 +306,9 @@ class PeminjamanController extends Controller
             ->all();
 
         $peminjamans = $query->paginate($perPage);
+
+        // Laporan untuk seluruh baris di halaman ini diambil sekali.
+        $this->prefetchLaporanAlat($peminjamans->getCollection());
 
         $peminjamans->setCollection(
             $peminjamans->getCollection()->map(fn (Peminjaman $peminjaman) => $this->transformPeminjaman($peminjaman))->values()
@@ -447,6 +433,8 @@ class PeminjamanController extends Controller
             'tanggal_pinjam' => ['required', 'date'],
             'tanggal_kembali' => ['required', 'date', 'after_or_equal:tanggal_pinjam'],
             'pekerjaan' => ['required', 'string', 'max:1000'],
+            'bidang_pekerjaan_id' => ['required', 'integer', 'exists:bidang_pekerjaans,id'],
+            'pekerjaan_oh_id' => ['nullable', 'integer', 'exists:pekerjaan_ohs,id'],
             'area_id' => ['nullable', 'integer', 'exists:areas,id'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'integer'],
@@ -545,6 +533,8 @@ class PeminjamanController extends Controller
                 'tanggal_pinjam' => $validated['tanggal_pinjam'],
                 'tanggal_kembali' => $validated['tanggal_kembali'],
                 'pekerjaan' => $validated['pekerjaan'],
+                'bidang_pekerjaan_id' => $validated['bidang_pekerjaan_id'],
+                'pekerjaan_oh_id' => $validated['pekerjaan_oh_id'] ?? null,
             ]);
 
             $now = now();
@@ -596,6 +586,8 @@ class PeminjamanController extends Controller
 
         $validated = $request->validate([
             'pekerjaan' => ['required', 'string', 'max:1000'],
+            'bidang_pekerjaan_id' => ['required', 'integer', 'exists:bidang_pekerjaans,id'],
+            'pekerjaan_oh_id' => ['nullable', 'integer', 'exists:pekerjaan_ohs,id'],
             'resi' => ['nullable', 'string', 'max:255'],
             'tanggal_pinjam' => ['required', 'date'],
             'tanggal_kembali' => ['required', 'date', 'after_or_equal:tanggal_pinjam'],
@@ -643,6 +635,8 @@ class PeminjamanController extends Controller
 
             $lockedPeminjaman->update([
                 'pekerjaan' => $validated['pekerjaan'],
+                'bidang_pekerjaan_id' => $validated['bidang_pekerjaan_id'],
+                'pekerjaan_oh_id' => $validated['pekerjaan_oh_id'] ?? null,
                 'resi' => $validated['resi'] ?? null,
                 'tanggal_pinjam' => $validated['tanggal_pinjam'],
                 'tanggal_kembali' => $validated['tanggal_kembali'],
@@ -652,7 +646,7 @@ class PeminjamanController extends Controller
             return $lockedPeminjaman;
         });
 
-        $peminjaman->load(['items.alat.area', 'suratJalans.photos', 'user', 'reviewer', 'requesterReviewer', 'area', 'requesterArea']);
+        $peminjaman->load(['items.alat.area', 'suratJalans.photos', 'user', 'reviewer', 'requesterReviewer', 'area', 'requesterArea', 'bidangPekerjaan']);
 
         return response()->json($this->transformPeminjaman($peminjaman));
     }
@@ -724,6 +718,8 @@ class PeminjamanController extends Controller
             'tanggal_pinjam' => ['required', 'date'],
             'tanggal_kembali' => ['required', 'date', 'after_or_equal:tanggal_pinjam'],
             'pekerjaan' => ['required', 'string', 'max:1000'],
+            'bidang_pekerjaan_id' => ['required', 'integer', 'exists:bidang_pekerjaans,id'],
+            'pekerjaan_oh_id' => ['nullable', 'integer', 'exists:pekerjaan_ohs,id'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'integer'],
             'items.*.qty' => ['required', 'integer', 'min:1'],
@@ -798,6 +794,8 @@ class PeminjamanController extends Controller
                 'tanggal_pinjam' => $validated['tanggal_pinjam'],
                 'tanggal_kembali' => $validated['tanggal_kembali'],
                 'pekerjaan' => $validated['pekerjaan'],
+                'bidang_pekerjaan_id' => $validated['bidang_pekerjaan_id'],
+                'pekerjaan_oh_id' => $validated['pekerjaan_oh_id'] ?? null,
             ]);
 
             $now = now();

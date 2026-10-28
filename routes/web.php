@@ -208,6 +208,13 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('Admin/Area');
     })->middleware('role:' . Role::KEY_SUPER_ADMIN)->name('area.index');
 
+    Route::get('/bidang-pekerjaan', function () {
+        return Inertia::render('Admin/BidangPekerjaan');
+    })->middleware('role:' . implode(',', [
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+    ]))->name('bidang-pekerjaan');
+
     Route::get('/analytics', function () {
         abort_unless(
             App\Http\Controllers\Api\AnalyticsController::bolehMengakses(request()->user()),
@@ -223,11 +230,29 @@ Route::middleware('auth')->group(function () {
         Role::KEY_SUPER_ADMIN,
     ]))->name('analytics');
 
+    // Melihat pekerjaan terbuka untuk peran operasional; batasan areanya
+    // ditegakkan di PekerjaanOhController.
     Route::get('/pekerjaan-overhaul', function () {
         return Inertia::render('Admin/PekerjaanOverhaul');
     })->middleware('role:' . implode(',', [
+        Role::KEY_USER,
+        Role::KEY_SP_TOOL,
         Role::KEY_PIC_TOOL,
+        Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
     ]))->name('pekerjaan-overhaul');
+
+    Route::get('/pekerjaan-overhaul/{pekerjaanOh}', function (App\Models\PekerjaanOh $pekerjaanOh) {
+        return Inertia::render('Admin/PekerjaanOverhaulDetail', [
+            'pekerjaanId' => $pekerjaanOh->id,
+        ]);
+    })->middleware('role:' . implode(',', [
+        Role::KEY_USER,
+        Role::KEY_SP_TOOL,
+        Role::KEY_PIC_TOOL,
+        Role::KEY_MGR_TOOL,
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+    ]))->name('pekerjaan-overhaul.detail');
 });

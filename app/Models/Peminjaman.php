@@ -46,6 +46,8 @@ class Peminjaman extends Model
         'requester_area_id',
         'is_inter_area',
         'pekerjaan',
+        'pekerjaan_oh_id',
+        'bidang_pekerjaan_id',
         'resi',
         'catatan',
         'status',
@@ -110,6 +112,16 @@ class Peminjaman extends Model
     public function area(): BelongsTo
     {
         return $this->belongsTo(Area::class);
+    }
+
+    public function bidangPekerjaan(): BelongsTo
+    {
+        return $this->belongsTo(BidangPekerjaan::class);
+    }
+
+    public function pekerjaanOh(): BelongsTo
+    {
+        return $this->belongsTo(PekerjaanOh::class, 'pekerjaan_oh_id');
     }
 
     public function requesterArea(): BelongsTo

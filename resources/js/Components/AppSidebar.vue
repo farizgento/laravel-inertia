@@ -1,27 +1,13 @@
 <template>
     <aside class="flex h-screen w-full flex-col overflow-hidden border-r border-slate-200 bg-white/95">
         <div class="border-b border-slate-200 px-4 py-4">
-            <div class="flex items-center gap-3">
-                <div
-                    class="flex h-12 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-sky-400 text-white shadow-lg shadow-blue-200"
-                >
-                    <svg
-                        class="h-5 w-5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" />
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="text-sm font-bold text-slate-900">IPTOOLS LITE</h1>
-                    <p class="text-xs text-slate-500"><i>BETA</i></p>
-                </div>
-            </div>
+            <!-- Logo sudah memuat nama "PLN Indonesia Power", jadi nama aplikasi
+                 ditaruh di bawahnya sebagai baris kecil agar tidak bertumpuk. -->
+            <AppLogo tinggi="h-9" ukuran-cadangan="h-9 w-9" />
+            <p class="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                IPTOOLS Lite
+                <span class="font-normal normal-case italic text-slate-400">beta</span>
+            </p>
         </div>
 
         <div class="flex min-h-0 flex-1 flex-col">
@@ -358,6 +344,7 @@
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import AppLogo from './AppLogo.vue';
 
 const props = defineProps({
     activeMenu: {
@@ -416,6 +403,7 @@ const page = usePage();
 const masterDataMenuKeys = new Set([
     'tambah-pengguna',
     'area',
+    'bidang-pekerjaan',
     'master-alat',
     'template-peminjaman',
 ]);
@@ -502,6 +490,12 @@ const menuItems = computed(() => {
                       icon: 'area',
                   },
                   {
+                      key: 'bidang-pekerjaan',
+                      label: 'Bidang Pekerjaan',
+                      href: '/bidang-pekerjaan',
+                      icon: 'area',
+                  },
+                  {
                       key: 'pengiriman',
                       label: 'Intra Area',
                       href: '/pengiriman-alat',
@@ -533,7 +527,7 @@ const menuItems = computed(() => {
                   },
                   {
                       key: 'pekerjaan-overhaul',
-                      label: 'Pekerjaan Overhaul',
+                      label: 'Pekerjaan/Project',
                       href: '/pekerjaan-overhaul',
                       icon: 'riwayat',
                   },
@@ -589,6 +583,12 @@ const menuItems = computed(() => {
                       icon: 'users',
                   },
                   {
+                      key: 'bidang-pekerjaan',
+                      label: 'Bidang Pekerjaan',
+                      href: '/bidang-pekerjaan',
+                      icon: 'area',
+                  },
+                  {
                       key: 'master-alat',
                       label: 'Alat',
                       href: '/master-alat',
@@ -602,7 +602,7 @@ const menuItems = computed(() => {
                   },
                   {
                       key: 'pekerjaan-overhaul',
-                      label: 'Pekerjaan Overhaul',
+                      label: 'Pekerjaan/Project',
                       href: '/pekerjaan-overhaul',
                       icon: 'riwayat',
                   },
@@ -671,7 +671,7 @@ const menuItems = computed(() => {
                   },
                   {
                       key: 'pekerjaan-overhaul',
-                      label: 'Pekerjaan Overhaul',
+                      label: 'Pekerjaan/Project',
                       href: '/pekerjaan-overhaul',
                       icon: 'riwayat',
                   },
@@ -725,6 +725,12 @@ const menuItems = computed(() => {
                         label: 'Pengguna',
                         href: '/tambah-pengguna',
                         icon: 'users',
+                    },
+                    {
+                        key: 'pekerjaan-overhaul',
+                        label: 'Pekerjaan/Project',
+                        href: '/pekerjaan-overhaul',
+                        icon: 'pekerjaan-overhaul',
                     },
                     {
                         key: 'review',
@@ -826,6 +832,12 @@ const menuItems = computed(() => {
                         label: 'Dashboard',
                         href: '/dashboard',
                         icon: 'dashboard',
+                    },
+                    {
+                        key: 'pekerjaan-overhaul',
+                        label: 'Pekerjaan/Project',
+                        href: '/pekerjaan-overhaul',
+                        icon: 'pekerjaan-overhaul',
                     },
                     ...(isSpTool
                         ? [

@@ -177,7 +177,7 @@
 
                     <div class="mt-4 flex flex-wrap gap-2">
                         <button
-                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700"
+                            class="inline-flex min-w-[9.5rem] flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700"
                             type="button"
                             @click="openDetail(item)"
                         >
@@ -188,8 +188,26 @@
                             Lihat Detail
                         </button>
                         <button
+                            v-if="canDownloadDaftarAlat(item)"
+                            class="inline-flex min-w-[9.5rem] flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-300 disabled:cursor-not-allowed disabled:opacity-60"
+                            type="button"
+                            :disabled="downloadingDaftarAlatId === item.id"
+                            @click="downloadDaftarAlat(item)"
+                        >
+                            <svg v-if="downloadingDaftarAlatId === item.id" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                                <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
+                            </svg>
+                            <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                <path d="M12 3v12" />
+                                <path d="m7 10 5 5 5-5" />
+                                <path d="M5 21h14" />
+                            </svg>
+                            {{ downloadingDaftarAlatId === item.id ? 'Menyiapkan...' : 'Unduh Daftar Alat' }}
+                        </button>
+                        <button
                             v-if="hasSuratJalan(item)"
-                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
+                            class="inline-flex min-w-[9.5rem] flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
                             type="button"
                             @click="openSuratJalan(item)"
                         >
@@ -204,7 +222,7 @@
                         </button>
                         <button
                             v-if="canAcceptSuratJalan(item)"
-                            class="inline-flex flex-1 basis-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                            class="inline-flex w-full basis-full items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-blue-200 bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
                             type="button"
                             :disabled="isAccepting === item.id"
                             @click="acceptPeminjaman(item)"
@@ -216,7 +234,7 @@
                         </button>
                         <button
                             v-if="canReturnItem(item)"
-                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:border-amber-300"
+                            class="inline-flex min-w-[9.5rem] flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:border-amber-300"
                             type="button"
                             @click="openReturn(item)"
                         >
@@ -230,8 +248,20 @@
                     </div>
                 </article>
             </div>
+
+            <div v-if="hasMore" class="mt-5 flex justify-center">
+                <button
+                    class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    type="button"
+                    :disabled="isLoadingMore"
+                    @click="muatLebihBanyak"
+                >
+                    {{ isLoadingMore ? 'Memuat...' : 'Muat lebih banyak' }}
+                </button>
+            </div>
         </div>
     </section>
+
 
     <PeminjamanDetailModal
         :open="!!detailItem"
@@ -575,6 +605,7 @@
 
 <script setup>
 import axios from 'axios';
+import { bacaDaftar } from '../../lib/daftarBerhalaman';
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
@@ -634,6 +665,7 @@ const alertMessage = ref('');
 const alertType = ref('success');
 const alertTitle = ref('');
 let alertTimeout = null;
+let filterTimeout = null;
 
 const detailItem = ref(null);
 const suratJalanItem = ref(null);
@@ -641,6 +673,7 @@ const returnItem = ref(null);
 const search = ref('');
 const isReturning = ref(false);
 const isAccepting = ref(null);
+const downloadingDaftarAlatId = ref(null);
 const returnReportError = ref('');
 const returnRows = ref([]);
 const returnSenderName = ref('');
@@ -722,20 +755,16 @@ const statusBadge = (status) => {
     }
 };
 
-const statusCountMap = computed(() => {
-    const base = {
-        Dikirim: 0,
-        Diterima: 0,
-        'Dikembalikan Partials': 0,
-        'Dikembalikan Semuanya': 0,
-    };
-    items.value.forEach((item) => {
-        if (base[item.status] !== undefined) {
-            base[item.status] += 1;
-        }
-    });
-    return base;
-});
+// Diisi server dari seluruh data yang lolos filter, bukan dihitung dari baris
+// yang sedang dimuat, supaya angkanya tidak ikut mengecil karena paginasi.
+const statusCounts = ref({});
+
+const statusCountMap = computed(() => ({
+    Dikirim: Number(statusCounts.value.Dikirim ?? 0),
+    Diterima: Number(statusCounts.value.Diterima ?? 0),
+    'Dikembalikan Partials': Number(statusCounts.value['Dikembalikan Partials'] ?? 0),
+    'Dikembalikan Semuanya': Number(statusCounts.value['Dikembalikan Semuanya'] ?? 0),
+}));
 
 const tabs = computed(() =>
     tabConfig.map((tab) => ({
@@ -749,22 +778,8 @@ const activeStatus = computed(() => {
     return match?.status ?? 'Dikirim';
 });
 
-const filteredItems = computed(() => {
-    const keyword = search.value.trim().toLowerCase();
-    return items.value.filter((item) => {
-        if (item.status !== activeStatus.value) {
-            return false;
-        }
-        if (!keyword) {
-            return true;
-        }
-        return (
-            item.title.toLowerCase().includes(keyword) ||
-            item.createdAt.toLowerCase().includes(keyword) ||
-            String(item.id).includes(keyword)
-        );
-    });
-});
+// Penyaringan sudah dikerjakan server, jadi daftarnya dipakai apa adanya.
+const filteredItems = computed(() => items.value);
 
 const approvedLabel = (item) => {
     const total = Number.isFinite(item?.itemCount) ? item.itemCount : 0;
@@ -838,11 +853,37 @@ const normalizeHistory = (item) => {
     };
 };
 
-const loadHistory = async () => {
+const halaman = ref(1);
+const hasMore = ref(false);
+const isLoadingMore = ref(false);
+
+const muatLebihBanyak = async () => {
+    if (isLoadingMore.value || !hasMore.value) {
+        return;
+    }
+    isLoadingMore.value = true;
+    halaman.value += 1;
+    try {
+        await loadHistory({ reset: false });
+    } finally {
+        isLoadingMore.value = false;
+    }
+};
+
+const loadHistory = async ({ reset = true } = {}) => {
+    if (reset) {
+        halaman.value = 1;
+    }
     isLoading.value = true;
     loadError.value = '';
     try {
-        const params = {};
+        // Pencarian dan status dikirim ke server supaya mencakup seluruh data,
+        // bukan hanya baris yang sudah dimuat ke halaman ini.
+        const params = { page: halaman.value, status: activeStatus.value };
+        const kataKunci = search.value.trim();
+        if (kataKunci) {
+            params.search = kataKunci;
+        }
         if (isAreaSwitcherRole.value && activeAreaId.value) {
             params.area_id = activeAreaId.value;
         }
@@ -853,8 +894,11 @@ const loadHistory = async () => {
             params.area_scope = mutasiAreaScope.value;
         }
         const response = await axios.get('/api/riwayat-pengiriman', { params });
-        const data = Array.isArray(response.data) ? response.data : [];
-        items.value = data.map((item) => normalizeHistory(item));
+        const { rows: data, hasMore: masihAda } = bacaDaftar(response);
+        hasMore.value = masihAda;
+        statusCounts.value = response.data?.status_counts ?? {};
+        const baru = data.map((item) => normalizeHistory(item));
+        items.value = halaman.value === 1 ? baru : [...items.value, ...baru];
         await refreshMailboxActions({ silent: true });
     } catch (error) {
         items.value = [];
@@ -909,6 +953,48 @@ const suratJalanDocuments = (item) => {
 };
 
 const hasSuratJalan = (item) => suratJalanDocuments(item).length > 0;
+
+// Daftar status yang sama dengan di halaman Transaksi Intra Area dan di
+// PengirimanController, supaya tombolnya muncul pada kondisi yang sama.
+const STATUS_DAFTAR_ALAT_TERSEDIA = [
+    'Disetujui',
+    'Dikirim',
+    'Diterima',
+    'Dikembalikan Partials',
+    'Dikembalikan Semuanya',
+    'Selesai',
+];
+
+const canDownloadDaftarAlat = (item) => STATUS_DAFTAR_ALAT_TERSEDIA.includes(item?.status);
+
+const downloadDaftarAlat = async (item) => {
+    if (!item?.id || downloadingDaftarAlatId.value) {
+        return;
+    }
+
+    downloadingDaftarAlatId.value = item.id;
+    try {
+        const response = await axios.get(`/api/pengiriman/${item.id}/daftar-alat/download`, {
+            responseType: 'blob',
+            __skipGlobalLoading: true,
+        });
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        const disposition = response.headers['content-disposition'] ?? '';
+        const match = disposition.match(/filename="?([^";]+)"?/i);
+        link.href = url;
+        link.download = match?.[1] ?? `DAFTAR-ALAT-DISETUJUI-${item.id}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        showAlert('error', 'Gagal mengunduh daftar alat.');
+    } finally {
+        downloadingDaftarAlatId.value = null;
+    }
+};
 
 const isInterAreaRequester = (item) =>
     Boolean(item?.isInterArea)
@@ -1316,6 +1402,21 @@ onMounted(() => {
             setAreaSwitching?.(false);
         }
     });
+});
+
+watch(activeTab, () => {
+    loadHistory();
+});
+
+// Jeda 300ms: pengetikan tidak menembak server di tiap huruf, tapi hasilnya
+// tetap mencakup seluruh data karena penyaringannya dikerjakan server.
+watch(search, () => {
+    if (filterTimeout) {
+        clearTimeout(filterTimeout);
+    }
+    filterTimeout = setTimeout(() => {
+        loadHistory();
+    }, 300);
 });
 
 watch(

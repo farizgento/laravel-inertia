@@ -6,7 +6,7 @@
         <div class="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-6 sm:px-8 lg:px-10">
             <header class="flex items-center justify-between gap-4 py-2">
                 <a href="/" class="group inline-flex items-center gap-3" aria-label="IPTOOLS Lite">
-                    <img src="http://192.168.90.68:1708/LOGO/logomsu.png" alt="logo" width="200">
+                    <AppLogo tinggi="h-12" ukuran-cadangan="h-12 w-12" />
                 </a>
             </header>
 
@@ -122,6 +122,7 @@
 
 <script setup>
 import { Head } from '@inertiajs/vue3';
+import AppLogo from '../Components/AppLogo.vue';
 
 const toolOptions = [
     {

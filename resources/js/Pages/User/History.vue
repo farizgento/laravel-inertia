@@ -705,11 +705,49 @@
                 <div class="space-y-4 px-6 py-5">
                     <label class="block space-y-2 text-sm font-medium text-slate-700">
                         <span>Pekerjaan</span>
-                        <textarea
+                        <SearchableSelect
                             v-model="editForm.pekerjaan"
-                            rows="3"
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            :options="pekerjaanChoices"
+                            :loading="isLoadingPekerjaan"
+                            placeholder="Pilih pekerjaan overhaul"
+                            search-placeholder="Cari nama pekerjaan..."
+                            loading-text="Memuat daftar pekerjaan..."
+                            empty-text="Belum ada pekerjaan overhaul terdaftar"
                         />
+                        <p v-if="pekerjaanLoadError" class="text-xs font-semibold text-rose-500">
+                            {{ pekerjaanLoadError }}
+                        </p>
+                        <p
+                            v-else-if="!isLoadingPekerjaan && !pekerjaanChoices.length"
+                            class="text-xs font-normal text-amber-700"
+                        >
+                            Belum ada pekerjaan overhaul terdaftar. Minta admin menambahkannya
+                            lebih dulu di menu Pekerjaan/Project.
+                        </p>
+                    </label>
+
+                    <label class="block space-y-2 text-sm font-medium text-slate-700">
+                        <span>Bidang Pekerjaan</span>
+                        <SearchableSelect
+                            :model-value="editForm.bidang_pekerjaan_id"
+                            :options="bidangChoices"
+                            :loading="isLoadingBidang"
+                            placeholder="Pilih bidang pekerjaan"
+                            search-placeholder="Cari bidang..."
+                            loading-text="Memuat daftar bidang..."
+                            empty-text="Belum ada bidang pekerjaan terdaftar"
+                            @update:model-value="editForm.bidang_pekerjaan_id = $event"
+                        />
+                        <p v-if="bidangLoadError" class="text-xs font-semibold text-rose-500">
+                            {{ bidangLoadError }}
+                        </p>
+                        <p
+                            v-else-if="!isLoadingBidang && !bidangChoices.length"
+                            class="text-xs font-normal text-amber-700"
+                        >
+                            Belum ada bidang pekerjaan terdaftar. Minta admin menambahkannya
+                            lebih dulu di menu Master Data.
+                        </p>
                     </label>
                     <label class="block space-y-2 text-sm font-medium text-slate-700">
                         <span>Resi</span>
@@ -786,6 +824,9 @@ import { computed, inject, onMounted, reactive, ref, watch } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import PeminjamanDetailModal from '../../Components/PeminjamanDetailModal.vue';
+import SearchableSelect from '../../Components/SearchableSelect.vue';
+import { findPekerjaanOhId, usePekerjaanOhOptions } from '../../lib/pekerjaanOh';
+import { useBidangPekerjaanOptions } from '../../lib/bidangPekerjaan';
 import SuratJalanModal from '../../Components/SuratJalanModal.vue';
 
 defineOptions({
@@ -864,11 +905,30 @@ const deleteModal = reactive({
 const editError = ref('');
 const editForm = reactive({
     pekerjaan: '',
+    bidang_pekerjaan_id: '',
     resi: '',
     tanggal_pinjam: '',
     tanggal_kembali: '',
     status: '',
 });
+
+// Peminjaman lama bisa memuat pekerjaan yang diisi bebas sebelum field ini
+// menjadi pilihan. Nilai seperti itu tetap muncul sebagai opsi "di luar daftar"
+// agar tidak terhapus hanya karena form edit dibuka.
+const {
+    options: pekerjaanOptions,
+    isLoading: isLoadingPekerjaan,
+    error: pekerjaanLoadError,
+    choices: pekerjaanChoices,
+    load: loadPekerjaanOptions,
+} = usePekerjaanOhOptions(() => editForm.pekerjaan);
+
+const {
+    isLoading: isLoadingBidang,
+    error: bidangLoadError,
+    choices: bidangChoices,
+    load: loadBidangOptions,
+} = useBidangPekerjaanOptions();
 const safeEditableStatuses = [
     'Perlu Disetujui',
     'Perlu Direview',
@@ -1103,7 +1163,12 @@ const repeatPeminjaman = (item) => {
 const openEdit = (item) => {
     editItem.value = item;
     editError.value = '';
+    // Dimuat saat dibutuhkan, karena sebagian besar kunjungan ke riwayat tidak
+    // membuka form edit. Hasilnya di-cache sehingga pembukaan berikutnya instan.
+    loadPekerjaanOptions();
+    loadBidangOptions();
     editForm.pekerjaan = item?.title ?? '';
+    editForm.bidang_pekerjaan_id = item?.bidang_pekerjaan_id ? String(item.bidang_pekerjaan_id) : '';
     editForm.resi = item?.resi ?? '';
     editForm.tanggal_pinjam = item?.borrowDateValue ?? '';
     editForm.tanggal_kembali = item?.returnDateValue ?? '';
@@ -1122,8 +1187,14 @@ const submitEdit = async () => {
     if (!editItem.value?.id || isSavingEdit.value) {
         return;
     }
-    if (!editForm.pekerjaan.trim() || !editForm.tanggal_pinjam || !editForm.tanggal_kembali || !editForm.status) {
-        editError.value = 'Lengkapi pekerjaan, periode, dan status.';
+    if (
+        !editForm.pekerjaan.trim()
+        || !editForm.bidang_pekerjaan_id
+        || !editForm.tanggal_pinjam
+        || !editForm.tanggal_kembali
+        || !editForm.status
+    ) {
+        editError.value = 'Lengkapi pekerjaan, bidang pekerjaan, periode, dan status.';
         return;
     }
     if (editForm.tanggal_kembali < editForm.tanggal_pinjam) {
@@ -1135,6 +1206,8 @@ const submitEdit = async () => {
     try {
         await axios.put(`/api/peminjaman/${editItem.value.id}`, {
             pekerjaan: editForm.pekerjaan.trim(),
+            pekerjaan_oh_id: findPekerjaanOhId(pekerjaanOptions.value, editForm.pekerjaan),
+            bidang_pekerjaan_id: Number(editForm.bidang_pekerjaan_id),
             resi: editForm.resi?.trim() || null,
             tanggal_pinjam: editForm.tanggal_pinjam,
             tanggal_kembali: editForm.tanggal_kembali,
@@ -1147,6 +1220,7 @@ const submitEdit = async () => {
         const errors = error?.response?.data?.errors ?? {};
         editError.value =
             errors.pekerjaan?.[0] ??
+            errors.bidang_pekerjaan_id?.[0] ??
             errors.resi?.[0] ??
             errors.tanggal_pinjam?.[0] ??
             errors.tanggal_kembali?.[0] ??

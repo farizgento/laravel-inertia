@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AlatController;
 use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\AreaController;
+use App\Http\Controllers\Api\BidangPekerjaanController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\LaporanAlatController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Api\PeminjamanTemplateController;
 use App\Http\Controllers\Api\PekerjaanOhController;
 use App\Http\Controllers\Api\PengirimanController;
 use App\Http\Controllers\Api\ReviewPeminjamanController;
+use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\UserManagementController;
 use App\Models\Role;
 use Illuminate\Http\Request;
@@ -31,7 +33,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('guest')->group(function () {
+Route::middleware(['guest', 'throttle:login'])->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login']);
 });
 
@@ -46,6 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', NotificationController::class);
 
     Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::get('/session/heartbeat', [SessionController::class, 'heartbeat']);
 
     Route::middleware('role:'.implode(',', [
         Role::KEY_SP_TOOL,
@@ -103,15 +106,37 @@ Route::middleware('auth')->group(function () {
         Role::KEY_SUPER_ADMIN,
     ]))->get('/analytics', AnalyticsController::class);
 
-    // Pekerjaan overhaul.
+    // Pilihan pekerjaan overhaul dan bidang pekerjaan untuk form peminjaman.
+    // Terbuka untuk semua pengguna yang sudah login karena peminjam hanya
+    // memilih, tidak mengelola.
+    Route::get('/pekerjaan-ohs/pilihan', [PekerjaanOhController::class, 'pilihan']);
+    Route::get('/bidang-pekerjaans/pilihan', [BidangPekerjaanController::class, 'pilihan']);
+
+    // Pengelolaan bidang pekerjaan hanya untuk admin dan super admin.
     Route::middleware('role:'.implode(',', [
+        Role::KEY_ADMIN,
+        Role::KEY_SUPER_ADMIN,
+    ]))->group(function () {
+        Route::get('/bidang-pekerjaans', [BidangPekerjaanController::class, 'index']);
+        Route::post('/bidang-pekerjaans', [BidangPekerjaanController::class, 'store']);
+        Route::put('/bidang-pekerjaans/{bidangPekerjaan}', [BidangPekerjaanController::class, 'update']);
+        Route::delete('/bidang-pekerjaans/{bidangPekerjaan}', [BidangPekerjaanController::class, 'destroy']);
+    });
+
+    // Pekerjaan overhaul: melihat terbuka untuk semua peran operasional,
+    // sedangkan pengelolaannya dibatasi di dalam controller.
+    Route::middleware('role:'.implode(',', [
+        Role::KEY_USER,
+        Role::KEY_SP_TOOL,
         Role::KEY_PIC_TOOL,
+        Role::KEY_MGR_TOOL,
         Role::KEY_ADMIN,
         Role::KEY_SUPER_ADMIN,
     ]))->group(function () {
         Route::get('/pekerjaan-ohs', [PekerjaanOhController::class, 'index']);
         // Terdaftar sebelum rute dengan parameter supaya tidak tertangkap olehnya.
         Route::get('/pekerjaan-ohs/pengguna-area', [PekerjaanOhController::class, 'penggunaArea']);
+        Route::get('/pekerjaan-ohs/{pekerjaanOh}/detail', [PekerjaanOhController::class, 'detail']);
         Route::post('/pekerjaan-ohs', [PekerjaanOhController::class, 'store']);
         Route::put('/pekerjaan-ohs/{pekerjaanOh}', [PekerjaanOhController::class, 'update']);
         Route::delete('/pekerjaan-ohs/{pekerjaanOh}', [PekerjaanOhController::class, 'destroy']);
@@ -165,6 +190,22 @@ Route::middleware('auth')->group(function () {
         Route::post('/pengiriman/{peminjaman}/terima', [PengirimanController::class, 'terima']);
         Route::post('/pengiriman/{peminjaman}/kembalikan', [PengirimanController::class, 'kembalikan']);
     });
+
+    // Daftar alat disetujui memakai batasan peran yang sama dengan surat jalan,
+    // karena isinya bagian dari dokumen peminjaman yang sama.
+    Route::get(
+        '/pengiriman/{peminjaman}/daftar-alat/download',
+        [PengirimanController::class, 'downloadDaftarAlatDisetujui']
+    )
+        ->name('pengiriman.daftar-alat.download')
+        ->middleware('role:'.implode(',', [
+            Role::KEY_USER,
+            Role::KEY_SP_TOOL,
+            Role::KEY_PIC_TOOL,
+            Role::KEY_MGR_TOOL,
+            Role::KEY_ADMIN,
+            Role::KEY_SUPER_ADMIN,
+        ]));
 
     Route::get(
         '/pengiriman/{peminjaman}/surat-jalan-peminjaman/download',

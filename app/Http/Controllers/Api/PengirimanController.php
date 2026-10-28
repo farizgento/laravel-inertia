@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\MembuatDaftarBerhalaman;
+use App\Http\Controllers\Concerns\MemuatLaporanAlatPeminjaman;
 use App\Http\Controllers\Controller;
 use App\Models\Alat;
 use App\Models\AreaAlatStock;
@@ -10,6 +12,7 @@ use App\Models\Peminjaman;
 use App\Models\PeminjamanItem;
 use App\Models\Role;
 use App\Models\SuratJalan;
+use App\Services\DaftarAlatDisetujuiExcelService;
 use App\Services\FastScaleDownModifier;
 use App\Services\OutgoingSuratJalanService;
 use App\Services\PeminjamanNotifier;
@@ -23,10 +26,27 @@ use Illuminate\Validation\ValidationException;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Intervention\Image\ImageManager;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 class PengirimanController extends Controller
 {
+    use MemuatLaporanAlatPeminjaman;
+    use MembuatDaftarBerhalaman;
+
+    /**
+     * Status yang boleh mengunduh daftar alat: sejak disetujui sampai selesai.
+     * Sebelum disetujui, jumlah yang disetujui reviewer belum pasti.
+     */
+    private const STATUS_DAFTAR_ALAT_TERSEDIA = [
+        Peminjaman::STATUS_DISETUJUI,
+        Peminjaman::STATUS_DIKIRIM,
+        Peminjaman::STATUS_DITERIMA,
+        Peminjaman::STATUS_DIKEMBALIKAN_PARTIALS,
+        Peminjaman::STATUS_DIKEMBALIKAN_SEMUANYA,
+        Peminjaman::STATUS_SELESAI,
+    ];
+
     private function isSuperAdmin(Request $request): bool
     {
         return strtolower((string) ($request->user()?->role?->key ?? '')) === Role::KEY_SUPER_ADMIN;
@@ -244,29 +264,7 @@ class PengirimanController extends Controller
 
     private function formatPeminjaman(Peminjaman $peminjaman): array
     {
-        $alatIds = $peminjaman->items
-            ->pluck('alat_id')
-            ->filter()
-            ->map(fn ($id) => (int) $id)
-            ->values();
-
-        $laporansByAlat = LaporanAlat::query()
-            ->with('alat.area')
-            ->where('user_id', $peminjaman->user_id)
-            ->when($alatIds->isNotEmpty(), function ($reportQuery) use ($alatIds) {
-                $reportQuery->whereIn('alat_id', $alatIds->all());
-            }, function ($reportQuery) {
-                $reportQuery->whereRaw('1 = 0');
-            })
-            ->when($peminjaman->created_at && $peminjaman->updated_at, function ($reportQuery) use ($peminjaman) {
-                $reportQuery->whereBetween('created_at', [
-                    $peminjaman->created_at,
-                    $peminjaman->updated_at,
-                ]);
-            })
-            ->orderByDesc('created_at')
-            ->get()
-            ->groupBy('alat_id');
+        $laporansByAlat = $this->laporanAlatUntuk($peminjaman);
 
         $tools = $peminjaman->items->map(function (PeminjamanItem $item) use ($laporansByAlat) {
             $alat = $item->alat;
@@ -436,15 +434,18 @@ class PengirimanController extends Controller
         if ($search !== '') {
             $query->where(function ($sub) use ($search) {
                 $sub->where('pekerjaan', 'like', '%'.$search.'%')
-                    ->orWhere('id', $search);
+                    ->when(ctype_digit($search), fn ($idQuery) => $idQuery->orWhere('id', (int) $search));
             });
         }
 
         $this->applyKategoriFilter($query, $request);
 
-        $peminjamans = $query->get();
+        return $this->daftarBerhalaman($query, $request, function ($peminjamans) {
+            // Laporan untuk seluruh baris diambil sekali, bukan per baris.
+            $this->prefetchLaporanAlat($peminjamans);
 
-        return $peminjamans->map(fn (Peminjaman $peminjaman) => $this->formatPeminjaman($peminjaman))->values();
+            return $peminjamans->map(fn (Peminjaman $peminjaman) => $this->formatPeminjaman($peminjaman));
+        });
     }
 
     public function pengembalianIndex(Request $request)
@@ -503,13 +504,17 @@ class PengirimanController extends Controller
         if ($search !== '') {
             $query->where(function ($sub) use ($search) {
                 $sub->where('pekerjaan', 'like', '%'.$search.'%')
-                    ->orWhere('id', $search);
+                    ->when(ctype_digit($search), fn ($idQuery) => $idQuery->orWhere('id', (int) $search));
             });
         }
 
         $this->applyKategoriFilter($query, $request);
 
-        return $query->get()->map(fn (Peminjaman $peminjaman) => $this->formatPeminjaman($peminjaman))->values();
+        return $this->daftarBerhalaman($query, $request, function ($peminjamans) {
+            $this->prefetchLaporanAlat($peminjamans);
+
+            return $peminjamans->map(fn (Peminjaman $peminjaman) => $this->formatPeminjaman($peminjaman));
+        });
     }
 
     public function notificationCounts(Request $request)
@@ -645,6 +650,27 @@ class PengirimanController extends Controller
             'status' => Peminjaman::STATUS_DIKIRIM,
             'surat_jalan_download_url' => $document->download_url,
         ]);
+    }
+
+    /**
+     * Daftar alat yang disetujui sebagai Excel, untuk menyiapkan alat sebelum
+     * dikirim. Tersedia sejak peminjaman disetujui, jadi tidak perlu menunggu
+     * surat jalan dibuat.
+     */
+    public function downloadDaftarAlatDisetujui(
+        Request $request,
+        Peminjaman $peminjaman,
+        DaftarAlatDisetujuiExcelService $daftarAlat
+    ): BinaryFileResponse {
+        $this->ensureCanDownloadOutgoingDocument($request, $peminjaman);
+
+        abort_unless(
+            in_array($peminjaman->status, self::STATUS_DAFTAR_ALAT_TERSEDIA, true),
+            404,
+            'Daftar alat baru tersedia setelah peminjaman disetujui.'
+        );
+
+        return $daftarAlat->unduh($peminjaman);
     }
 
     public function downloadOutgoingSuratJalan(

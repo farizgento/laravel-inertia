@@ -14,12 +14,13 @@
         <div class="relative flex flex-wrap items-start justify-between gap-5">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.35em] text-amber-200/80">Master Data</p>
-                <h1 class="mt-2 text-2xl font-semibold md:text-3xl">Pekerjaan Overhaul</h1>
+                <h1 class="mt-2 text-2xl font-semibold md:text-3xl">Pekerjaan / Project</h1>
                 <p class="mt-2 max-w-xl text-sm leading-6 text-slate-300">
                     Jadwal overhaul beserta lama pengerjaan dan site coordinator-nya.
                 </p>
             </div>
             <button
+                v-if="bolehMengelola"
                 class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition hover:from-blue-600 hover:to-indigo-600 sm:w-auto"
                 type="button"
                 @click="openCreate"
@@ -31,6 +32,38 @@
             </button>
         </div>
     </section>
+
+    <div
+        v-if="pendingDraft"
+        class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3"
+    >
+        <div class="flex items-start gap-2 text-sm text-amber-800">
+            <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M3 12a9 9 0 1 0 3-6.7" />
+                <path d="M3 4v5h5" />
+            </svg>
+            <span>
+                Ada isian pekerjaan {{ pendingDraftLabel }} yang belum tersimpan<template v-if="pendingDraftTime">
+                    dari {{ pendingDraftTime }}</template>.
+            </span>
+        </div>
+        <div class="flex gap-2">
+            <button
+                class="rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-amber-700"
+                type="button"
+                @click="applyPendingDraft"
+            >
+                Lanjutkan isian
+            </button>
+            <button
+                class="rounded-xl border border-amber-300 px-4 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
+                type="button"
+                @click="discardPendingDraft"
+            >
+                Hapus draft
+            </button>
+        </div>
+    </div>
 
     <section class="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <article
@@ -66,8 +99,10 @@
             </span>
         </div>
 
-        <div class="grid gap-3 px-6 py-4 md:grid-cols-[1fr,220px]">
-            <label class="relative block">
+        <!-- Memakai flex, bukan grid dengan lebar kolom dinamis, supaya jumlah
+             penyaring yang berbeda antar peran tetap tersusun rapi. -->
+        <div class="flex flex-col gap-3 border-b border-slate-100 px-6 py-4 lg:flex-row lg:items-center">
+            <label class="relative block w-full lg:flex-1">
                 <span class="sr-only">Cari pekerjaan</span>
                 <span class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -82,13 +117,68 @@
                     class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
             </label>
-            <select
-                v-model="jenisFilter"
-                class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            >
-                <option value="">Jenis - Semua</option>
-                <option v-for="jenis in jenisOptions" :key="jenis" :value="jenis">{{ jenis }}</option>
-            </select>
+
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div class="relative w-full sm:w-52">
+                    <span class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-slate-400">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M4 6h16" />
+                            <path d="M7 12h10" />
+                            <path d="M10 18h4" />
+                        </svg>
+                    </span>
+                    <select
+                        v-model="jenisFilter"
+                        class="h-11 w-full appearance-none rounded-xl border bg-white pl-10 pr-9 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        :class="jenisFilter ? 'border-blue-300 font-semibold text-blue-700' : 'border-slate-200 text-slate-700'"
+                    >
+                        <option value="">Semua Jenis</option>
+                        <option v-for="jenis in jenisOptions" :key="jenis" :value="jenis">{{ jenis }}</option>
+                    </select>
+                    <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="m6 9 6 6 6-6" />
+                        </svg>
+                    </span>
+                </div>
+
+                <div v-if="bolehMemilihArea" class="relative w-full sm:w-52">
+                    <span class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-slate-400">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" />
+                            <circle cx="12" cy="10" r="2.5" />
+                        </svg>
+                    </span>
+                    <select
+                        v-model="areaFilter"
+                        class="h-11 w-full appearance-none rounded-xl border bg-white pl-10 pr-9 text-sm shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        :class="areaFilter ? 'border-blue-300 font-semibold text-blue-700' : 'border-slate-200 text-slate-700'"
+                    >
+                        <option value="">Semua Area</option>
+                        <option v-for="area in areas" :key="area.id" :value="String(area.id)">
+                            {{ area.name }}
+                        </option>
+                    </select>
+                    <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="m6 9 6 6 6-6" />
+                        </svg>
+                    </span>
+                </div>
+
+                <button
+                    v-if="adaFilterAktif"
+                    class="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                    type="button"
+                    @click="aturUlangFilter"
+                >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <path d="M18 6 6 18" />
+                        <path d="M6 6 18 18" />
+                    </svg>
+                    Atur ulang
+                </button>
+            </div>
         </div>
 
         <div class="overflow-x-auto px-6 pb-2">
@@ -132,7 +222,13 @@
                             </p>
                         </td>
                     </tr>
-                    <tr v-else v-for="row in rows" :key="row.id" class="transition hover:bg-slate-50/70">
+                    <tr
+                        v-else
+                        v-for="row in rows"
+                        :key="row.id"
+                        class="cursor-pointer transition hover:bg-slate-50/70"
+                        @click="openDetail(row)"
+                    >
                         <td class="px-4 py-3">
                             <span
                                 v-if="row.jenis"
@@ -148,7 +244,7 @@
                                 class="block max-w-full truncate text-left font-semibold text-blue-600 transition hover:text-blue-800 hover:underline"
                                 type="button"
                                 :title="row.nama"
-                                @click="openEdit(row)"
+                                @click.stop="openDetail(row)"
                             >
                                 {{ row.nama }}
                             </button>
@@ -187,12 +283,12 @@
                         <td class="px-4 py-3 text-slate-700">{{ row.created_by_nama }}</td>
                         <td class="px-4 py-3 text-slate-500">{{ row.created_at ?? '-' }}</td>
                         <td class="px-4 py-3 text-right">
-                            <div class="inline-flex items-center gap-1.5">
+                            <div v-if="bolehMengelola" class="inline-flex items-center gap-1.5">
                                 <button
                                     class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-blue-300 hover:text-blue-600"
                                     type="button"
                                     title="Ubah"
-                                    @click="openEdit(row)"
+                                    @click.stop="openEdit(row)"
                                 >
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M12 20h9" />
@@ -203,7 +299,7 @@
                                     class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-600 transition hover:bg-rose-100"
                                     type="button"
                                     title="Hapus"
-                                    @click="deleteTarget = row"
+                                    @click.stop="deleteTarget = row"
                                 >
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M3 6h18" />
@@ -260,11 +356,47 @@
             <div class="flex min-h-full items-center justify-center overflow-y-auto p-4" @click.self="closeForm">
                 <div class="max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
                     <h3 class="text-lg font-semibold text-slate-900">
-                        {{ form.id ? 'Ubah Pekerjaan Overhaul' : 'Tambah Pekerjaan Overhaul' }}
+                        {{ form.id ? 'Ubah Pekerjaan' : 'Tambah Pekerjaan' }}
                     </h3>
                     <p class="mt-1 text-sm text-slate-500">Lama OH dihitung otomatis dari tanggal mulai dan selesai.</p>
 
+                    <div
+                        v-if="isDraftRestored"
+                        class="mt-4 flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-sm text-blue-700"
+                    >
+                        <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M3 12a9 9 0 1 0 3-6.7" />
+                            <path d="M3 4v5h5" />
+                        </svg>
+                        <span>Isian dipulihkan dari draft. Periksa kembali sebelum menyimpan.</span>
+                    </div>
+
                     <div class="mt-5 grid gap-4 md:grid-cols-2">
+                        <label v-if="isSuperAdmin" class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+                            <span>Area *</span>
+                            <select
+                                v-model="form.area_id"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            >
+                                <option value="" disabled>Pilih area pekerjaan</option>
+                                <option v-for="area in areas" :key="area.id" :value="String(area.id)">
+                                    {{ area.name }}
+                                </option>
+                            </select>
+                            <p v-if="formErrors.area_id" class="text-xs font-semibold text-rose-500">
+                                {{ formErrors.area_id }}
+                            </p>
+                        </label>
+                        <div v-else class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+                            <span>Area</span>
+                            <p class="rounded-xl border border-slate-200 bg-slate-100 px-3 py-2.5 text-sm text-slate-600">
+                                {{ areaAkun ?? 'Akun Anda belum memiliki area' }}
+                            </p>
+                            <p class="text-xs font-normal text-slate-400">
+                                Pekerjaan otomatis tersimpan pada area akun Anda.
+                            </p>
+                        </div>
+
                         <label class="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
                             <span>Project *</span>
                             <input
@@ -388,16 +520,20 @@
 
 <script setup>
 import axios from 'axios';
+import { router, usePage } from '@inertiajs/vue3';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import ToastNotification from '../../Components/ToastNotification.vue';
+import { loadAreas as loadSharedAreas } from '../../lib/areas';
+import { useFormDraft } from '../../lib/formDraft';
+import { invalidatePekerjaanOhCache } from '../../lib/pekerjaanOh';
 
 defineOptions({
     layout: (h, page) =>
         h(
             AppLayout,
             {
-                title: 'Pekerjaan Overhaul',
+                title: 'Pekerjaan / Project',
                 subtitle: 'Daftar pekerjaan overhaul',
                 activeMenu: 'pekerjaan-overhaul',
             },
@@ -412,6 +548,26 @@ const isLoading = ref(false);
 const loadError = ref('');
 const search = ref('');
 const jenisFilter = ref('');
+const areaFilter = ref('');
+// Hak akses datang dari server; antarmuka tidak menebak sendiri dari peran.
+const akses = reactive({
+    bolehMengelola: false,
+    terkunciArea: false,
+    areaSendiri: null,
+});
+const bolehMengelola = computed(() => akses.bolehMengelola);
+// Yang terkunci area tidak perlu penyaring, karena pilihannya cuma satu.
+const bolehMemilihArea = computed(() => !akses.terkunciArea);
+
+const adaFilterAktif = computed(
+    () => search.value.trim() !== '' || jenisFilter.value !== '' || areaFilter.value !== ''
+);
+
+const aturUlangFilter = () => {
+    search.value = '';
+    jenisFilter.value = '';
+    areaFilter.value = '';
+};
 const formOpen = ref(false);
 const isSubmitting = ref(false);
 const isDeleting = ref(false);
@@ -439,8 +595,16 @@ const ringkasan = reactive({
 
 const formatAngka = (nilai) => new Intl.NumberFormat('id-ID').format(nilai ?? 0);
 
+const page = usePage();
+const areas = ref([]);
+const isSuperAdmin = computed(
+    () => String(page.props.auth?.user?.role?.key ?? '').toLowerCase() === 'super_admin'
+);
+const areaAkun = computed(() => page.props.auth?.user?.area?.name ?? null);
+
 const form = reactive({
     id: null,
+    area_id: '',
     jenis: 'STANDAR',
     nama: '',
     siteco: '',
@@ -449,12 +613,75 @@ const form = reactive({
 });
 
 const formErrors = reactive({
+    area_id: '',
     jenis: '',
     nama: '',
     siteco: '',
     tanggal_mulai: '',
     tanggal_selesai: '',
 });
+
+const openDetail = (row) => {
+    if (!row?.id) {
+        return;
+    }
+    // Detail kini berupa halaman tersendiri, bukan modal, karena isinya
+    // bertambah banyak (daftar alat beserta laporan kerusakannya).
+    router.visit('/pekerjaan-overhaul/' + row.id);
+};
+
+const pendingDraft = ref(null);
+const isDraftRestored = ref(false);
+
+const overhaulDraft = useFormDraft({
+    name: 'pekerjaan-overhaul',
+    scope: () => page.props.auth?.user?.id ?? 'guest',
+    source: () => form,
+    isActive: () => formOpen.value,
+});
+
+const pendingDraftLabel = computed(() => {
+    const nama = pendingDraft.value?.data?.nama?.trim();
+    return nama ? `"${nama}"` : 'tanpa nama project';
+});
+
+const pendingDraftTime = computed(() => {
+    const savedAt = pendingDraft.value?.savedAt;
+    if (!savedAt) {
+        return '';
+    }
+    return savedAt.toLocaleString('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+});
+
+const applyPendingDraft = () => {
+    const draft = pendingDraft.value?.data;
+    if (!draft) {
+        return;
+    }
+
+    resetFormErrors();
+    form.id = draft.id ?? null;
+    form.jenis = draft.jenis ?? 'STANDAR';
+    form.nama = draft.nama ?? '';
+    form.siteco = draft.siteco ?? '';
+    form.tanggal_mulai = draft.tanggal_mulai ?? '';
+    form.tanggal_selesai = draft.tanggal_selesai ?? '';
+
+    pendingDraft.value = null;
+    isDraftRestored.value = true;
+    formOpen.value = true;
+    overhaulDraft.markPristine();
+};
+
+const discardPendingDraft = () => {
+    pendingDraft.value = null;
+    overhaulDraft.clear();
+};
 
 const kartuRingkasan = computed(() => [
     {
@@ -632,10 +859,16 @@ const loadRows = async () => {
                 per_page: pagination.perPage,
                 search: search.value.trim() || undefined,
                 jenis: jenisFilter.value || undefined,
+                area_id: areaFilter.value || undefined,
             },
         });
         rows.value = Array.isArray(response.data?.data) ? response.data.data : [];
         jenisOptions.value = Array.isArray(response.data?.jenis_tersedia) ? response.data.jenis_tersedia : [];
+
+        const hak = response.data?.akses ?? {};
+        akses.bolehMengelola = Boolean(hak.boleh_mengelola);
+        akses.terkunciArea = Boolean(hak.terkunci_area);
+        akses.areaSendiri = hak.area_sendiri ?? null;
         const meta = response.data?.meta ?? {};
         pagination.currentPage = Number(meta.current_page ?? 1);
         pagination.lastPage = Number(meta.last_page ?? 1);
@@ -694,6 +927,9 @@ const resetFormErrors = () => {
 
 const resetForm = () => {
     form.id = null;
+    // Super admin tidak terikat satu area, jadi sengaja dikosongkan agar ia
+    // memilih sendiri. Peran lain areanya ditentukan server dari akun.
+    form.area_id = '';
     form.jenis = 'STANDAR';
     form.nama = '';
     form.siteco = '';
@@ -704,27 +940,41 @@ const resetForm = () => {
 
 const openCreate = () => {
     resetForm();
+    isDraftRestored.value = false;
     formOpen.value = true;
+    overhaulDraft.markPristine();
 };
 
 const openEdit = (row) => {
     resetForm();
     form.id = row.id;
+    form.area_id = row.area_id ? String(row.area_id) : '';
     form.jenis = row.jenis ?? '';
     form.nama = row.nama;
     form.siteco = row.siteco ?? '';
     form.tanggal_mulai = row.tanggal_mulai_iso ?? '';
     form.tanggal_selesai = row.tanggal_selesai_iso ?? '';
+    isDraftRestored.value = false;
     formOpen.value = true;
+    // Nilai dari baris yang dibuka belum dianggap perubahan, jadi membuka form
+    // ubah tanpa menyentuh apa pun tidak membuat draft.
+    overhaulDraft.markPristine();
 };
 
 const closeForm = () => {
     formOpen.value = false;
+    isDraftRestored.value = false;
+    // Menutup form adalah keputusan pengguna, jadi draftnya ikut dibuang.
+    overhaulDraft.clear();
 };
 
 const submitForm = async () => {
     resetFormErrors();
 
+    if (isSuperAdmin.value && !form.area_id) {
+        formErrors.area_id = 'Area wajib dipilih.';
+        return;
+    }
     if (!form.nama.trim()) {
         formErrors.nama = 'Project wajib diisi.';
         return;
@@ -742,12 +992,18 @@ const submitForm = async () => {
             siteco: form.siteco.trim() || null,
             tanggal_mulai: form.tanggal_mulai,
             tanggal_selesai: form.tanggal_selesai || null,
+            // Hanya dikirim oleh super admin; untuk peran lain server yang
+            // menentukan areanya dari akun yang login.
+            ...(isSuperAdmin.value ? { area_id: Number(form.area_id) } : {}),
         };
 
         const response = form.id
             ? await axios.put(`/api/pekerjaan-ohs/${form.id}`, payload)
             : await axios.post('/api/pekerjaan-ohs', payload);
 
+        // Daftar ini juga dipakai sebagai pilihan di form peminjaman, jadi
+        // cache-nya dibuang supaya pilihan tidak basi.
+        invalidatePekerjaanOhCache();
         await loadRows();
         closeForm();
         showAlert('success', response.data?.message ?? 'Pekerjaan overhaul berhasil disimpan.');
@@ -770,6 +1026,7 @@ const confirmDelete = async () => {
     isDeleting.value = true;
     try {
         const response = await axios.delete(`/api/pekerjaan-ohs/${deleteTarget.value.id}`);
+        invalidatePekerjaanOhCache();
         deleteTarget.value = null;
         await loadRows();
         showAlert('success', response.data?.message ?? 'Pekerjaan overhaul berhasil dihapus.');
@@ -780,7 +1037,7 @@ const confirmDelete = async () => {
     }
 };
 
-watch([search, jenisFilter], () => {
+watch([search, jenisFilter, areaFilter], () => {
     if (filterTimeout) {
         clearTimeout(filterTimeout);
     }
@@ -791,8 +1048,24 @@ watch([search, jenisFilter], () => {
     }, 300);
 });
 
+const loadAreaOptions = async () => {
+    if (!isSuperAdmin.value) {
+        return;
+    }
+    areas.value = await loadSharedAreas();
+};
+
 onMounted(() => {
+    // Penyaring dimulai dari area akun sendiri; "Semua Area" tetap bisa dipilih.
+    const areaAkunId = page.props.auth?.user?.area?.id;
+    if (areaAkunId) {
+        areaFilter.value = String(areaAkunId);
+    }
+
     loadRows();
     loadPenggunaArea();
+    loadAreaOptions();
+    // Form tidak dibuka otomatis; pengguna yang memutuskan lewat banner draft.
+    pendingDraft.value = overhaulDraft.restore();
 });
 </script>

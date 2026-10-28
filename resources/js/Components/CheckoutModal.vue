@@ -27,6 +27,17 @@
                 </div>
 
                 <div class="mt-6 space-y-6">
+                    <div
+                        v-if="draftRestored"
+                        class="flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-sm text-blue-700"
+                    >
+                        <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M3 12a9 9 0 1 0 3-6.7" />
+                            <path d="M3 4v5h5" />
+                        </svg>
+                        <span>Isian terakhir Anda dipulihkan. Periksa kembali sebelum mengirim.</span>
+                    </div>
+
                     <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <div class="flex items-center gap-2 text-sm font-semibold text-slate-700">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -81,15 +92,50 @@
                     </p>
 
                     <label class="space-y-2">
-                        <span class="text-sm font-medium text-slate-700">Pekerjaan *</span><br>
-                        <span><i class="text-xs text-red-500 font-light">Contoh : SI UNIT 1 PLTU JERANJANG 2026</i></span>
-                        <textarea
+                        <span class="text-sm font-medium text-slate-700">Pekerjaan *</span>
+                        <SearchableSelect
                             v-model="form.pekerjaan"
-                            rows="3"
-                            placeholder="Jelaskan pekerjaan peminjaman..."
-                            required
-                            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                            :options="pekerjaanChoices"
+                            :loading="pekerjaanLoading"
+                            placeholder="Pilih pekerjaan overhaul"
+                            search-placeholder="Cari nama pekerjaan..."
+                            loading-text="Memuat daftar pekerjaan..."
+                            empty-text="Belum ada pekerjaan overhaul terdaftar"
                         />
+                        <p v-if="pekerjaanError" class="text-xs font-semibold text-rose-500">
+                            {{ pekerjaanError }}
+                        </p>
+                        <p
+                            v-else-if="!pekerjaanLoading && !pekerjaanChoices.length"
+                            class="text-xs text-amber-700"
+                        >
+                            Belum ada pekerjaan overhaul terdaftar. Minta admin menambahkannya
+                            lebih dulu di menu Pekerjaan/Project.
+                        </p>
+                    </label>
+
+                    <label class="space-y-2">
+                        <span class="text-sm font-medium text-slate-700">Bidang Pekerjaan *</span>
+                        <SearchableSelect
+                            :model-value="form.bidang_pekerjaan_id"
+                            :options="bidangChoices"
+                            :loading="bidangLoading"
+                            placeholder="Pilih bidang pekerjaan"
+                            search-placeholder="Cari bidang..."
+                            loading-text="Memuat daftar bidang..."
+                            empty-text="Belum ada bidang pekerjaan terdaftar"
+                            @update:model-value="form.bidang_pekerjaan_id = $event"
+                        />
+                        <p v-if="bidangError" class="text-xs font-semibold text-rose-500">
+                            {{ bidangError }}
+                        </p>
+                        <p
+                            v-else-if="!bidangLoading && !bidangChoices.length"
+                            class="text-xs text-amber-700"
+                        >
+                            Belum ada bidang pekerjaan terdaftar. Minta admin menambahkannya
+                            lebih dulu di menu Master Data.
+                        </p>
                     </label>
                 </div>
 
@@ -121,7 +167,11 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue';
+import SearchableSelect from './SearchableSelect.vue';
+import { buildPekerjaanOhChoices } from '../lib/pekerjaanOh';
+
+const props = defineProps({
     modelValue: {
         type: Boolean,
         default: false,
@@ -150,6 +200,34 @@ defineProps({
         type: String,
         default: '',
     },
+    draftRestored: {
+        type: Boolean,
+        default: false,
+    },
+    pekerjaanOptions: {
+        type: Array,
+        default: () => [],
+    },
+    pekerjaanLoading: {
+        type: Boolean,
+        default: false,
+    },
+    pekerjaanError: {
+        type: String,
+        default: '',
+    },
+    bidangChoices: {
+        type: Array,
+        default: () => [],
+    },
+    bidangLoading: {
+        type: Boolean,
+        default: false,
+    },
+    bidangError: {
+        type: String,
+        default: '',
+    },
     dateLimits: {
         type: Object,
         default: () => ({
@@ -161,4 +239,8 @@ defineProps({
 });
 
 const emit = defineEmits(['update:modelValue', 'submit']);
+
+const pekerjaanChoices = computed(() =>
+    buildPekerjaanOhChoices(props.pekerjaanOptions, props.form?.pekerjaan)
+);
 </script>

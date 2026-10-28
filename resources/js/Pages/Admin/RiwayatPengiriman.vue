@@ -141,6 +141,17 @@
                             </tr>
                         </tbody>
                     </table>
+
+            <div v-if="hasMore" class="mt-5 flex justify-center">
+                <button
+                    class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    type="button"
+                    :disabled="isLoadingMore"
+                    @click="muatLebihBanyak"
+                >
+                    {{ isLoadingMore ? 'Memuat...' : 'Muat lebih banyak' }}
+                </button>
+            </div>
                 </div>
             </div>
         </div>
@@ -166,7 +177,8 @@
 
 <script setup>
 import axios from 'axios';
-import { computed, onMounted, ref } from 'vue';
+import { bacaDaftar } from '../../lib/daftarBerhalaman';
+import { computed, onMounted, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import PeminjamanDetailModal from '../../Components/PeminjamanDetailModal.vue';
@@ -203,6 +215,7 @@ const search = ref('');
 
 const statusOptions = ['Dikirim', 'Diterima', 'Dikembalikan Partials', 'Dikembalikan Semuanya', 'Selesai'];
 const statusFilter = ref('Semua');
+let filterTimeout = null;
 
 const statusLabel = (status) => {
     switch (status) {
@@ -238,26 +251,9 @@ const statusBadge = (status) => {
     }
 };
 
-const filteredItems = computed(() => {
-    const keyword = search.value.trim().toLowerCase();
-    return items.value.filter((item) => {
-        if (statusFilter.value === 'Semua') {
-            if (!statusOptions.includes(item.status)) {
-                return false;
-            }
-        } else if (item.status !== statusFilter.value) {
-            return false;
-        }
-        if (!keyword) {
-            return true;
-        }
-        return (
-            item.title.toLowerCase().includes(keyword) ||
-            item.createdAt.toLowerCase().includes(keyword) ||
-            String(item.id).includes(keyword)
-        );
-    });
-});
+// Pencarian dan status dikerjakan server, jadi daftarnya dipakai apa adanya.
+// Penyaringan di browser hanya akan melihat baris yang sudah dimuat.
+const filteredItems = computed(() => items.value);
 
 const approvedLabel = (item) => {
     const total = Number.isFinite(item?.itemCount) ? item.itemCount : 0;
@@ -297,13 +293,43 @@ const normalizeHistory = (item) => {
     };
 };
 
-const loadHistory = async () => {
+const halaman = ref(1);
+const hasMore = ref(false);
+const isLoadingMore = ref(false);
+
+const muatLebihBanyak = async () => {
+    if (isLoadingMore.value || !hasMore.value) {
+        return;
+    }
+    isLoadingMore.value = true;
+    halaman.value += 1;
+    try {
+        await loadHistory({ reset: false });
+    } finally {
+        isLoadingMore.value = false;
+    }
+};
+
+const loadHistory = async ({ reset = true } = {}) => {
+    if (reset) {
+        halaman.value = 1;
+    }
     isLoading.value = true;
     loadError.value = '';
     try {
-        const response = await axios.get('/api/riwayat-pengiriman');
-        const data = Array.isArray(response.data) ? response.data : [];
-        items.value = data.map((item) => normalizeHistory(item));
+        const params = { page: halaman.value };
+        const kataKunci = search.value.trim();
+        if (kataKunci) {
+            params.search = kataKunci;
+        }
+        if (statusFilter.value && statusFilter.value !== 'Semua') {
+            params.status = statusFilter.value;
+        }
+        const response = await axios.get('/api/riwayat-pengiriman', { params });
+        const { rows: data, hasMore: masihAda } = bacaDaftar(response);
+        hasMore.value = masihAda;
+        const baru = data.map((item) => normalizeHistory(item));
+        items.value = halaman.value === 1 ? baru : [...items.value, ...baru];
     } catch (error) {
         items.value = [];
         loadError.value = 'Gagal memuat riwayat pengiriman.';
@@ -347,6 +373,20 @@ const closeAlert = () => {
     alertMessage.value = '';
     alertTitle.value = '';
 };
+
+watch(statusFilter, () => {
+    loadHistory();
+});
+
+// Jeda 300ms, konsisten dengan halaman lain yang mencari lewat server.
+watch(search, () => {
+    if (filterTimeout) {
+        clearTimeout(filterTimeout);
+    }
+    filterTimeout = setTimeout(() => {
+        loadHistory();
+    }, 300);
+});
 
 onMounted(() => {
     loadHistory();

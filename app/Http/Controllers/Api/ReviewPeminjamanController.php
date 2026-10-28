@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\MembuatDaftarBerhalaman;
 use App\Http\Controllers\Controller;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanItem;
@@ -13,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 
 class ReviewPeminjamanController extends Controller
 {
+    use MembuatDaftarBerhalaman;
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -60,17 +63,46 @@ class ReviewPeminjamanController extends Controller
         if ($search !== '') {
             $query->where(function ($sub) use ($search) {
                 $sub->where('pekerjaan', 'like', '%' . $search . '%')
-                    ->orWhere('id', $search);
+                    ->when(ctype_digit($search), fn ($idQuery) => $idQuery->orWhere('id', (int) $search));
             });
         }
+
+        // Rekap dihitung sebelum penyaring status dipasang, dan dari seluruh
+        // data yang lolos filter, supaya angka pada kartu tidak hanya mewakili
+        // baris yang kebetulan sedang ditampilkan.
+        $rekapStatus = (clone $query)
+            ->reorder()
+            ->toBase()
+            ->select('status', DB::raw('COUNT(*) as jumlah'))
+            ->groupBy('status')
+            ->pluck('jumlah', 'status')
+            ->map(fn ($jumlah) => (int) $jumlah);
+
+        $jumlahAntarArea = (int) (clone $query)
+            ->reorder()
+            ->toBase()
+            ->where(function ($sub) {
+                $sub->where('kategori', Peminjaman::KATEGORI_ANTAR_AREA)
+                    ->orWhere('is_inter_area', true);
+            })
+            ->count();
+
+        $rekap = [
+            'total' => (int) $rekapStatus->sum(),
+            'perlu_direview' => (int) $rekapStatus->get(Peminjaman::STATUS_MENUNGGU_REVIEW_AREA_PEMINJAM, 0),
+            'perlu_disetujui' => (int) $rekapStatus->get(Peminjaman::STATUS_MENUNGGU_REVIEW, 0),
+            'antar_area' => $jumlahAntarArea,
+        ];
+
+        // Seluruh baris pada query ini memang sudah menjadi tanggung jawab area
+        // yang sedang aktif, jadi yang perlu ditindak sama dengan totalnya.
+        $rekap['perlu_tindakan'] = $rekap['total'];
 
         if ($status !== '' && $status !== 'Semua') {
             $query->where('status', $status);
         }
 
-        $peminjamans = $query->get();
-
-        return $peminjamans->map(function (Peminjaman $peminjaman) use ($areaId) {
+        return $this->daftarBerhalaman($query, $request, fn ($peminjamans) => $peminjamans->map(function (Peminjaman $peminjaman) use ($areaId) {
             $tools = $peminjaman->items->map(function (PeminjamanItem $item) use ($peminjaman, $areaId) {
                 $alat = $item->alat;
                 $qty = (int) $item->qty;
@@ -121,7 +153,7 @@ class ReviewPeminjamanController extends Controller
                 'kategori' => $peminjaman->kategori ?? Peminjaman::KATEGORI_INTRA_AREA,
                 'tools' => $tools,
             ];
-        })->values();
+        }), ['rekap' => $rekap]);
     }
 
     public function pendingCount(Request $request)

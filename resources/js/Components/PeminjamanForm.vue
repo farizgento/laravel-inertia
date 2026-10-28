@@ -574,6 +574,13 @@
         :date-limits="checkoutDateLimits"
         :is-submitting="isSubmitting"
         :checkout-error="checkoutError"
+        :draft-restored="isCheckoutDraftRestored"
+        :pekerjaan-options="pekerjaanOptions"
+        :pekerjaan-loading="isLoadingPekerjaan"
+        :pekerjaan-error="pekerjaanLoadError"
+        :bidang-choices="bidangChoices"
+        :bidang-loading="isLoadingBidang"
+        :bidang-error="bidangLoadError"
         @submit="submitCheckout"
     />
 </template>
@@ -586,6 +593,9 @@ import CartModal from './CartModal.vue';
 import CheckoutModal from './CheckoutModal.vue';
 import ToastNotification from './ToastNotification.vue';
 import { loadAreas as loadSharedAreas } from '../lib/areas';
+import { useFormDraft } from '../lib/formDraft';
+import { findPekerjaanOhId, usePekerjaanOhOptions } from '../lib/pekerjaanOh';
+import { useBidangPekerjaanOptions } from '../lib/bidangPekerjaan';
 
 const STORAGE_KEY_PREFIX = 'peminjaman_cart_v1';
 const REPEAT_DRAFT_STORAGE_KEY = 'peminjaman_repeat_draft_v1';
@@ -726,6 +736,21 @@ const pageNumbers = computed(() => {
 const cart = ref([]);
 const templates = ref([]);
 const templatesLoading = ref(false);
+// Daftar pekerjaan overhaul untuk pilihan pada checkout. Tidak bergantung area,
+// jadi cukup dimuat sekali lalu dipakai bersama halaman lain.
+const {
+    options: pekerjaanOptions,
+    isLoading: isLoadingPekerjaan,
+    error: pekerjaanLoadError,
+    load: loadPekerjaanOptions,
+} = usePekerjaanOhOptions();
+
+const {
+    isLoading: isLoadingBidang,
+    error: bidangLoadError,
+    choices: bidangChoices,
+    load: loadBidangOptions,
+} = useBidangPekerjaanOptions();
 const selectedTemplateId = ref('');
 const templateWarnings = ref([]);
 const cartDrafts = reactive({});
@@ -844,6 +869,7 @@ const applyRepeatDraft = async (draft) => {
         tanggal_pinjam: draft.tanggal_pinjam ?? '',
         tanggal_kembali: draft.tanggal_kembali ?? '',
         pekerjaan: draft.pekerjaan ?? '',
+        bidang_pekerjaan_id: draft.bidang_pekerjaan_id ? String(draft.bidang_pekerjaan_id) : '',
     };
 
     const targetAreaId = draft.area_id ?? areaId.value;
@@ -1047,11 +1073,19 @@ onMounted(() => {
         cachedUserId.value = loadCachedUserId();
         cachedUser.value = loadCachedUser();
         loadCartFromStorage();
-        applyRepeatDraft(loadRepeatDraft());
+        const repeatDraft = loadRepeatDraft();
+        applyRepeatDraft(repeatDraft);
+        // Draft "ulangi peminjaman" sudah mengisi form sendiri, jadi tidak
+        // ditimpa draft checkout yang tersimpan.
+        if (!repeatDraft) {
+            restoreCheckoutDraft();
+        }
     }
     loadAreas();
     loadKatalog(buildFilterParams());
     loadTemplates();
+    loadPekerjaanOptions();
+    loadBidangOptions();
 });
 
 watch(
@@ -1419,7 +1453,36 @@ const form = ref({
     tanggal_pinjam: '',
     tanggal_kembali: '',
     pekerjaan: '',
+    // Disimpan sebagai teks karena SearchableSelect bekerja dengan nilai string.
+    bidang_pekerjaan_id: '',
 });
+
+// Isi keranjang sudah disimpan sendiri ke localStorage. Yang belum terlindungi
+// adalah isian checkout, dan itu yang paling mahal diulang kalau sesi berakhir
+// di tengah pengisian.
+const checkoutDraft = useFormDraft({
+    name: 'peminjaman-checkout',
+    scope: () => userId.value ?? 'guest',
+    source: () => form.value,
+    isActive: () => cart.value.length > 0,
+});
+const isCheckoutDraftRestored = ref(false);
+
+const restoreCheckoutDraft = () => {
+    const draft = checkoutDraft.restore();
+    if (!draft) {
+        return;
+    }
+
+    form.value = {
+        tanggal_pinjam: draft.data.tanggal_pinjam ?? '',
+        tanggal_kembali: draft.data.tanggal_kembali ?? '',
+        pekerjaan: draft.data.pekerjaan ?? '',
+        bidang_pekerjaan_id: draft.data.bidang_pekerjaan_id ?? '',
+    };
+    isCheckoutDraftRestored.value = true;
+    checkoutDraft.markPristine();
+};
 
 // Tombol "Tambah Lagi" di keranjang: tutup drawer lalu bawa pengguna kembali ke
 // kolom pencarian katalog supaya bisa langsung mencari alat berikutnya. Isi
@@ -1460,6 +1523,7 @@ const resetCheckout = () => {
         tanggal_pinjam: '',
         tanggal_kembali: '',
         pekerjaan: '',
+        bidang_pekerjaan_id: '',
     };
     cart.value = [];
     Object.keys(cartDrafts).forEach((key) => {
@@ -1469,6 +1533,8 @@ const resetCheckout = () => {
     drawerOpen.value = false;
     checkoutError.value = '';
     templateWarnings.value = [];
+    checkoutDraft.clear();
+    isCheckoutDraftRestored.value = false;
 };
 
 const submitCheckout = async () => {
@@ -1476,8 +1542,13 @@ const submitCheckout = async () => {
         checkoutError.value = 'Peminjaman hanya dapat dibuat dari area akun Anda.';
         return;
     }
-    if (!form.value.tanggal_pinjam || !form.value.tanggal_kembali || !form.value.pekerjaan) {
-        checkoutError.value = 'Lengkapi tanggal pinjam, tanggal kembali, dan pekerjaan.';
+    if (
+        !form.value.tanggal_pinjam
+        || !form.value.tanggal_kembali
+        || !form.value.pekerjaan
+        || !form.value.bidang_pekerjaan_id
+    ) {
+        checkoutError.value = 'Lengkapi tanggal pinjam, tanggal kembali, pekerjaan, dan bidang pekerjaan.';
         return;
     }
     if (!cartItems.value.length) {
@@ -1499,6 +1570,8 @@ const submitCheckout = async () => {
             tanggal_pinjam: form.value.tanggal_pinjam,
             tanggal_kembali: form.value.tanggal_kembali,
             pekerjaan: form.value.pekerjaan,
+            pekerjaan_oh_id: findPekerjaanOhId(pekerjaanOptions.value, form.value.pekerjaan),
+            bidang_pekerjaan_id: Number(form.value.bidang_pekerjaan_id),
             ...(roleKey.value === 'super_admin' && areaId.value ? { area_id: areaId.value } : {}),
             items: cartItems.value.map((item) => ({ id: item.id, qty: item.qty })),
         };

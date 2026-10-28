@@ -761,7 +761,7 @@ class LaporanAlatController extends Controller
         if ($search !== '') {
             $query->where(function (Builder $sub) use ($search) {
                 $sub->where('deskripsi', 'like', '%' . $search . '%')
-                    ->orWhere('id', $search)
+                    ->when(ctype_digit($search), fn ($idQuery) => $idQuery->orWhere('id', (int) $search))
                     ->orWhereHas('alat', function (Builder $alatQuery) use ($search) {
                         $alatQuery->where('nama', 'like', '%' . $search . '%');
                     })

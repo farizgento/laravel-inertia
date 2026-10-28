@@ -384,6 +384,17 @@
                     </li>
                 </ul>
 
+            <div v-if="hasMore" class="mt-5 flex justify-center">
+                <button
+                    class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    type="button"
+                    :disabled="isLoadingMore"
+                    @click="muatLebihBanyak"
+                >
+                    {{ isLoadingMore ? 'Memuat...' : 'Muat lebih banyak' }}
+                </button>
+            </div>
+
                 <p class="mt-4 border-t border-slate-200 pt-4 text-sm text-slate-500">
                     Menampilkan <span class="font-semibold text-slate-700">{{ filteredItems.length }}</span>
                     dari <span class="font-semibold text-slate-700">{{ totalCount }}</span> peminjaman
@@ -404,6 +415,7 @@
 
 <script setup>
 import axios from 'axios';
+import { bacaDaftar } from '../../lib/daftarBerhalaman';
 import { computed, inject, onMounted, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
@@ -456,22 +468,14 @@ let alertTimeout = null;
 
 const search = ref('');
 const statusFilter = ref('Semua');
+const rekap = ref({});
+let filterTimeout = null;
 const selectedItem = ref(null);
 let hasLoadedInitialReviewData = false;
 let loadHistoryRequestId = 0;
 
-const filteredItems = computed(() => {
-    const keyword = search.value.trim().toLowerCase();
-    return items.value.filter((item) => {
-        const matchStatus = statusFilter.value === 'Semua' || item.status === statusFilter.value;
-        const matchKeyword =
-            !keyword ||
-            item.title.toLowerCase().includes(keyword) ||
-            item.createdAt.toLowerCase().includes(keyword) ||
-            String(item.id).includes(keyword);
-        return matchStatus && matchKeyword;
-    });
-});
+// Penyaringan dikerjakan server, jadi daftarnya dipakai apa adanya.
+const filteredItems = computed(() => items.value);
 
 const isReviewableItem = (item) => {
     if (!item || !currentReviewAreaId.value) {
@@ -486,11 +490,13 @@ const isReviewableItem = (item) => {
     return false;
 };
 
-const totalCount = computed(() => items.value.length);
-const reviewCount = computed(() => items.value.filter((item) => item.status === 'Perlu Direview').length);
-const approvalCount = computed(() => items.value.filter((item) => item.status === 'Perlu Disetujui').length);
-const interAreaCount = computed(() => items.value.filter((item) => item.kategori === 'Antar Area').length);
-const actionableCount = computed(() => items.value.filter((item) => isReviewableItem(item)).length);
+// Angka pada kartu berasal dari server dan mewakili seluruh data yang lolos
+// filter, bukan hanya baris yang sedang dimuat.
+const totalCount = computed(() => Number(rekap.value.total ?? 0));
+const reviewCount = computed(() => Number(rekap.value.perlu_direview ?? 0));
+const approvalCount = computed(() => Number(rekap.value.perlu_disetujui ?? 0));
+const interAreaCount = computed(() => Number(rekap.value.antar_area ?? 0));
+const actionableCount = computed(() => Number(rekap.value.perlu_tindakan ?? 0));
 
 const summaryCards = computed(() => [
     {
@@ -630,7 +636,27 @@ const kategoriClass = (kategori) => {
     }
 };
 
-const loadHistory = async () => {
+const halaman = ref(1);
+const hasMore = ref(false);
+const isLoadingMore = ref(false);
+
+const muatLebihBanyak = async () => {
+    if (isLoadingMore.value || !hasMore.value) {
+        return;
+    }
+    isLoadingMore.value = true;
+    halaman.value += 1;
+    try {
+        await loadHistory({ reset: false });
+    } finally {
+        isLoadingMore.value = false;
+    }
+};
+
+const loadHistory = async ({ reset = true } = {}) => {
+    if (reset) {
+        halaman.value = 1;
+    }
     const reviewAreaId = currentReviewAreaId.value;
     const requestId = loadHistoryRequestId + 1;
     loadHistoryRequestId = requestId;
@@ -645,16 +671,28 @@ const loadHistory = async () => {
     isLoading.value = true;
     loadError.value = '';
     try {
-        const params = {};
+        // Pencarian dan status dikirim ke server agar mencakup seluruh data,
+        // bukan hanya baris yang sudah dimuat.
+        const params = { page: halaman.value };
         if (isAreaSwitcherRole.value && reviewAreaId) {
             params.area_id = reviewAreaId;
         }
+        const kataKunci = search.value.trim();
+        if (kataKunci) {
+            params.search = kataKunci;
+        }
+        if (statusFilter.value && statusFilter.value !== 'Semua') {
+            params.status = statusFilter.value;
+        }
         const response = await axios.get('/api/review-peminjaman', { params });
-        const data = Array.isArray(response.data) ? response.data : [];
+        const { rows: data, hasMore: masihAda } = bacaDaftar(response);
+        hasMore.value = masihAda;
+        rekap.value = response.data?.rekap ?? {};
         if (requestId !== loadHistoryRequestId) {
             return;
         }
-        items.value = data.map((item) => normalizeHistory(item));
+        const baru = data.map((item) => normalizeHistory(item));
+        items.value = halaman.value === 1 ? baru : [...items.value, ...baru];
     } catch (error) {
         if (requestId !== loadHistoryRequestId) {
             return;
@@ -724,6 +762,20 @@ onMounted(() => {
         hasLoadedInitialReviewData = true;
         loadHistory();
     }
+});
+
+watch(statusFilter, () => {
+    loadHistory();
+});
+
+// Jeda 300ms, konsisten dengan halaman lain yang mencari lewat server.
+watch(search, () => {
+    if (filterTimeout) {
+        clearTimeout(filterTimeout);
+    }
+    filterTimeout = setTimeout(() => {
+        loadHistory();
+    }, 300);
 });
 
 watch(

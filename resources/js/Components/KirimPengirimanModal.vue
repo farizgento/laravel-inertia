@@ -3,7 +3,7 @@
         <div
             v-if="open"
             class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
-            @click.self="emit('close')"
+            @click.self="handleClose"
         >
             <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
                 <div class="flex items-start justify-between gap-3">
@@ -24,7 +24,7 @@
                     <button
                         class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:text-slate-700"
                         type="button"
-                        @click="emit('close')"
+                        @click="handleClose"
                     >
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 6 6 18" />
@@ -49,6 +49,20 @@
                 </div>
 
                 <div class="mt-6 space-y-4">
+                    <div
+                        v-if="isDraftRestored"
+                        class="flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-sm text-blue-700"
+                    >
+                        <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M3 12a9 9 0 1 0 3-6.7" />
+                            <path d="M3 4v5h5" />
+                        </svg>
+                        <span>
+                            Nama pengirim dan nomor resi dipulihkan dari isian terakhir. Foto
+                            pengiriman perlu dipilih ulang.
+                        </span>
+                    </div>
+
                     <div>
                         <label class="text-sm font-semibold text-slate-900" for="pengirim-nama">
                             Nama Pengirim
@@ -167,7 +181,7 @@
                     <button
                         class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
                         type="button"
-                        @click="emit('close')"
+                        @click="handleClose"
                     >
                         Batal
                     </button>
@@ -187,6 +201,7 @@
 
 <script setup>
 import { onBeforeUnmount, ref, watch } from 'vue';
+import { useFormDraft } from '../lib/formDraft';
 
 const MAX_PHOTO_COUNT = 8;
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
@@ -215,6 +230,7 @@ const resi = ref('');
 const photoInput = ref(null);
 const photoItems = ref([]);
 const validationError = ref('');
+const isDraftRestored = ref(false);
 let photoSequence = 0;
 
 const photoKey = (file) => `${file.name}-${file.size}-${file.lastModified}`;
@@ -297,6 +313,14 @@ const formatSize = (size) => {
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+// Menutup modal adalah keputusan pengguna, jadi draftnya ikut dibuang. Draft
+// hanya bertahan untuk kejadian yang tidak disengaja seperti sesi berakhir.
+const handleClose = () => {
+    shippingDraft.clear();
+    isDraftRestored.value = false;
+    emit('close');
+};
+
 const submitShipping = () => {
     const name = senderName.value.trim();
     if (!name) {
@@ -315,6 +339,15 @@ const submitShipping = () => {
     });
 };
 
+// Foto pengiriman tidak bisa disimpan di localStorage, jadi hanya nama pengirim
+// dan nomor resi yang dijadikan draft.
+const shippingDraft = useFormDraft({
+    name: 'pengiriman-kirim',
+    scope: () => props.item?.id ?? null,
+    source: () => ({ senderName: senderName.value, resi: resi.value }),
+    isActive: () => props.open && !!props.item,
+});
+
 watch(
     () => props.item,
     (next) => {
@@ -322,6 +355,21 @@ watch(
         resi.value = next?.resi ?? '';
         clearPhotos();
         validationError.value = '';
+        isDraftRestored.value = false;
+        shippingDraft.markPristine();
+
+        if (!next?.id) {
+            return;
+        }
+
+        const draft = shippingDraft.restore(next.id);
+        if (!draft?.data) {
+            return;
+        }
+
+        senderName.value = draft.data.senderName ?? senderName.value;
+        resi.value = draft.data.resi ?? resi.value;
+        isDraftRestored.value = true;
     },
     { immediate: true }
 );

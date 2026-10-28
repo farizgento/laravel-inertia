@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PekerjaanOh extends Model
 {
@@ -13,6 +14,7 @@ class PekerjaanOh extends Model
     protected $table = 'pekerjaan_ohs';
 
     protected $fillable = [
+        'area_id',
         'jenis',
         'nama',
         'tanggal_mulai',
@@ -29,6 +31,17 @@ class PekerjaanOh extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function area(): BelongsTo
+    {
+        return $this->belongsTo(Area::class);
+    }
+
+    /** Satu pekerjaan overhaul bisa memiliki banyak peminjaman. */
+    public function peminjamans(): HasMany
+    {
+        return $this->hasMany(Peminjaman::class, 'pekerjaan_oh_id');
     }
 
     /**

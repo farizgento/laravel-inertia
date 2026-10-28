@@ -175,7 +175,7 @@
 
                     <div class="mt-4 flex flex-wrap gap-2">
                         <button
-                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700"
+                            class="inline-flex min-w-[9.5rem] flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700"
                             type="button"
                             @click="openDetail(item)"
                         >
@@ -186,8 +186,26 @@
                             Lihat Detail
                         </button>
                         <button
+                            v-if="canDownloadDaftarAlat(item)"
+                            class="inline-flex min-w-[9.5rem] flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-300 disabled:cursor-not-allowed disabled:opacity-60"
+                            type="button"
+                            :disabled="downloadingDaftarAlatId === item.id"
+                            @click="downloadDaftarAlat(item)"
+                        >
+                            <svg v-if="downloadingDaftarAlatId === item.id" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                                <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
+                            </svg>
+                            <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                                <path d="M12 3v12" />
+                                <path d="m7 10 5 5 5-5" />
+                                <path d="M5 21h14" />
+                            </svg>
+                            {{ downloadingDaftarAlatId === item.id ? 'Menyiapkan...' : 'Unduh Daftar Alat' }}
+                        </button>
+                        <button
                             v-if="hasSuratJalan(item)"
-                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
+                            class="inline-flex min-w-[9.5rem] flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-300"
                             type="button"
                             @click="openSuratJalan(item)"
                         >
@@ -202,7 +220,7 @@
                         </button>
                         <button
                             v-if="canAcceptSuratJalan(item)"
-                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                            class="inline-flex w-full basis-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                             type="button"
                             :disabled="acceptingId === item.id"
                             @click="openAcceptModal(item)"
@@ -218,7 +236,7 @@
                         </button>
                         <button
                             v-if="item.status === 'Disetujui'"
-                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-700 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+                            class="inline-flex w-full basis-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-blue-700 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-800"
                             type="button"
                             @click="openShipping(item)"
                         >
@@ -232,7 +250,7 @@
                         </button>
                         <button
                             v-if="canCompleteItem(item)"
-                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                            class="inline-flex w-full basis-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                             type="button"
                             :disabled="finishingId === item.id"
                             @click="openCompleteModal(item)"
@@ -244,7 +262,7 @@
                         </button>
                         <button
                             v-if="canUpdatePeriod(item)"
-                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-300"
+                            class="inline-flex min-w-[9.5rem] flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-300"
                             type="button"
                             @click="openPeriodModal(item)"
                         >
@@ -259,7 +277,7 @@
                         </button>
                         <button
                             v-if="canReturnItem(item)"
-                            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:border-amber-300"
+                            class="inline-flex min-w-[9.5rem] flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 transition hover:border-amber-300"
                             type="button"
                             @click="openReturnModal(item)"
                         >
@@ -272,6 +290,21 @@
                         </button>
                     </div>
                 </article>
+            </div>
+
+            <div v-if="hasMore" class="mt-5 flex justify-center">
+                <button
+                    class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    type="button"
+                    :disabled="isLoadingMore"
+                    @click="muatLebihBanyak"
+                >
+                    <svg v-if="isLoadingMore" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                        <path class="opacity-90" fill="currentColor" d="M12 2a10 10 0 0 1 10 10h-4a6 6 0 0 0-6-6V2Z" />
+                    </svg>
+                    {{ isLoadingMore ? 'Memuat...' : 'Muat lebih banyak' }}
+                </button>
             </div>
         </div>
     </section>
@@ -469,6 +502,16 @@
                             Perubahan ini hanya mengubah tanggal periode peminjaman.
                         </p>
                     </div>
+                    <div
+                        v-if="isPeriodDraftRestored"
+                        class="flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-sm text-blue-700"
+                    >
+                        <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M3 12a9 9 0 1 0 3-6.7" />
+                            <path d="M3 4v5h5" />
+                        </svg>
+                        <span>Tanggal dipulihkan dari isian terakhir yang belum tersimpan.</span>
+                    </div>
                     <label class="block space-y-2 text-sm font-medium text-slate-700">
                         <span>Tanggal pinjam</span>
                         <input
@@ -541,6 +584,20 @@
                         <p class="mt-1 text-xs text-slate-500">
                             Isi jumlah alat yang dikembalikan. Bisa sebagian atau seluruh sisa alat.
                         </p>
+                    </div>
+
+                    <div
+                        v-if="isReturnDraftRestored"
+                        class="mt-4 flex items-start gap-2 rounded-xl bg-blue-50 px-3 py-2.5 text-sm text-blue-700"
+                    >
+                        <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M3 12a9 9 0 1 0 3-6.7" />
+                            <path d="M3 4v5h5" />
+                        </svg>
+                        <span>
+                            Nama pengirim dan jumlah kembali dipulihkan dari isian terakhir. Foto
+                            pengembalian perlu dipilih ulang.
+                        </span>
                     </div>
 
                     <div class="mt-4 grid gap-4">
@@ -686,6 +743,8 @@ import PeminjamanDetailModal from '../../Components/PeminjamanDetailModal.vue';
 import KirimPengirimanModal from '../../Components/KirimPengirimanModal.vue';
 import SuratJalanModal from '../../Components/SuratJalanModal.vue';
 import ToastNotification from '../../Components/ToastNotification.vue';
+import { bacaDaftar } from '../../lib/daftarBerhalaman';
+import { clearDraft, useFormDraft } from '../../lib/formDraft';
 
 defineOptions({
     layout: (h, page) =>
@@ -751,6 +810,37 @@ const returnSenderName = ref('');
 const returnPhotoInput = ref(null);
 const returnPhotoItems = ref([]);
 let returnPhotoSequence = 0;
+
+const downloadingDaftarAlatId = ref(null);
+const halaman = ref(1);
+const hasMore = ref(false);
+const isLoadingMore = ref(false);
+const isPeriodDraftRestored = ref(false);
+const isReturnDraftRestored = ref(false);
+
+// Draft dipisah per peminjaman supaya isian satu peminjaman tidak terbawa ke
+// peminjaman lain saat modal dibuka untuk baris berbeda.
+const periodDraft = useFormDraft({
+    name: 'pengiriman-periode',
+    scope: () => periodItem.value?.id ?? null,
+    source: () => periodForm.value,
+    isActive: () => !!periodItem.value,
+});
+
+// Foto tidak bisa disimpan di localStorage, jadi hanya nama pengirim dan jumlah
+// kembali yang masuk draft. Foto tetap harus dipilih ulang.
+const returnDraft = useFormDraft({
+    name: 'pengiriman-pengembalian',
+    scope: () => returnItem.value?.id ?? null,
+    source: () => ({
+        senderName: returnSenderName.value,
+        rows: returnRows.value.map((row) => ({
+            itemId: row.itemId,
+            returnQty: row.returnQty,
+        })),
+    }),
+    isActive: () => !!returnItem.value,
+});
 
 const MAX_RETURN_PHOTO_COUNT = 8;
 const MAX_RETURN_PHOTO_SIZE = 5 * 1024 * 1024;
@@ -959,34 +1049,58 @@ const normalizeHistory = (item) => {
         };
     };
 
-const loadHistory = async () => {
-    isLoading.value = true;
+const loadHistory = async ({ reset = true } = {}) => {
+    if (reset) {
+        halaman.value = 1;
+    }
+    isLoading.value = halaman.value === 1;
     loadError.value = '';
     try {
         const [pengirimanResponse, pengembalianResponse] = await Promise.all([
             axios.get('/api/pengiriman', {
                 params: {
                     kategori: shippingCategory.value,
+                    page: halaman.value,
                     ...(isAreaSwitcherRole.value && currentAreaId.value ? { area_id: currentAreaId.value } : {}),
                 },
             }),
             axios.get('/api/pengembalian', {
                 params: {
                     kategori: shippingCategory.value,
+                    page: halaman.value,
                     ...(isAreaSwitcherRole.value && currentAreaId.value ? { area_id: currentAreaId.value } : {}),
                 },
             }),
         ]);
-        const pengirimanData = Array.isArray(pengirimanResponse.data) ? pengirimanResponse.data : [];
-        const pengembalianData = Array.isArray(pengembalianResponse.data) ? pengembalianResponse.data : [];
-        items.value = [...pengirimanData, ...pengembalianData].map((item) => normalizeHistory(item));
+        const pengiriman = bacaDaftar(pengirimanResponse);
+        const pengembalian = bacaDaftar(pengembalianResponse);
+        const baru = [...pengiriman.rows, ...pengembalian.rows].map((item) => normalizeHistory(item));
+
+        // Halaman pertama mengganti isi, halaman berikutnya menambah.
+        items.value = halaman.value === 1 ? baru : [...items.value, ...baru];
+        hasMore.value = pengiriman.hasMore || pengembalian.hasMore;
         await refreshPengirimanNotificationCounts({ silent: true });
     } catch (error) {
-        items.value = [];
+        if (halaman.value === 1) {
+            items.value = [];
+        }
         loadError.value = 'Gagal memuat data peminjaman.';
         showAlert('error', loadError.value);
     } finally {
         isLoading.value = false;
+    }
+};
+
+const muatLebihBanyak = async () => {
+    if (isLoadingMore.value || !hasMore.value) {
+        return;
+    }
+    isLoadingMore.value = true;
+    halaman.value += 1;
+    try {
+        await loadHistory({ reset: false });
+    } finally {
+        isLoadingMore.value = false;
     }
 };
 
@@ -1038,6 +1152,48 @@ const suratJalanDocuments = (item) => {
 };
 
 const hasSuratJalan = (item) => suratJalanDocuments(item).length > 0;
+
+// Tersedia sejak peminjaman disetujui, karena sebelum itu jumlah yang disetujui
+// reviewer belum pasti. Daftar sama yang dipakai di PengirimanController.
+const STATUS_DAFTAR_ALAT_TERSEDIA = [
+    'Disetujui',
+    'Dikirim',
+    'Diterima',
+    'Dikembalikan Partials',
+    'Dikembalikan Semuanya',
+    'Selesai',
+];
+
+const canDownloadDaftarAlat = (item) => STATUS_DAFTAR_ALAT_TERSEDIA.includes(item?.status);
+
+const downloadDaftarAlat = async (item) => {
+    if (!item?.id || downloadingDaftarAlatId.value) {
+        return;
+    }
+
+    downloadingDaftarAlatId.value = item.id;
+    try {
+        const response = await axios.get(`/api/pengiriman/${item.id}/daftar-alat/download`, {
+            responseType: 'blob',
+            __skipGlobalLoading: true,
+        });
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        const disposition = response.headers['content-disposition'] ?? '';
+        const match = disposition.match(/filename="?([^";]+)"?/i);
+        link.href = url;
+        link.download = match?.[1] ?? `DAFTAR-ALAT-DISETUJUI-${item.id}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        showAlert('error', 'Gagal mengunduh daftar alat.');
+    } finally {
+        downloadingDaftarAlatId.value = null;
+    }
+};
 
 const canAcceptSuratJalan = (item) =>
     Boolean(item?.isInterArea)
@@ -1092,12 +1248,36 @@ const openReturnModal = (item) => {
             remainingQty: Number(tool.remainingQty ?? 0),
             returnQty: Number(tool.remainingQty ?? 0),
         }));
+    returnDraft.markPristine();
+
+    const draft = returnDraft.restore(item?.id ?? null);
+    isReturnDraftRestored.value = false;
+    if (draft?.data) {
+        returnSenderName.value = draft.data.senderName ?? '';
+        const savedQty = new Map(
+            (Array.isArray(draft.data.rows) ? draft.data.rows : []).map((row) => [row.itemId, row.returnQty])
+        );
+        returnRows.value.forEach((row) => {
+            if (!savedQty.has(row.itemId)) {
+                return;
+            }
+            const qty = Number(savedQty.get(row.itemId));
+            if (!Number.isFinite(qty)) {
+                return;
+            }
+            // Sisa alat bisa berubah sejak draft disimpan, jadi tetap dibatasi.
+            row.returnQty = Math.max(0, Math.min(qty, row.remainingQty));
+        });
+        isReturnDraftRestored.value = true;
+    }
 };
 
 const closeReturnModal = () => {
     if (isReturning.value) {
         return;
     }
+    returnDraft.clear();
+    isReturnDraftRestored.value = false;
     returnItem.value = null;
     returnRows.value = [];
     returnError.value = '';
@@ -1234,6 +1414,8 @@ const confirmReturn = async () => {
         });
         await loadHistory();
         const nextStatus = response?.data?.status ?? '';
+        returnDraft.clear();
+        isReturnDraftRestored.value = false;
         returnItem.value = null;
         returnRows.value = [];
         returnError.value = '';
@@ -1304,12 +1486,23 @@ const openPeriodModal = (item) => {
         tanggal_pinjam: item?.borrowDateValue ?? '',
         tanggal_kembali: item?.returnDateValue ?? '',
     };
+    periodDraft.markPristine();
+
+    const draft = periodDraft.restore(item?.id ?? null);
+    isPeriodDraftRestored.value = false;
+    if (draft?.data?.tanggal_kembali) {
+        periodForm.value.tanggal_kembali = draft.data.tanggal_kembali;
+        isPeriodDraftRestored.value = true;
+    }
 };
 
 const closePeriodModal = () => {
     if (isUpdatingPeriod.value) {
         return;
     }
+    // Draft dibuang karena menutup modal adalah keputusan pengguna.
+    periodDraft.clear();
+    isPeriodDraftRestored.value = false;
     periodItem.value = null;
     periodError.value = '';
     periodForm.value = {
@@ -1401,6 +1594,8 @@ const submitShipping = async (payload) => {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
         await loadHistory();
+        // Modal tidak tahu hasil pengiriman, jadi draftnya dibersihkan di sini.
+        clearDraft('pengiriman-kirim', payload.peminjamanId);
         shippingItem.value = null;
         showAlert('success', 'Pengiriman berhasil dikirim dan surat jalan Excel telah dibuat.');
     } catch (error) {

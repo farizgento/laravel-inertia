@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers\api;
 
+use App\Http\Controllers\Concerns\MembuatDaftarBerhalaman;
 use App\Http\Controllers\Controller;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanItem;
 use App\Models\Role;
 use App\Models\SuratJalan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MutasiAlatController extends Controller
 {
+    use MembuatDaftarBerhalaman;
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -103,13 +107,30 @@ class MutasiAlatController extends Controller
         if ($search !== '') {
             $query->where(function ($sub) use ($search) {
                 $sub->where('pekerjaan', 'like', '%'.$search.'%')
-                    ->orWhere('id', $search);
+                    ->when(ctype_digit($search), fn ($idQuery) => $idQuery->orWhere('id', (int) $search));
             });
         }
 
-        $peminjamans = $query->get();
+        // Rekap per status dihitung dari seluruh data yang lolos filter, bukan
+        // dari satu halaman, supaya angka pada tab tidak ikut mengecil saat
+        // datanya dibatasi per halaman.
+        $statusCounts = (clone $query)
+            ->reorder()
+            ->toBase()
+            ->select('status', DB::raw('COUNT(*) as jumlah'))
+            ->groupBy('status')
+            ->pluck('jumlah', 'status')
+            ->map(fn ($jumlah) => (int) $jumlah)
+            ->all();
 
-        return $peminjamans->map(function (Peminjaman $peminjaman) {
+        // Penyaring status dipasang setelah rekap, supaya rekapnya tetap
+        // memuat seluruh status.
+        $status = trim((string) $request->query('status', ''));
+        if ($status !== '' && $status !== 'Semua') {
+            $query->where('status', $status);
+        }
+
+        return $this->daftarBerhalaman($query, $request, fn ($peminjamans) => $peminjamans->map(function (Peminjaman $peminjaman) {
             $tools = $peminjaman->items->map(function (PeminjamanItem $item) {
                 $alat = $item->alat;
 
@@ -202,7 +223,7 @@ class MutasiAlatController extends Controller
                 'surat_jalan_items' => $suratJalanItems,
                 'tools' => $tools,
             ];
-        })->values();
+        }), ['status_counts' => $statusCounts]);
     }
 
     private function applyAreaScopeFilter($query, int $areaId, string $areaScope, string $areaColumn): void

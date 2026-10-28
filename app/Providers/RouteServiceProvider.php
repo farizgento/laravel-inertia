@@ -28,6 +28,20 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        // Login diadu ke LDAP, jadi percobaan brute force tidak hanya berisiko
+        // secara keamanan tetapi juga bisa mengunci akun domain pengguna.
+        // Batas per username dibuat ketat; batas per IP dibuat longgar karena
+        // banyak pengguna di jaringan kantor berbagi satu IP publik (NAT) dan
+        // bisa login hampir bersamaan di awal shift.
+        RateLimiter::for('login', function (Request $request) {
+            $username = strtolower(trim((string) $request->input('username')));
+
+            return [
+                Limit::perMinute(5)->by('login:'.$username.'|'.$request->ip()),
+                Limit::perMinute(60)->by('login-ip:'.$request->ip()),
+            ];
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')

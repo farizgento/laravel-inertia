@@ -87,6 +87,62 @@
                 </main>
             </div>
         </div>
+
+        <div
+            v-if="isSessionWarningOpen"
+            class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 px-4"
+        >
+            <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+                <div class="flex items-start gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M12 7v5l3 2" />
+                        </svg>
+                    </span>
+                    <div>
+                        <h2 class="text-base font-semibold text-slate-900">Sesi akan berakhir</h2>
+                        <p class="mt-1 text-sm text-slate-500">
+                            <template v-if="isAbsoluteSessionWarning">
+                                Sesi Anda sudah mendekati batas waktu maksimal. Anda perlu masuk
+                                kembali untuk melanjutkan.
+                            </template>
+                            <template v-else>
+                                Tidak ada aktivitas beberapa saat. Sesi akan berakhir otomatis dan
+                                data yang belum disimpan bisa hilang.
+                            </template>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-4 rounded-xl bg-slate-50 py-3 text-center">
+                    <div class="text-xs font-medium uppercase tracking-wide text-slate-400">Berakhir dalam</div>
+                    <div class="mt-1 font-mono text-2xl font-semibold text-slate-900">
+                        {{ sessionCountdownLabel }}
+                    </div>
+                </div>
+
+                <div class="mt-5 flex gap-2">
+                    <button
+                        v-if="!isAbsoluteSessionWarning"
+                        type="button"
+                        :disabled="isExtendingSession"
+                        class="flex-1 rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                        @click="extendSession"
+                    >
+                        {{ isExtendingSession ? 'Memproses...' : 'Tetap masuk' }}
+                    </button>
+                    <button
+                        type="button"
+                        class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                        :class="isAbsoluteSessionWarning ? 'flex-1' : ''"
+                        @click="logout"
+                    >
+                        Keluar sekarang
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -117,6 +173,17 @@ const props = defineProps({
 const page = usePage();
 const SIDEBAR_BADGE_POLL_INTERVAL_MS = 30000;
 const GLOBAL_LOADING_DELAY_MS = 180;
+// Pemeriksaan sesi dijalankan tiap detik supaya hitungan di modal peringatan
+// akurat. Isinya hanya beberapa operasi aritmetika dan tidak menulis state
+// reaktif kecuali modal sedang terbuka, jadi tidak memicu render ulang.
+const SESSION_CHECK_INTERVAL_MS = 1000;
+// Jarak minimal antar heartbeat. Pengguna yang sedang mengisi form panjang
+// tanpa mengirim request apa pun tetap dianggap aktif oleh server.
+const SESSION_HEARTBEAT_MIN_GAP_MS = 5 * 60 * 1000;
+// Setelah pengguna menganggur sekian lama, polling badge dihentikan agar
+// server tidak melayani permintaan untuk tampilan yang tidak sedang dilihat.
+const IDLE_POLLING_PAUSE_AFTER_MS = 5 * 60 * 1000;
+const SESSION_ACTIVITY_EVENTS = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'];
 const isSidebarOpen = ref(
     typeof window !== 'undefined' &&
         window.matchMedia('(min-width: 1024px)').matches
@@ -144,6 +211,18 @@ const sidebarBadgePollingId = ref(null);
 const isRefreshingSidebarCounts = ref(false);
 let notificationRequestId = 0;
 
+const isSessionWarningOpen = ref(false);
+const isExtendingSession = ref(false);
+const sessionWarningReason = ref('idle');
+const sessionRemainingSeconds = ref(0);
+const sessionCheckTimerId = ref(null);
+// Disengaja bukan ref: nilai ini diperbarui pada setiap gerakan mouse, dan
+// menulisnya ke state reaktif akan memicu render ulang puluhan kali per detik.
+let lastActivityAt = Date.now();
+let lastHeartbeatAt = Date.now();
+let absoluteDeadlineAt = null;
+let isSessionTerminating = false;
+
 const fetchedUser = ref(null);
 const authUser = computed(() => page.props.auth?.user ?? fetchedUser.value);
 const dismissedFlash = ref('');
@@ -160,6 +239,25 @@ const flashMessage = computed(() => {
 });
 const flashType = computed(() => (page.props.flash?.error ? 'error' : 'success'));
 const flashTitle = computed(() => (flashType.value === 'error' ? 'Gagal' : 'Berhasil'));
+
+// Angka batas waktu diambil dari server (config/session.php) agar timer di
+// browser dan penegakan di server tidak pernah berbeda.
+const sessionTimeoutConfig = computed(() => page.props.sessionTimeout ?? {});
+const idleLimitMs = computed(() => {
+    const seconds = Number(sessionTimeoutConfig.value.idle ?? -1);
+    return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : 0;
+});
+const sessionWarningLeadMs = computed(() => {
+    const seconds = Number(sessionTimeoutConfig.value.warningLeadTime ?? 0);
+    return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : 0;
+});
+const isAbsoluteSessionWarning = computed(() => sessionWarningReason.value === 'absolute');
+const sessionCountdownLabel = computed(() => {
+    const total = Math.max(0, sessionRemainingSeconds.value);
+    const minutes = Math.floor(total / 60);
+    const seconds = total % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+});
 
 const normalizeAreaId = (value) => {
     if (value === null || value === undefined || value === '') {
@@ -320,6 +418,7 @@ const attachLoadingInterceptors = () => {
             if (response?.config?.__usesGlobalLoading) {
                 stopGlobalLoading();
             }
+            captureSessionHeaders(response);
             return response;
         },
         (error) => {
@@ -411,7 +510,7 @@ const clearNotificationPayload = () => {
 let pendingNotificationRequest = null;
 let pendingNotificationKey = '';
 
-const refreshNotifications = async ({ silent = false } = {}) => {
+const refreshNotifications = async ({ silent = false, background = false } = {}) => {
     if (!isApiReady.value) {
         return;
     }
@@ -439,6 +538,9 @@ const refreshNotifications = async ({ silent = false } = {}) => {
             const response = await axios.get('/api/notifications', {
                 params,
                 __skipGlobalLoading: silent,
+                // Polling otomatis ditandai agar server tidak menghitungnya
+                // sebagai aktivitas pengguna saat mengukur idle timeout.
+                headers: background ? { 'X-Silent-Poll': '1' } : {},
             });
             if (requestId !== notificationRequestId) {
                 return;
@@ -474,7 +576,7 @@ const pollSidebarNotificationCounts = async () => {
         return;
     }
 
-    await refreshSidebarNotificationCounts({ silent: true });
+    await refreshSidebarNotificationCounts({ silent: true, background: true });
 };
 
 const startSidebarBadgePolling = () => {
@@ -497,9 +599,12 @@ const stopSidebarBadgePolling = () => {
 };
 
 const handleVisibilityChange = () => {
-    if (typeof document !== 'undefined' && !document.hidden) {
-        pollSidebarNotificationCounts();
+    if (typeof document === 'undefined' || document.hidden) {
+        return;
     }
+    // Kembali ke tab aplikasi termasuk aktivitas pengguna.
+    handleUserActivity();
+    pollSidebarNotificationCounts();
 };
 
 const redirectToLogin = () => {
@@ -527,6 +632,165 @@ const logout = async () => {
     } finally {
         router.visit('/login');
     }
+};
+
+const applyAbsoluteDeadline = (secondsRaw) => {
+    const seconds = Number(secondsRaw);
+    absoluteDeadlineAt = Number.isFinite(seconds) && seconds >= 0
+        ? Date.now() + seconds * 1000
+        : null;
+};
+
+// Setiap response dari server membawa sisa waktu sesi, jadi batas absolut
+// selalu tersinkron tanpa perlu request khusus.
+const captureSessionHeaders = (response) => {
+    const raw = response?.headers?.['x-session-absolute-expires-in'];
+    if (raw === undefined || raw === null) {
+        return;
+    }
+    applyAbsoluteDeadline(raw);
+};
+
+const sendSessionHeartbeat = async () => {
+    try {
+        const response = await axios.get('/api/session/heartbeat', {
+            __skipGlobalLoading: true,
+        });
+        applyAbsoluteDeadline(response.data?.absolute_expires_in);
+    } catch (err) {
+        // Sesi yang sudah berakhir ditangani interceptor global (401).
+    }
+};
+
+const handleUserActivity = () => {
+    // Saat modal peringatan terbuka, sesi hanya boleh diperpanjang lewat tombol.
+    // Kalau gerakan mouse ikut dihitung, komputer yang ditinggal dengan mouse
+    // tersenggol akan memperpanjang sesi tanpa ada orangnya.
+    if (isSessionWarningOpen.value || isSessionTerminating) {
+        return;
+    }
+
+    const now = Date.now();
+    lastActivityAt = now;
+
+    if (sidebarBadgePollingId.value === null) {
+        startSidebarBadgePolling();
+        pollSidebarNotificationCounts();
+    }
+
+    if (now - lastHeartbeatAt >= SESSION_HEARTBEAT_MIN_GAP_MS) {
+        lastHeartbeatAt = now;
+        sendSessionHeartbeat();
+    }
+};
+
+const remainingIdleMs = () =>
+    idleLimitMs.value ? idleLimitMs.value - (Date.now() - lastActivityAt) : Infinity;
+
+const remainingAbsoluteMs = () =>
+    absoluteDeadlineAt === null ? Infinity : absoluteDeadlineAt - Date.now();
+
+const endSessionLocally = async (reason) => {
+    if (isSessionTerminating) {
+        return;
+    }
+    isSessionTerminating = true;
+    isSessionWarningOpen.value = false;
+    stopSidebarBadgePolling();
+    stopSessionWatcher();
+
+    try {
+        await axios.post('/api/auth/logout', null, { __skipGlobalLoading: true });
+    } catch (err) {
+        // Sesi mungkin sudah dibersihkan server; lanjut ke halaman login.
+    } finally {
+        // Memakai location, bukan router.visit, supaya seluruh state halaman
+        // ikut dibuang dan tidak ada data sesi lama yang tertinggal di memori.
+        window.location.href = `/login?expired=${reason}`;
+    }
+};
+
+const evaluateSessionState = () => {
+    if (isSessionTerminating) {
+        return;
+    }
+
+    const idleLeft = remainingIdleMs();
+    const absoluteLeft = remainingAbsoluteMs();
+    const soonest = Math.min(idleLeft, absoluteLeft);
+
+    if (soonest === Infinity) {
+        return;
+    }
+
+    if (soonest <= 0) {
+        endSessionLocally(absoluteLeft <= 0 ? 'absolute' : 'idle');
+        return;
+    }
+
+    if (idleLimitMs.value && Date.now() - lastActivityAt >= IDLE_POLLING_PAUSE_AFTER_MS) {
+        stopSidebarBadgePolling();
+    }
+
+    if (sessionWarningLeadMs.value > 0 && soonest <= sessionWarningLeadMs.value) {
+        if (!isSessionWarningOpen.value) {
+            sessionWarningReason.value = absoluteLeft <= idleLeft ? 'absolute' : 'idle';
+            isSessionWarningOpen.value = true;
+        }
+        sessionRemainingSeconds.value = Math.ceil(soonest / 1000);
+    }
+};
+
+const extendSession = async () => {
+    if (isExtendingSession.value) {
+        return;
+    }
+    isExtendingSession.value = true;
+
+    try {
+        await sendSessionHeartbeat();
+        const now = Date.now();
+        lastActivityAt = now;
+        lastHeartbeatAt = now;
+        isSessionWarningOpen.value = false;
+        startSidebarBadgePolling();
+        pollSidebarNotificationCounts();
+    } finally {
+        isExtendingSession.value = false;
+    }
+};
+
+const startSessionWatcher = () => {
+    if (typeof window === 'undefined' || sessionCheckTimerId.value !== null) {
+        return;
+    }
+    sessionCheckTimerId.value = window.setInterval(evaluateSessionState, SESSION_CHECK_INTERVAL_MS);
+};
+
+const stopSessionWatcher = () => {
+    if (typeof window === 'undefined' || sessionCheckTimerId.value === null) {
+        return;
+    }
+    window.clearInterval(sessionCheckTimerId.value);
+    sessionCheckTimerId.value = null;
+};
+
+const attachActivityListeners = () => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+    SESSION_ACTIVITY_EVENTS.forEach((eventName) => {
+        window.addEventListener(eventName, handleUserActivity, { passive: true, capture: true });
+    });
+};
+
+const detachActivityListeners = () => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+    SESSION_ACTIVITY_EVENTS.forEach((eventName) => {
+        window.removeEventListener(eventName, handleUserActivity, { capture: true });
+    });
 };
 
 const toggleSidebar = () => {
@@ -632,6 +896,11 @@ onMounted(async () => {
     if (typeof document !== 'undefined') {
         document.addEventListener('visibilitychange', handleVisibilityChange);
     }
+
+    lastActivityAt = Date.now();
+    lastHeartbeatAt = lastActivityAt;
+    attachActivityListeners();
+    startSessionWatcher();
 });
 
 onBeforeUnmount(() => {
@@ -651,5 +920,8 @@ onBeforeUnmount(() => {
     if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
     }
+
+    stopSessionWatcher();
+    detachActivityListeners();
 });
 </script>

@@ -51,12 +51,49 @@
 
             <label class="space-y-2 text-sm font-medium text-slate-700">
                 <span>Pekerjaan</span>
-                <input
+                <SearchableSelect
                     v-model="form.pekerjaan"
-                    type="text"
-                    placeholder="Nama pekerjaan"
-                    class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    :options="pekerjaanChoices"
+                    :loading="isLoadingPekerjaan"
+                    placeholder="Pilih pekerjaan overhaul"
+                    search-placeholder="Cari nama pekerjaan..."
+                    loading-text="Memuat daftar pekerjaan..."
+                    empty-text="Belum ada pekerjaan overhaul terdaftar"
                 />
+                <p v-if="pekerjaanLoadError" class="text-xs font-semibold text-rose-500">
+                    {{ pekerjaanLoadError }}
+                </p>
+                <p
+                    v-else-if="!isLoadingPekerjaan && !pekerjaanChoices.length"
+                    class="text-xs font-normal text-amber-700"
+                >
+                    Belum ada pekerjaan overhaul terdaftar. Minta admin menambahkannya lebih dulu
+                    di menu Pekerjaan/Project.
+                </p>
+            </label>
+
+            <label class="space-y-2 text-sm font-medium text-slate-700">
+                <span>Bidang Pekerjaan</span>
+                <SearchableSelect
+                    :model-value="form.bidang_pekerjaan_id"
+                    :options="bidangChoices"
+                    :loading="isLoadingBidang"
+                    placeholder="Pilih bidang pekerjaan"
+                    search-placeholder="Cari bidang..."
+                    loading-text="Memuat daftar bidang..."
+                    empty-text="Belum ada bidang pekerjaan terdaftar"
+                    @update:model-value="form.bidang_pekerjaan_id = $event"
+                />
+                <p v-if="bidangLoadError" class="text-xs font-semibold text-rose-500">
+                    {{ bidangLoadError }}
+                </p>
+                <p
+                    v-else-if="!isLoadingBidang && !bidangChoices.length"
+                    class="text-xs font-normal text-amber-700"
+                >
+                    Belum ada bidang pekerjaan terdaftar. Minta admin menambahkannya lebih dulu
+                    di menu Master Data.
+                </p>
             </label>
         </div>
 
@@ -256,8 +293,11 @@ import axios from 'axios';
 import { computed, inject, onMounted, reactive, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
+import SearchableSelect from '../../Components/SearchableSelect.vue';
 import ToastNotification from '../../Components/ToastNotification.vue';
 import { loadAreas as loadSharedAreas } from '../../lib/areas';
+import { findPekerjaanOhId, usePekerjaanOhOptions } from '../../lib/pekerjaanOh';
+import { useBidangPekerjaanOptions } from '../../lib/bidangPekerjaan';
 
 defineOptions({
     layout: (h, page) =>
@@ -308,7 +348,23 @@ const form = reactive({
     tanggal_pinjam: '',
     tanggal_kembali: '',
     pekerjaan: '',
+    bidang_pekerjaan_id: '',
 });
+
+const {
+    options: pekerjaanOptions,
+    isLoading: isLoadingPekerjaan,
+    error: pekerjaanLoadError,
+    choices: pekerjaanChoices,
+    load: loadPekerjaanOptions,
+} = usePekerjaanOhOptions(() => form.pekerjaan);
+
+const {
+    isLoading: isLoadingBidang,
+    error: bidangLoadError,
+    choices: bidangChoices,
+    load: loadBidangOptions,
+} = useBidangPekerjaanOptions();
 
 const loadCachedUser = () => {
     return null;
@@ -542,8 +598,15 @@ const goToPage = (pageNumber) => {
 };
 
 const submit = async () => {
-    if (!sourceAreaId.value || !form.tanggal_pinjam || !form.tanggal_kembali || !form.pekerjaan || !selectedItems.value.length) {
-        showAlert('error', 'Lengkapi area sumber, tanggal, pekerjaan, dan alat yang dipinjam.');
+    if (
+        !sourceAreaId.value
+        || !form.tanggal_pinjam
+        || !form.tanggal_kembali
+        || !form.pekerjaan
+        || !form.bidang_pekerjaan_id
+        || !selectedItems.value.length
+    ) {
+        showAlert('error', 'Lengkapi area sumber, tanggal, pekerjaan, bidang pekerjaan, dan alat yang dipinjam.');
         return;
     }
 
@@ -555,10 +618,13 @@ const submit = async () => {
             tanggal_pinjam: form.tanggal_pinjam,
             tanggal_kembali: form.tanggal_kembali,
             pekerjaan: form.pekerjaan,
+            pekerjaan_oh_id: findPekerjaanOhId(pekerjaanOptions.value, form.pekerjaan),
+            bidang_pekerjaan_id: Number(form.bidang_pekerjaan_id),
             items: selectedItems.value,
         });
         resetSelection();
         form.pekerjaan = '';
+        form.bidang_pekerjaan_id = '';
         await loadTools();
         showAlert('success', 'Peminjaman antar area berhasil diajukan.');
     } catch (error) {
@@ -633,6 +699,8 @@ watch(classificationFilter, () => {
 
 onMounted(async () => {
     cachedUser.value = loadCachedUser();
+    loadPekerjaanOptions();
+    loadBidangOptions();
     await loadAreas();
     await loadTemplates();
 });

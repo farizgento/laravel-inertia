@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\LdapLoginException;
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\EnforceSessionTimeout;
 use App\Services\ActivityLogger;
 use App\Services\LdapLoginService;
 use Illuminate\Http\JsonResponse;
@@ -36,6 +37,7 @@ class AuthController extends Controller
 
         if ($request->hasSession()) {
             $request->session()->regenerate();
+            EnforceSessionTimeout::markSessionStart($request);
         }
 
         $user->loadMissing(['area', 'role']);

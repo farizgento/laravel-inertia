@@ -34,6 +34,14 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            // Dibagikan agar timer di browser memakai angka yang sama dengan
+            // yang ditegakkan server, tanpa perlu request tambahan. Semua
+            // dalam detik; -1 berarti pemeriksaannya dimatikan.
+            'sessionTimeout' => [
+                'idle' => EnforceSessionTimeout::idleLimit() ?: -1,
+                'absolute' => EnforceSessionTimeout::absoluteLimit() ?: -1,
+                'warningLeadTime' => max(0, (int) config('session.warning_lead_time', 0)),
+            ],
         ]);
     }
 

@@ -17,6 +17,20 @@ window.ensureCsrfCookie = () => window.axios.get('/sanctum/csrf-cookie', {
 
 window.clearAuthSession = () => {};
 
+// Alasan dari EnforceSessionTimeout diteruskan ke halaman login supaya pengguna
+// tahu kenapa ia dikeluarkan, bukan tiba-tiba kembali ke form login.
+const loginUrlFor = (reason) => {
+    if (reason === 'session_idle_expired') {
+        return '/login?expired=idle';
+    }
+
+    if (reason === 'session_absolute_expired') {
+        return '/login?expired=absolute';
+    }
+
+    return '/login';
+};
+
 window.axios.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -35,7 +49,7 @@ window.axios.interceptors.response.use(
 
         if (error?.response?.status === 401 && !isAuthFlowRequest) {
             if (window.location?.pathname !== '/login') {
-                window.location.href = '/login';
+                window.location.href = loginUrlFor(error?.response?.data?.reason);
             }
         }
         return Promise.reject(error);

@@ -160,8 +160,20 @@
                     </div>
                 </article>
             </div>
+
+            <div v-if="hasMore" class="mt-5 flex justify-center">
+                <button
+                    class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    type="button"
+                    :disabled="isLoadingMore"
+                    @click="muatLebihBanyak"
+                >
+                    {{ isLoadingMore ? 'Memuat...' : 'Muat lebih banyak' }}
+                </button>
+            </div>
         </div>
     </section>
+
 
     <PeminjamanDetailModal
         :open="!!detailItem"
@@ -190,6 +202,7 @@
 
 <script setup>
 import axios from 'axios';
+import { bacaDaftar } from '../../lib/daftarBerhalaman';
 import { computed, onMounted, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
@@ -318,13 +331,35 @@ const normalizeHistory = (item) => {
         };
     };
 
-const loadHistory = async () => {
+const halaman = ref(1);
+const hasMore = ref(false);
+const isLoadingMore = ref(false);
+
+const muatLebihBanyak = async () => {
+    if (isLoadingMore.value || !hasMore.value) {
+        return;
+    }
+    isLoadingMore.value = true;
+    halaman.value += 1;
+    try {
+        await loadHistory({ reset: false });
+    } finally {
+        isLoadingMore.value = false;
+    }
+};
+
+const loadHistory = async ({ reset = true } = {}) => {
+    if (reset) {
+        halaman.value = 1;
+    }
     isLoading.value = true;
     loadError.value = '';
     try {
-        const response = await axios.get('/api/pengiriman');
-        const data = Array.isArray(response.data) ? response.data : [];
-        items.value = data.map((item) => normalizeHistory(item));
+        const response = await axios.get('/api/pengiriman', { params: { page: halaman.value } });
+        const { rows: data, hasMore: masihAda } = bacaDaftar(response);
+        hasMore.value = masihAda;
+        const baru = data.map((item) => normalizeHistory(item));
+        items.value = halaman.value === 1 ? baru : [...items.value, ...baru];
     } catch (error) {
         items.value = [];
         loadError.value = 'Gagal memuat data peminjaman.';
